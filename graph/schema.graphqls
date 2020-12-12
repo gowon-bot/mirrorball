@@ -1,0 +1,9 @@
+type User {
+  id: Int!
+  lastFMUsername: String!
+}
+
+type Query {
+  users: [User!]!
+  getUser(username: String!): User!
+}
