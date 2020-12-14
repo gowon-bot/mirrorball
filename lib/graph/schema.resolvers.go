@@ -7,9 +7,9 @@ import (
 	"context"
 	"log"
 
-	"github.com/jivison/gowon-indexer/db"
-	"github.com/jivison/gowon-indexer/graph/generated"
-	"github.com/jivison/gowon-indexer/graph/model"
+	"github.com/jivison/gowon-indexer/lib/db"
+	"github.com/jivison/gowon-indexer/lib/graph/generated"
+	"github.com/jivison/gowon-indexer/lib/graph/model"
 )
 
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {

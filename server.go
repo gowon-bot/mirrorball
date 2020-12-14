@@ -7,9 +7,9 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/jivison/gowon-indexer/db"
 	"github.com/jivison/gowon-indexer/graph"
 	"github.com/jivison/gowon-indexer/graph/generated"
+	"github.com/jivison/gowon-indexer/lib/db"
 )
 
 const defaultPort = "8080"
@@ -28,5 +28,6 @@ func main() {
 	http.Handle("/query", srv)
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
+
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
