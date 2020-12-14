@@ -88,6 +88,13 @@ func (lfm LastFM) UserInfo(username string) (*ErrorResponse, *UserInfoResponse) 
 	return err, userInfo
 }
 
+// ValidateUser validates that a given username exists in last.fm
+func (lfm LastFM) ValidateUser(username string) bool {
+	err, _ := lfm.UserInfo(username)
+
+	return err == nil
+}
+
 // CreateService creates an instance of the lastfm service object
 func CreateService() *LastFM {
 	godotenv.Load()

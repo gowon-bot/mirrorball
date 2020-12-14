@@ -4,5 +4,5 @@ package graph
 //
 // It serves as dependency injection for your app, add any dependencies you require here.
 
-// Resolver - I have no idea what this is
+// Resolver - I have no idea what this is for...
 type Resolver struct{}
