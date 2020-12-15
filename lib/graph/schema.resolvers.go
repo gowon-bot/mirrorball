@@ -11,6 +11,7 @@ import (
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
 	"github.com/jivison/gowon-indexer/lib/services/lastfm"
+	"github.com/jivison/gowon-indexer/lib/tasks"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
@@ -35,7 +36,6 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 }
 
 func (r *queryResolver) GetUser(ctx context.Context, username string) (*model.User, error) {
-
 	dbUser := new(db.User)
 
 	err := db.Db.Model(dbUser).Where("last_fm_username = ?", username).Limit(1).Select()
@@ -60,6 +60,12 @@ func (r *queryResolver) GetUser(ctx context.Context, username string) (*model.Us
 	}
 
 	return resultUser, nil
+}
+
+func (r *queryResolver) CoolQuery(ctx context.Context, str string) (*string, error) {
+	tasks.TaskServer.SendTestTask(str)
+
+	return nil, nil
 }
 
 // Query returns generated.QueryResolver implementation.

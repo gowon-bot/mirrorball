@@ -6,4 +6,6 @@ type User {
 type Query {
   users: [User!]!
   getUser(username: String!): User!
+
+  coolQuery(str: String!): String
 }

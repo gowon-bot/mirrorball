@@ -10,6 +10,7 @@ import (
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
+	"github.com/jivison/gowon-indexer/lib/tasks"
 )
 
 const defaultPort = "8080"
@@ -21,6 +22,9 @@ func main() {
 	}
 
 	db.InitDB()
+
+	taskServer := tasks.NewTaskServer()
+	taskServer.LaunchWorkers()
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
 
