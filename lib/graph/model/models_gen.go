@@ -2,6 +2,11 @@
 
 package model
 
+type TaskStartResponse struct {
+	Success bool   `json:"success"`
+	Token   string `json:"token"`
+}
+
 type User struct {
 	ID             int    `json:"id"`
 	LastFMUsername string `json:"lastFMUsername"`

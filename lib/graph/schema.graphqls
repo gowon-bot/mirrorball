@@ -3,9 +3,16 @@ type User {
   lastFMUsername: String!
 }
 
+type TaskStartResponse {
+  success: Boolean!
+  token: String!
+}
+
 type Query {
   users: [User!]!
   getUser(username: String!): User!
+}
 
-  coolQuery(str: String!): String
+type Mutation {
+  indexUser(username: String!): TaskStartResponse!
 }

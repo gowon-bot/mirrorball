@@ -1,9 +1,7 @@
 package tasks
 
 import (
-	"fmt"
 	"log"
-	"time"
 
 	"github.com/RichardKnop/machinery/v1/config"
 	"github.com/RichardKnop/machinery/v1/tasks"
@@ -24,7 +22,7 @@ type GowonTaskServer struct {
 }
 
 // SendTestTask h
-func (gts GowonTaskServer) SendTestTask(str string) {
+func (gts GowonTaskServer) SendTestTask(str string, token string) {
 	signature := &tasks.Signature{
 		Name: "test_task",
 		Args: []tasks.Arg{
@@ -32,18 +30,33 @@ func (gts GowonTaskServer) SendTestTask(str string) {
 				Type:  "string",
 				Value: str,
 			},
+			{
+				Type:  "string",
+				Value: token,
+			},
 		},
 	}
 
-	asyncResult, err := gts.Server.SendTask(signature)
+	gts.Server.SendTask(signature)
+}
 
-	results, err := asyncResult.Get(time.Duration(time.Millisecond * 5))
-
-	if err != nil {
-		_ = fmt.Errorf("Getting task result failed with error: %s", err.Error())
+// SendIndexUserTask h
+func (gts GowonTaskServer) SendIndexUserTask(username string, token string) {
+	signature := &tasks.Signature{
+		Name: "index_user",
+		Args: []tasks.Arg{
+			{
+				Type:  "string",
+				Value: username,
+			},
+			{
+				Type:  "string",
+				Value: token,
+			},
+		},
 	}
 
-	log.Printf("Result of test task: %s", tasks.HumanReadableResults(results))
+	gts.Server.SendTask(signature)
 }
 
 // LaunchWorkers launches all the workers associated with a task server
@@ -93,6 +106,7 @@ func createServer() *machinery.Server {
 	server := machinery.NewServer(cnf, broker, backend, lock)
 
 	server.RegisterTask("test_task", TestTask)
+	server.RegisterTask("index_user", IndexUserTask)
 
 	return server
 }
