@@ -12,13 +12,13 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// LastFM holds methods for interacting with LastFM
-type LastFM struct {
+// API holds methods for interacting with the Last.fm API
+type API struct {
 	baseURL string
 	apiKey  string
 }
 
-func (lfm LastFM) buildParams(method string, params interface{}) string {
+func (lfm API) buildParams(method string, params interface{}) string {
 	defaultParams := struct {
 		APIKey string `url:"api_key"`
 		Format string `url:"format"`
@@ -42,7 +42,7 @@ func (lfm LastFM) buildParams(method string, params interface{}) string {
 }
 
 // MakeRequest calls the lastfm api with the given parameters
-func (lfm LastFM) MakeRequest(method string, params interface{}) *http.Response {
+func (lfm API) MakeRequest(method string, params interface{}) *http.Response {
 	queryparams := lfm.buildParams(method, params)
 
 	log.Print(queryparams)
@@ -57,7 +57,7 @@ func (lfm LastFM) MakeRequest(method string, params interface{}) *http.Response 
 }
 
 // ParseResponse parses a JSON respone from the last.fm api
-func (lfm LastFM) ParseResponse(response *http.Response, output interface{}) *ErrorResponse {
+func (lfm API) ParseResponse(response *http.Response, output interface{}) *ErrorResponse {
 	defer response.Body.Close()
 
 	responseBody, _ := ioutil.ReadAll(response.Body)
@@ -74,7 +74,7 @@ func (lfm LastFM) ParseResponse(response *http.Response, output interface{}) *Er
 }
 
 // UserInfo fetches a user's info from the last.fm API
-func (lfm LastFM) UserInfo(username string) (*ErrorResponse, *UserInfoResponse) {
+func (lfm API) UserInfo(username string) (*ErrorResponse, *UserInfoResponse) {
 	params := UserInfoParams{
 		Username: username,
 	}
@@ -89,19 +89,19 @@ func (lfm LastFM) UserInfo(username string) (*ErrorResponse, *UserInfoResponse) 
 }
 
 // ValidateUser validates that a given username exists in last.fm
-func (lfm LastFM) ValidateUser(username string) bool {
+func (lfm API) ValidateUser(username string) bool {
 	err, _ := lfm.UserInfo(username)
 
 	return err == nil
 }
 
-// CreateService creates an instance of the lastfm service object
-func CreateService() *LastFM {
+// CreateAPIService creates an instance of the lastfm api service object
+func CreateAPIService() *API {
 	godotenv.Load()
 
 	apiKey := os.Getenv("LAST_FM_API_KEY")
 
-	service := &LastFM{
+	service := &API{
 		baseURL: "http://ws.audioscrobbler.com/2.0/",
 		apiKey:  apiKey,
 	}

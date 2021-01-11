@@ -42,6 +42,9 @@ func InitDB() {
 func createSchema(db *pg.DB) error {
 	models := []interface{}{
 		(*User)(nil),
+		(*Artist)(nil),
+		(*Album)(nil),
+		(*Track)(nil),
 	}
 
 	for _, model := range models {

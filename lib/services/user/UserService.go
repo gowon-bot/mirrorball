@@ -16,7 +16,7 @@ func (u User) GetUser(username string) (*db.User, error) {
 	err := db.Db.Model(dbUser).Where("last_fm_username = ?", username).Limit(1).Select()
 
 	if err != nil {
-		lastFM := lastfm.CreateService()
+		lastFM := lastfm.CreateAPIService()
 
 		if !lastFM.ValidateUser(username) {
 			return nil, gqlerror.Errorf("The user %s doesn't exist in Last.fm!", username)

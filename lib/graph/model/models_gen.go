@@ -2,9 +2,26 @@
 
 package model
 
+type Album struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type Artist struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
 type TaskStartResponse struct {
 	Success bool   `json:"success"`
 	Token   string `json:"token"`
+}
+
+type Track struct {
+	ID     int     `json:"id"`
+	Name   string  `json:"name"`
+	Artist *Artist `json:"artist"`
+	Album  *Album  `json:"album"`
 }
 
 type User struct {

@@ -8,6 +8,23 @@ type TaskStartResponse {
   token: String!
 }
 
+type Artist {
+  id: Int!
+  name: String!
+}
+
+type Album {
+  id: Int!
+  name: String!
+}
+
+type Track {
+  id: Int!
+  name: String!
+  artist: Artist!
+  album: Album
+}
+
 type Query {
   users: [User!]!
   getUser(username: String!): User!
@@ -15,4 +32,5 @@ type Query {
 
 type Mutation {
   indexUser(username: String!): TaskStartResponse!
+  saveTrack(artist: String!, album: String, track: String!): Track!
 }

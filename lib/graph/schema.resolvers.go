@@ -10,6 +10,7 @@ import (
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
+	"github.com/jivison/gowon-indexer/lib/services/lastfm"
 	"github.com/jivison/gowon-indexer/lib/services/response"
 	"github.com/jivison/gowon-indexer/lib/services/user"
 	"github.com/jivison/gowon-indexer/lib/tasks"
@@ -23,6 +24,16 @@ func (r *mutationResolver) IndexUser(ctx context.Context, username string) (*mod
 	tasks.TaskServer.SendIndexUserTask(username, token)
 
 	return responseService.BuildTaskStartResponse(token), nil
+}
+
+func (r *mutationResolver) SaveTrack(ctx context.Context, artist string, album *string, track string) (*model.Track, error) {
+	indexedService := lastfm.CreateIndexedService()
+
+	savedTrack := indexedService.SaveTrack(artist, track, album)
+
+	gqlTrack := lastfm.ConvertToGraphQLTrack(savedTrack)
+
+	return gqlTrack, nil
 }
 
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
