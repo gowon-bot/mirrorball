@@ -1,3 +1,15 @@
+type Query {
+  users: [User!]!
+  getUser(username: String!): User!
+
+  userTopArtists(username: String!): Int!
+}
+
+type Mutation {
+  indexUser(username: String!): TaskStartResponse!
+  saveTrack(artist: String!, album: String, track: String!): Track!
+}
+
 type User {
   id: Int!
   lastFMUsername: String!
@@ -25,12 +37,13 @@ type Track {
   album: Album
 }
 
-type Query {
-  users: [User!]!
-  getUser(username: String!): User!
+type TopArtists {
+  artists: [TopArtist!]!
+  total: Int!
 }
 
-type Mutation {
-  indexUser(username: String!): TaskStartResponse!
-  saveTrack(artist: String!, album: String, track: String!): Track!
+type TopArtist {
+  artist: Artist!
+  plays: Int!
+  rank: Int!
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
-	"github.com/jivison/gowon-indexer/lib/services/lastfm"
+	"github.com/jivison/gowon-indexer/lib/services/indexeddata"
 	"github.com/jivison/gowon-indexer/lib/services/response"
 	"github.com/jivison/gowon-indexer/lib/services/user"
 	"github.com/jivison/gowon-indexer/lib/tasks"
@@ -27,11 +27,11 @@ func (r *mutationResolver) IndexUser(ctx context.Context, username string) (*mod
 }
 
 func (r *mutationResolver) SaveTrack(ctx context.Context, artist string, album *string, track string) (*model.Track, error) {
-	indexedService := lastfm.CreateIndexedService()
+	indexedService := indexeddata.CreateIndexedMutationService()
 
 	savedTrack := indexedService.SaveTrack(artist, track, album)
 
-	gqlTrack := lastfm.ConvertToGraphQLTrack(savedTrack)
+	gqlTrack := indexeddata.ConvertToGraphQLTrack(savedTrack)
 
 	return gqlTrack, nil
 }
@@ -69,6 +69,14 @@ func (r *queryResolver) GetUser(ctx context.Context, username string) (*model.Us
 		ID:             int(user.ID),
 		LastFMUsername: user.LastFMUsername,
 	}, nil
+}
+
+func (r *queryResolver) UserTopArtists(ctx context.Context, username string) (int, error) {
+	indexedQuery := indexeddata.CreateIndexedQueryService()
+
+	count := indexedQuery.UserTopArtists(username)
+
+	return count, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

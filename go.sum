@@ -44,7 +44,6 @@ github.com/RichardKnop/logging v0.0.0-20190827224416-1a693bdd4fae h1:DcFpTQBYQ9C
 github.com/RichardKnop/logging v0.0.0-20190827224416-1a693bdd4fae/go.mod h1:rJJ84PyA/Wlmw1hO+xTzV2wsSUon6J5ktg0g8BF2PuU=
 github.com/RichardKnop/machinery v1.10.0 h1:fw2qkFY145N55pkoCFk27aJYBgIB97KVp9SLII7ykwk=
 github.com/RichardKnop/machinery v1.10.0/go.mod h1:BU4Cgsp2OpTy00OqVBkVjUJUlhchpUV8M83VHH6lCZY=
-github.com/RichardKnop/machinery/v2 v2.0.2 h1:4QLfM1yxPhRJ9rzfwBKAfDqNroutFJjCkTchjhf0WzA=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=
 github.com/agnivade/levenshtein v1.0.3 h1:M5ZnqLOoZR8ygVq0FfkXsNOKzMCk0xRiow0R5+5VkQ0=
 github.com/agnivade/levenshtein v1.0.3/go.mod h1:4SFRZbbXWLF4MU1T9Qg0pGgH3Pjs+t6ie5efyrwRJXs=

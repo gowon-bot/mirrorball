@@ -30,6 +30,8 @@ func InitDB() {
 
 	db := pg.Connect(parsedOptions)
 
+	db.AddQueryHook(Logger{})
+
 	err = createSchema(db)
 
 	if err != nil {
@@ -45,6 +47,7 @@ func createSchema(db *pg.DB) error {
 		(*Artist)(nil),
 		(*Album)(nil),
 		(*Track)(nil),
+		(*Scrobble)(nil),
 	}
 
 	for _, model := range models {

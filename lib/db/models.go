@@ -1,9 +1,13 @@
 package db
 
+import "time"
+
 // User is the database model for a last.fm user
 type User struct {
 	ID             int64  `json:"id"`
 	LastFMUsername string `json:"lastFMUsername"`
+
+	Scrobbles *[]Scrobble `pg:"rel:has-many"`
 }
 
 /**
@@ -40,4 +44,15 @@ type Track struct {
 
 	AlbumID int64
 	Album   *Album `pg:"rel:has-one"`
+}
+
+// Scrobble represents a Last.fm scrobble
+type Scrobble struct {
+	Timestamp time.Time
+
+	UserID int64
+	User   *User `pg:"rel:has-one"`
+
+	TrackID int64
+	Track   *Track `pg:"rel:has-one"`
 }

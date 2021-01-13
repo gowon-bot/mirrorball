@@ -17,6 +17,17 @@ type TaskStartResponse struct {
 	Token   string `json:"token"`
 }
 
+type TopArtist struct {
+	Artist *Artist `json:"artist"`
+	Plays  int     `json:"plays"`
+	Rank   int     `json:"rank"`
+}
+
+type TopArtists struct {
+	Artists []*TopArtist `json:"artists"`
+	Total   int          `json:"total"`
+}
+
 type Track struct {
 	ID     int     `json:"id"`
 	Name   string  `json:"name"`

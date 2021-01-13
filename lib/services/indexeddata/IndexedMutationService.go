@@ -1,15 +1,15 @@
-package lastfm
+package indexeddata
 
 import (
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
 )
 
-// Indexed holds methods for interacting with the cached Last.fm data
-type Indexed struct{}
+// IndexedMutation holds methods for interacting with the cached Last.fm data
+type IndexedMutation struct{}
 
 // GetArtist returns (and optionally creates) an artist from the database
-func (i Indexed) GetArtist(artist string, create bool) (*db.Artist, error) {
+func (i IndexedMutation) GetArtist(artist string, create bool) (*db.Artist, error) {
 	dbArtist := new(db.Artist)
 
 	err := db.Db.Model(dbArtist).Where("name ILIKE ?", artist).Limit(1).Select()
@@ -28,7 +28,7 @@ func (i Indexed) GetArtist(artist string, create bool) (*db.Artist, error) {
 }
 
 // GetAlbum returns (and optionally creates) an album from the database
-func (i Indexed) GetAlbum(album, artist string, create bool) (*db.Album, error) {
+func (i IndexedMutation) GetAlbum(album, artist string, create bool) (*db.Album, error) {
 	dbAlbum := new(db.Album)
 
 	err := db.Db.Model(dbAlbum).
@@ -57,11 +57,13 @@ func (i Indexed) GetAlbum(album, artist string, create bool) (*db.Album, error) 
 }
 
 // GetTrack returns (and optionally creates) a track from the database
-func (i Indexed) GetTrack(track, artist string, album *string, create bool) (*db.Track, error) {
+func (i IndexedMutation) GetTrack(track, artist string, album *string, create bool) (*db.Track, error) {
+
 	dbTrack := new(db.Track)
 
 	query := db.Db.Model(dbTrack).
 		Relation("Artist").
+		Relation("Album").
 		Where("track.name ILIKE ?", track).
 		Where("artist.name ILIKE ?", artist).
 		Limit(1)
@@ -74,15 +76,13 @@ func (i Indexed) GetTrack(track, artist string, album *string, create bool) (*db
 
 	if err != nil && create == true {
 		dbTrack = i.SaveTrack(track, artist, album)
-	} else {
-		return nil, err
 	}
 
 	return dbTrack, nil
 }
 
 // SaveTrack saves a track in the database
-func (i Indexed) SaveTrack(artistName, trackName string, albumName *string) *db.Track {
+func (i IndexedMutation) SaveTrack(trackName, artistName string, albumName *string) *db.Track {
 
 	artist, _ := i.GetArtist(artistName, true)
 	var album *db.Album = nil
@@ -108,13 +108,6 @@ func (i Indexed) SaveTrack(artistName, trackName string, albumName *string) *db.
 	db.Db.Model(track).Insert()
 
 	return track
-}
-
-// CreateIndexedService creates an instance of the lastfm indexed service object
-func CreateIndexedService() *Indexed {
-	service := &Indexed{}
-
-	return service
 }
 
 // ConvertToGraphQLArtist converts a db artist to a gql artist
@@ -165,4 +158,11 @@ func ConvertToGraphQLTrack(track *db.Track) *model.Track {
 		Artist: artist,
 		Album:  album,
 	}
+}
+
+// CreateIndexedMutationService creates an instance of the lastfm indexed service object
+func CreateIndexedMutationService() *IndexedMutation {
+	service := &IndexedMutation{}
+
+	return service
 }

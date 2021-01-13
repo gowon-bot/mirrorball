@@ -45,8 +45,6 @@ func (lfm API) buildParams(method string, params interface{}) string {
 func (lfm API) MakeRequest(method string, params interface{}) *http.Response {
 	queryparams := lfm.buildParams(method, params)
 
-	log.Print(queryparams)
-
 	resp, err := http.Get(lfm.baseURL + "?" + queryparams)
 
 	if err != nil {
@@ -86,6 +84,27 @@ func (lfm API) UserInfo(username string) (*ErrorResponse, *UserInfoResponse) {
 	err := lfm.ParseResponse(response, userInfo)
 
 	return err, userInfo
+}
+
+// RecentTracks fetches a user's recent tracks from the last.fm API
+func (lfm API) RecentTracks(params RecentTracksParams) (*ErrorResponse, *RecentTracksResponse) {
+	if params.Page < 1 {
+		params.Page = 1
+	}
+	if params.Limit < 1 {
+		params.Limit = 1
+	}
+	if params.Period == "" {
+		params.Period = "overall"
+	}
+
+	recentTracks := &RecentTracksResponse{}
+
+	response := lfm.MakeRequest("user.getRecentTracks", params)
+
+	err := lfm.ParseResponse(response, recentTracks)
+
+	return err, recentTracks
 }
 
 // ValidateUser validates that a given username exists in last.fm
