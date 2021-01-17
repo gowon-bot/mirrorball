@@ -39,3 +39,14 @@ type User struct {
 	ID             int    `json:"id"`
 	LastFMUsername string `json:"lastFMUsername"`
 }
+
+type WhoKnows struct {
+	Artist    *Artist `json:"artist"`
+	User      *User   `json:"user"`
+	Playcount int     `json:"playcount"`
+}
+
+type WhoKnowsResponse struct {
+	Users  []*WhoKnows `json:"users"`
+	Artist *Artist     `json:"artist"`
+}

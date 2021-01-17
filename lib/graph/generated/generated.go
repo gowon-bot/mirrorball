@@ -60,8 +60,10 @@ type ComplexityRoot struct {
 
 	Query struct {
 		GetUser        func(childComplexity int, username string) int
+		Test           func(childComplexity int) int
 		UserTopArtists func(childComplexity int, username string) int
 		Users          func(childComplexity int) int
+		WhoKnows       func(childComplexity int, artist string) int
 	}
 
 	TaskStartResponse struct {
@@ -91,6 +93,17 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		LastFMUsername func(childComplexity int) int
 	}
+
+	WhoKnows struct {
+		Artist    func(childComplexity int) int
+		Playcount func(childComplexity int) int
+		User      func(childComplexity int) int
+	}
+
+	WhoKnowsResponse struct {
+		Artist func(childComplexity int) int
+		Users  func(childComplexity int) int
+	}
 }
 
 type MutationResolver interface {
@@ -101,6 +114,8 @@ type QueryResolver interface {
 	Users(ctx context.Context) ([]*model.User, error)
 	GetUser(ctx context.Context, username string) (*model.User, error)
 	UserTopArtists(ctx context.Context, username string) (int, error)
+	WhoKnows(ctx context.Context, artist string) (*model.WhoKnowsResponse, error)
+	Test(ctx context.Context) (*string, error)
 }
 
 type executableSchema struct {
@@ -182,6 +197,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetUser(childComplexity, args["username"].(string)), true
 
+	case "Query.test":
+		if e.complexity.Query.Test == nil {
+			break
+		}
+
+		return e.complexity.Query.Test(childComplexity), true
+
 	case "Query.userTopArtists":
 		if e.complexity.Query.UserTopArtists == nil {
 			break
@@ -200,6 +222,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Users(childComplexity), true
+
+	case "Query.whoKnows":
+		if e.complexity.Query.WhoKnows == nil {
+			break
+		}
+
+		args, err := ec.field_Query_whoKnows_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.WhoKnows(childComplexity, args["artist"].(string)), true
 
 	case "TaskStartResponse.success":
 		if e.complexity.TaskStartResponse.Success == nil {
@@ -292,6 +326,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.LastFMUsername(childComplexity), true
 
+	case "WhoKnows.artist":
+		if e.complexity.WhoKnows.Artist == nil {
+			break
+		}
+
+		return e.complexity.WhoKnows.Artist(childComplexity), true
+
+	case "WhoKnows.playcount":
+		if e.complexity.WhoKnows.Playcount == nil {
+			break
+		}
+
+		return e.complexity.WhoKnows.Playcount(childComplexity), true
+
+	case "WhoKnows.user":
+		if e.complexity.WhoKnows.User == nil {
+			break
+		}
+
+		return e.complexity.WhoKnows.User(childComplexity), true
+
+	case "WhoKnowsResponse.artist":
+		if e.complexity.WhoKnowsResponse.Artist == nil {
+			break
+		}
+
+		return e.complexity.WhoKnowsResponse.Artist(childComplexity), true
+
+	case "WhoKnowsResponse.users":
+		if e.complexity.WhoKnowsResponse.Users == nil {
+			break
+		}
+
+		return e.complexity.WhoKnowsResponse.Users(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -361,6 +430,10 @@ var sources = []*ast.Source{
   getUser(username: String!): User!
 
   userTopArtists(username: String!): Int!
+
+  whoKnows(artist: String!): WhoKnowsResponse!
+
+  test: String
 }
 
 type Mutation {
@@ -404,6 +477,17 @@ type TopArtist {
   artist: Artist!
   plays: Int!
   rank: Int!
+}
+
+type WhoKnowsResponse {
+  users: [WhoKnows!]!
+  artist: Artist
+}
+
+type WhoKnows {
+  artist: Artist!
+  user: User!
+  playcount: Int!
 }
 `, BuiltIn: false},
 }
@@ -503,6 +587,21 @@ func (ec *executionContext) field_Query_userTopArtists_args(ctx context.Context,
 		}
 	}
 	args["username"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_whoKnows_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["artist"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("artist"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["artist"] = arg0
 	return args, nil
 }
 
@@ -885,6 +984,80 @@ func (ec *executionContext) _Query_userTopArtists(ctx context.Context, field gra
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_whoKnows(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_whoKnows_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().WhoKnows(rctx, args["artist"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.WhoKnowsResponse)
+	fc.Result = res
+	return ec.marshalNWhoKnowsResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_test(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Test(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1408,6 +1581,178 @@ func (ec *executionContext) _User_lastFMUsername(ctx context.Context, field grap
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WhoKnows_artist(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnows) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoKnows",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Artist, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Artist)
+	fc.Result = res
+	return ec.marshalNArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtist(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WhoKnows_user(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnows) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoKnows",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WhoKnows_playcount(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnows) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoKnows",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Playcount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WhoKnowsResponse_users(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnowsResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoKnowsResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Users, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.WhoKnows)
+	fc.Result = res
+	return ec.marshalNWhoKnows2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WhoKnowsResponse_artist(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnowsResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoKnowsResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Artist, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Artist)
+	fc.Result = res
+	return ec.marshalOArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtist(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -2662,6 +3007,31 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "whoKnows":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_whoKnows(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "test":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_test(ctx, field)
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -2838,6 +3208,72 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var whoKnowsImplementors = []string{"WhoKnows"}
+
+func (ec *executionContext) _WhoKnows(ctx context.Context, sel ast.SelectionSet, obj *model.WhoKnows) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, whoKnowsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WhoKnows")
+		case "artist":
+			out.Values[i] = ec._WhoKnows_artist(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "user":
+			out.Values[i] = ec._WhoKnows_user(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "playcount":
+			out.Values[i] = ec._WhoKnows_playcount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var whoKnowsResponseImplementors = []string{"WhoKnowsResponse"}
+
+func (ec *executionContext) _WhoKnowsResponse(ctx context.Context, sel ast.SelectionSet, obj *model.WhoKnowsResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, whoKnowsResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WhoKnowsResponse")
+		case "users":
+			out.Values[i] = ec._WhoKnowsResponse_users(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "artist":
+			out.Values[i] = ec._WhoKnowsResponse_artist(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3275,6 +3711,67 @@ func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋjivisonᚋgowonᚑind
 	return ec._User(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNWhoKnows2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.WhoKnows) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNWhoKnows2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnows(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNWhoKnows2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnows(ctx context.Context, sel ast.SelectionSet, v *model.WhoKnows) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._WhoKnows(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNWhoKnowsResponse2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsResponse(ctx context.Context, sel ast.SelectionSet, v model.WhoKnowsResponse) graphql.Marshaler {
+	return ec._WhoKnowsResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNWhoKnowsResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsResponse(ctx context.Context, sel ast.SelectionSet, v *model.WhoKnowsResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._WhoKnowsResponse(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
 	return ec.___Directive(ctx, sel, &v)
 }
@@ -3509,6 +4006,13 @@ func (ec *executionContext) marshalOAlbum2ᚖgithubᚗcomᚋjivisonᚋgowonᚑin
 		return graphql.Null
 	}
 	return ec._Album(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtist(ctx context.Context, sel ast.SelectionSet, v *model.Artist) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Artist(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {

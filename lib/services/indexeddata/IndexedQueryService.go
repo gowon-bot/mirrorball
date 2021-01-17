@@ -31,6 +31,19 @@ func (id IndexedQuery) UserTopArtists(username string) int {
 	return count
 }
 
+func (id IndexedQuery) WhoKnowsArtist(artist *db.Artist) []db.ArtistCount {
+	var whoKnows []db.ArtistCount
+
+	db.Db.Model(&whoKnows).
+		Relation("Artist").
+		Relation("User").
+		Where("artist_id=?", artist.ID).
+		Order("playcount desc", "last_fm_username desc").
+		Select()
+
+	return whoKnows
+}
+
 // CreateIndexedQueryService creates an instance of the lastfm indexed data service object
 func CreateIndexedQueryService() *IndexedQuery {
 	service := &IndexedQuery{

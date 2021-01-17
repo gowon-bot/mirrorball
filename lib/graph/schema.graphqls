@@ -3,6 +3,8 @@ type Query {
   getUser(username: String!): User!
 
   userTopArtists(username: String!): Int!
+
+  whoKnows(artist: String!): WhoKnowsResponse!
 }
 
 type Mutation {
@@ -46,4 +48,15 @@ type TopArtist {
   artist: Artist!
   plays: Int!
   rank: Int!
+}
+
+type WhoKnowsResponse {
+  users: [WhoKnows!]!
+  artist: Artist
+}
+
+type WhoKnows {
+  artist: Artist!
+  user: User!
+  playcount: Int!
 }

@@ -7,10 +7,12 @@ import (
 	"context"
 	"log"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
 	"github.com/jivison/gowon-indexer/lib/services/indexeddata"
+	"github.com/jivison/gowon-indexer/lib/services/indexing"
 	"github.com/jivison/gowon-indexer/lib/services/response"
 	"github.com/jivison/gowon-indexer/lib/services/user"
 	"github.com/jivison/gowon-indexer/lib/tasks"
@@ -77,6 +79,65 @@ func (r *queryResolver) UserTopArtists(ctx context.Context, username string) (in
 	count := indexedQuery.UserTopArtists(username)
 
 	return count, nil
+}
+
+func (r *queryResolver) WhoKnows(ctx context.Context, artist string) (*model.WhoKnowsResponse, error) {
+	indexedQuery := indexeddata.CreateIndexedQueryService()
+	indexedMutation := indexeddata.CreateIndexedMutationService()
+
+	dbArtist, err := indexedMutation.GetArtist(artist, false)
+	gqlArtist := indexeddata.ConvertToGraphQLArtist(dbArtist)
+
+	if err != nil {
+		return nil, err
+	}
+
+	whoKnows := indexedQuery.WhoKnowsArtist(dbArtist)
+
+	spew.Dump(whoKnows)
+
+	var whoKnowsResponse []*model.WhoKnows
+
+	for _, whoKnowsRow := range whoKnows {
+		whoKnowsResponse = append(whoKnowsResponse, &model.WhoKnows{
+			Artist: gqlArtist,
+			User: &model.User{
+				ID:             int(whoKnowsRow.User.ID),
+				LastFMUsername: whoKnowsRow.User.LastFMUsername,
+			},
+			Playcount: int(whoKnowsRow.Playcount),
+		})
+	}
+
+	return &model.WhoKnowsResponse{
+		Artist: gqlArtist,
+		Users:  whoKnowsResponse,
+	}, nil
+}
+
+func (r *queryResolver) Test(ctx context.Context) (*string, error) {
+	// lastFMService := lastfm.CreateAPIService()
+	userService := user.CreateService()
+	// indexedMutation := indexeddata.CreateIndexedMutationService()
+	indexingService := indexing.CreateService()
+
+	user, _ := userService.GetUser("flushed_emoji")
+
+	// _, response := lastFMService.TopArtists(lastfm.TopArtistParams{
+	// 	Username: user.LastFMUsername,
+	// 	Limit:    1000,
+	// })
+
+	// for _, artist := range response.TopArtists.Artists {
+	// 	dbArtist, _ := indexedMutation.GetArtist(artist.Name, true)
+	// 	playcount, _ := strconv.Atoi(artist.Playcount)
+
+	// 	indexedMutation.IncrementArtistCount(dbArtist, user, int32(playcount))
+	// }
+
+	indexingService.FullArtistCountIndex(user)
+
+	return nil, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

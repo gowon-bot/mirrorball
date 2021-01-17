@@ -32,7 +32,8 @@ func InitDB() {
 
 	db.AddQueryHook(Logger{})
 
-	err = createSchema(db)
+	// this is handled by migrations
+	// err = createSchema(db)
 
 	if err != nil {
 		log.Fatal("Error creating schema")
@@ -48,6 +49,7 @@ func createSchema(db *pg.DB) error {
 		(*Album)(nil),
 		(*Track)(nil),
 		(*Scrobble)(nil),
+		(*ArtistCount)(nil),
 	}
 
 	for _, model := range models {

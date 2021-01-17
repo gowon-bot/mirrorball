@@ -1,0 +1,4 @@
+# this file is used for sql-migrate
+development:
+  dialect: postgres
+  datasource: postgres://username:password@localhost:5432/gowon-indexer?sslmode=disable

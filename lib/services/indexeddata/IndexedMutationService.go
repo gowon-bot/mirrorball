@@ -110,6 +110,49 @@ func (i IndexedMutation) SaveTrack(trackName, artistName string, albumName *stri
 	return track
 }
 
+// GetArtistCount gets and optionally creates an artist count
+func (i IndexedMutation) GetArtistCount(artist *db.Artist, user *db.User, create bool) (*db.ArtistCount, error) {
+	artistCount := new(db.ArtistCount)
+
+	err := db.Db.Model(artistCount).Where("user_id=?", user.ID).Where("artist_id=?", artist.ID).Limit(1).Select()
+
+	if err != nil && create == true {
+		artistCount = &db.ArtistCount{
+			UserID: user.ID,
+			User:   user,
+
+			ArtistID: artist.ID,
+			Artist:   artist,
+		}
+
+		db.Db.Model(artistCount).Insert()
+	} else if err != nil {
+		return nil, err
+	}
+
+	return artistCount, nil
+}
+
+// IncrementArtistCount increments an artist's aggregated playcount by a given amount
+func (i IndexedMutation) IncrementArtistCount(artist *db.Artist, user *db.User, count int32) *db.ArtistCount {
+
+	artistCount, _ := i.GetArtistCount(artist, user, true)
+
+	var newPlaycount int32
+
+	db.Db.Model(artistCount).
+		Set("playcount=?", count+artistCount.Playcount).
+		Where("artist_id=?", artist.ID).
+		Where("user_id=?", user.ID).
+		Returning("playcount").
+		Update(&newPlaycount)
+
+	artistCount.Artist = artist
+	artistCount.Playcount = newPlaycount
+
+	return artistCount
+}
+
 // ConvertToGraphQLArtist converts a db artist to a gql artist
 func ConvertToGraphQLArtist(artist *db.Artist) *model.Artist {
 	if artist == nil {

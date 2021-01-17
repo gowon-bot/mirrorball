@@ -83,6 +83,41 @@ type RecentTracksParams struct {
 	Period   string `url:"period"`
 }
 
+// TopArtist is the struct type for a last.fm top artist
+type TopArtist struct {
+	Attributes struct {
+		Rank string `json:"rank"`
+	} `json:"@attr"`
+	MBID       string  `json:"mbid"`
+	URL        string  `json:"url"`
+	Playcount  string  `json:"playcount"`
+	Images     []Image `json:"image"`
+	Name       string  `json:"name"`
+	Streamable string  `json:"streamable"`
+}
+
+// TopArtistsResponse is the struct type for a user.getTopArtists response from last.fm
+type TopArtistsResponse struct {
+	TopArtists struct {
+		Artists    []TopArtist `json:"artist"`
+		Attributes struct {
+			Page       string `json:"page"`
+			Total      string `json:"total"`
+			User       string `json:"user"`
+			PerPage    string `json:"perPage"`
+			TotalPages string `json:"totalPages"`
+		} `json:"@attr"`
+	} `json:"topartists"`
+}
+
+// TopArtistParams is the parameters for a user.getInfo response
+type TopArtistParams struct {
+	Username string `url:"username"`
+	Limit    int    `url:"limit"`
+	Page     int    `url:"page"`
+	Period   string `url:"period"`
+}
+
 // // TopTracksResponse is the struct type for a user.getTopTracks response from last.fm
 // type TopTracksResponse struct {
 // 	TopTracks struct {
