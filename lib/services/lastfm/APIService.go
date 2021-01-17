@@ -7,8 +7,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/google/go-querystring/query"
+	helpers "github.com/jivison/gowon-indexer/lib/helpers/api"
 	"github.com/joho/godotenv"
 )
 
@@ -133,6 +135,34 @@ func (lfm API) ValidateUser(username string) bool {
 	err, _ := lfm.UserInfo(username)
 
 	return err == nil
+}
+
+// LastScrobbledTimestamp returns the timestamp of the last scrobbled track
+func (lfm API) LastScrobbledTimestamp(username string) time.Time {
+	err, recentTracks := lfm.RecentTracks(RecentTracksParams{
+		Limit:    1,
+		Username: username,
+	})
+
+	if err != nil || len(recentTracks.RecentTracks.Tracks) == 0 {
+		return time.Now()
+	}
+
+	var lastTrack RecentTrack
+
+	if (len(recentTracks.RecentTracks.Tracks)) == 2 {
+		lastTrack = recentTracks.RecentTracks.Tracks[1]
+	} else {
+		lastTrack = recentTracks.RecentTracks.Tracks[0]
+	}
+
+	timestamp, parseErr := helpers.ParseUnix(lastTrack.Timestamp.UTS)
+
+	if parseErr != nil {
+		return time.Now()
+	}
+
+	return timestamp
 }
 
 // CreateAPIService creates an instance of the lastfm api service object

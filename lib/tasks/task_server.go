@@ -21,14 +21,14 @@ type GowonTaskServer struct {
 	Workers []*machinery.Worker
 }
 
-// SendTestTask h
-func (gts GowonTaskServer) SendTestTask(str string, token string) {
+// SendIndexUserTask starts an index task
+func (gts GowonTaskServer) SendIndexUserTask(username string, token string) {
 	signature := &tasks.Signature{
-		Name: "test_task",
+		Name: "index_user",
 		Args: []tasks.Arg{
 			{
 				Type:  "string",
-				Value: str,
+				Value: username,
 			},
 			{
 				Type:  "string",
@@ -40,10 +40,10 @@ func (gts GowonTaskServer) SendTestTask(str string, token string) {
 	gts.Server.SendTask(signature)
 }
 
-// SendIndexUserTask h
-func (gts GowonTaskServer) SendIndexUserTask(username string, token string) {
+// SendUpdateUserTask starts an update task
+func (gts GowonTaskServer) SendUpdateUserTask(username string, token string) {
 	signature := &tasks.Signature{
-		Name: "index_user",
+		Name: "update_user",
 		Args: []tasks.Arg{
 			{
 				Type:  "string",
@@ -105,8 +105,8 @@ func createServer() *machinery.Server {
 
 	server := machinery.NewServer(cnf, broker, backend, lock)
 
-	server.RegisterTask("test_task", TestTask)
 	server.RegisterTask("index_user", IndexUserTask)
+	server.RegisterTask("update_user", UpdateUserTask)
 
 	return server
 }

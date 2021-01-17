@@ -39,6 +39,30 @@ type UserInfoParams struct {
 	Username string `url:"username"`
 }
 
+// RecentTrack is a struct containing a recent track from last.fm
+type RecentTrack struct {
+	Artist struct {
+		MBID string `json:"mbid"`
+		Text string `json:"#text"`
+	} `json:"artist"`
+	Attributes struct {
+		IsNowPlaying string `json:"nowplaying"`
+	} `json:"@attr"`
+	MBID  string `json:"mbid"`
+	Album struct {
+		MBID string `json:"mbid"`
+		Text string `json:"#text"`
+	} `json:"album"`
+	Images     []Image `json:"image"`
+	Streamable string  `json:"streamable"`
+	URL        string  `json:"url"`
+	Name       string  `json:"name"`
+	Timestamp  struct {
+		UTS  string `json:"uts"`
+		Text string `json:"#text"`
+	} `json:"date"`
+}
+
 // RecentTracksResponse is the struct type for a user.getRecentTracks response from last.fm
 type RecentTracksResponse struct {
 	RecentTracks struct {
@@ -50,28 +74,7 @@ type RecentTracksResponse struct {
 			TotalPages string `json:"totalPages"`
 		} `json:"@attr"`
 
-		Tracks [](struct {
-			Artist struct {
-				MBID string `json:"mbid"`
-				Text string `json:"#text"`
-			} `json:"artist"`
-			Attributes struct {
-				IsNowPlaying string `json:"nowplaying"`
-			} `json:"@attr"`
-			MBID  string `json:"mbid"`
-			Album struct {
-				MBID string `json:"mbid"`
-				Text string `json:"#text"`
-			} `json:"album"`
-			Images     []Image `json:"image"`
-			Streamable string  `json:"streamable"`
-			URL        string  `json:"url"`
-			Name       string  `json:"name"`
-			date       struct {
-				UTS  string `json:"uts"`
-				Text string `json:"#text"`
-			}
-		}) `json:"track"`
+		Tracks []RecentTrack `json:"track"`
 	} `json:"recenttracks"`
 }
 
@@ -81,6 +84,7 @@ type RecentTracksParams struct {
 	Limit    int    `url:"limit"`
 	Page     int    `url:"page"`
 	Period   string `url:"period"`
+	From     string `url:"from"`
 }
 
 // TopArtist is the struct type for a last.fm top artist

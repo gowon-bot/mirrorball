@@ -54,8 +54,9 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		IndexUser func(childComplexity int, username string) int
-		SaveTrack func(childComplexity int, artist string, album *string, track string) int
+		IndexUser  func(childComplexity int, username string) int
+		SaveTrack  func(childComplexity int, artist string, album *string, track string) int
+		UpdateUser func(childComplexity int, username string) int
 	}
 
 	Query struct {
@@ -108,6 +109,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	IndexUser(ctx context.Context, username string) (*model.TaskStartResponse, error)
+	UpdateUser(ctx context.Context, username string) (*model.TaskStartResponse, error)
 	SaveTrack(ctx context.Context, artist string, album *string, track string) (*model.Track, error)
 }
 type QueryResolver interface {
@@ -115,7 +117,7 @@ type QueryResolver interface {
 	GetUser(ctx context.Context, username string) (*model.User, error)
 	UserTopArtists(ctx context.Context, username string) (int, error)
 	WhoKnows(ctx context.Context, artist string) (*model.WhoKnowsResponse, error)
-	Test(ctx context.Context) (*string, error)
+	Test(ctx context.Context) (string, error)
 }
 
 type executableSchema struct {
@@ -184,6 +186,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.SaveTrack(childComplexity, args["artist"].(string), args["album"].(*string), args["track"].(string)), true
+
+	case "Mutation.updateUser":
+		if e.complexity.Mutation.UpdateUser == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateUser_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateUser(childComplexity, args["username"].(string)), true
 
 	case "Query.getUser":
 		if e.complexity.Query.GetUser == nil {
@@ -433,11 +447,13 @@ var sources = []*ast.Source{
 
   whoKnows(artist: String!): WhoKnowsResponse!
 
-  test: String
+  test: String!
 }
 
 type Mutation {
   indexUser(username: String!): TaskStartResponse!
+  updateUser(username: String!): TaskStartResponse!
+
   saveTrack(artist: String!, album: String, track: String!): Track!
 }
 
@@ -542,6 +558,21 @@ func (ec *executionContext) field_Mutation_saveTrack_args(ctx context.Context, r
 		}
 	}
 	args["track"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["username"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["username"] = arg0
 	return args, nil
 }
 
@@ -825,6 +856,48 @@ func (ec *executionContext) _Mutation_indexUser(ctx context.Context, field graph
 	return ec.marshalNTaskStartResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTaskStartResponse(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateUser_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateUser(rctx, args["username"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.TaskStartResponse)
+	fc.Result = res
+	return ec.marshalNTaskStartResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTaskStartResponse(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_saveTrack(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1053,11 +1126,14 @@ func (ec *executionContext) _Query_test(ctx context.Context, field graphql.Colle
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2934,6 +3010,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "updateUser":
+			out.Values[i] = ec._Mutation_updateUser(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "saveTrack":
 			out.Values[i] = ec._Mutation_saveTrack(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -3030,6 +3111,9 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_test(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		case "__type":

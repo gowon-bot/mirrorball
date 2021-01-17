@@ -1,24 +1,10 @@
 package db
 
 import (
-	"log"
+	"time"
 )
 
-// AddScrobble saves a scrobble to the database
-func (u User) AddScrobble(track *Track) *Scrobble {
-	scrobble := &Scrobble{
-		UserID: u.ID,
-		User:   &u,
-
-		TrackID: track.ID,
-		Track:   track,
-	}
-
-	_, err := Db.Model(scrobble).Insert()
-
-	if err != nil {
-		log.Panic(err)
-	}
-
-	return scrobble
+// SetLastIndexed sets a user's last indexed time
+func (u User) SetLastIndexed(to time.Time) {
+	Db.Model(&u).Set("last_indexed = ?", to).WherePK().Update()
 }

@@ -5,10 +5,14 @@ type Query {
   userTopArtists(username: String!): Int!
 
   whoKnows(artist: String!): WhoKnowsResponse!
+
+  test: String!
 }
 
 type Mutation {
   indexUser(username: String!): TaskStartResponse!
+  updateUser(username: String!): TaskStartResponse!
+
   saveTrack(artist: String!, album: String, track: String!): Track!
 }
 

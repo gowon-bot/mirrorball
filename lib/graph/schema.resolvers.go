@@ -5,9 +5,9 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"log"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
@@ -24,6 +24,16 @@ func (r *mutationResolver) IndexUser(ctx context.Context, username string) (*mod
 	token := responseService.GenerateToken()
 
 	tasks.TaskServer.SendIndexUserTask(username, token)
+
+	return responseService.BuildTaskStartResponse(token), nil
+}
+
+func (r *mutationResolver) UpdateUser(ctx context.Context, username string) (*model.TaskStartResponse, error) {
+	responseService := response.CreateService()
+
+	token := responseService.GenerateToken()
+
+	tasks.TaskServer.SendUpdateUserTask(username, token)
 
 	return responseService.BuildTaskStartResponse(token), nil
 }
@@ -94,8 +104,6 @@ func (r *queryResolver) WhoKnows(ctx context.Context, artist string) (*model.Who
 
 	whoKnows := indexedQuery.WhoKnowsArtist(dbArtist)
 
-	spew.Dump(whoKnows)
-
 	var whoKnowsResponse []*model.WhoKnows
 
 	for _, whoKnowsRow := range whoKnows {
@@ -115,29 +123,17 @@ func (r *queryResolver) WhoKnows(ctx context.Context, artist string) (*model.Who
 	}, nil
 }
 
-func (r *queryResolver) Test(ctx context.Context) (*string, error) {
-	// lastFMService := lastfm.CreateAPIService()
+func (r *queryResolver) Test(ctx context.Context) (string, error) {
+	username := "flushed_emoji"
+
 	userService := user.CreateService()
-	// indexedMutation := indexeddata.CreateIndexedMutationService()
 	indexingService := indexing.CreateService()
 
-	user, _ := userService.GetUser("flushed_emoji")
+	user, _ := userService.GetUser(username)
 
-	// _, response := lastFMService.TopArtists(lastfm.TopArtistParams{
-	// 	Username: user.LastFMUsername,
-	// 	Limit:    1000,
-	// })
+	indexingService.Update(user)
 
-	// for _, artist := range response.TopArtists.Artists {
-	// 	dbArtist, _ := indexedMutation.GetArtist(artist.Name, true)
-	// 	playcount, _ := strconv.Atoi(artist.Playcount)
-
-	// 	indexedMutation.IncrementArtistCount(dbArtist, user, int32(playcount))
-	// }
-
-	indexingService.FullArtistCountIndex(user)
-
-	return nil, nil
+	return fmt.Sprintf("Indexed user %s", username), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

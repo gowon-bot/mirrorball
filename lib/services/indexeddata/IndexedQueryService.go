@@ -31,6 +31,7 @@ func (id IndexedQuery) UserTopArtists(username string) int {
 	return count
 }
 
+// WhoKnowsArtist returns a list of users who have scrobbled an artist
 func (id IndexedQuery) WhoKnowsArtist(artist *db.Artist) []db.ArtistCount {
 	var whoKnows []db.ArtistCount
 
