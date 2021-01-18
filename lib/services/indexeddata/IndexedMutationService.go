@@ -133,6 +133,29 @@ func (i IndexedMutation) GetArtistCount(artist *db.Artist, user *db.User, create
 	return artistCount, nil
 }
 
+// GetAlbumCount gets and optionally creates an album count
+func (i IndexedMutation) GetAlbumCount(album *db.Album, user *db.User, create bool) (*db.AlbumCount, error) {
+	albumCount := new(db.AlbumCount)
+
+	err := db.Db.Model(albumCount).Where("user_id=?", user.ID).Where("album_id=?", album.ID).Limit(1).Select()
+
+	if err != nil && create == true {
+		albumCount = &db.AlbumCount{
+			UserID: user.ID,
+			User:   user,
+
+			AlbumID: album.ID,
+			Album:   album,
+		}
+
+		db.Db.Model(albumCount).Insert()
+	} else if err != nil {
+		return nil, err
+	}
+
+	return albumCount, nil
+}
+
 // IncrementArtistCount increments an artist's aggregated playcount by a given amount
 func (i IndexedMutation) IncrementArtistCount(artist *db.Artist, user *db.User, count int32) *db.ArtistCount {
 
@@ -153,6 +176,26 @@ func (i IndexedMutation) IncrementArtistCount(artist *db.Artist, user *db.User, 
 	return artistCount
 }
 
+// IncrementAlbumCount increments an album's aggregated playcount by a given amount
+func (i IndexedMutation) IncrementAlbumCount(album *db.Album, user *db.User, count int32) *db.AlbumCount {
+
+	albumCount, _ := i.GetAlbumCount(album, user, true)
+
+	var newPlaycount int32
+
+	db.Db.Model(albumCount).
+		Set("playcount=?", count+albumCount.Playcount).
+		Where("album_id=?", album.ID).
+		Where("user_id=?", user.ID).
+		Returning("playcount").
+		Update(&newPlaycount)
+
+	albumCount.Album = album
+	albumCount.Playcount = newPlaycount
+
+	return albumCount
+}
+
 // ConvertToGraphQLArtist converts a db artist to a gql artist
 func ConvertToGraphQLArtist(artist *db.Artist) *model.Artist {
 	if artist == nil {
@@ -167,15 +210,17 @@ func ConvertToGraphQLArtist(artist *db.Artist) *model.Artist {
 
 // ConvertToGraphQLAlbum converts a db album to a gql album
 func ConvertToGraphQLAlbum(album *db.Album) *model.Album {
-	// var artist *model.Artist
-	// if album.Artist != nil {
-	// 	artist = ConvertToGraphQLArtist(album.Artist)
-	// }
 
-	return &model.Album{
+	convertedAlbum := &model.Album{
 		ID:   int(album.ID),
 		Name: album.Name,
 	}
+
+	if album.Artist != nil {
+		convertedAlbum.Artist = ConvertToGraphQLArtist(album.Artist)
+	}
+
+	return convertedAlbum
 }
 
 // ConvertToGraphQLTrack converts a db track to a gql track

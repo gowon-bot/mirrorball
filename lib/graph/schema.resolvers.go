@@ -5,14 +5,12 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
 	"github.com/jivison/gowon-indexer/lib/services/indexeddata"
-	"github.com/jivison/gowon-indexer/lib/services/indexing"
 	"github.com/jivison/gowon-indexer/lib/services/response"
 	"github.com/jivison/gowon-indexer/lib/services/user"
 	"github.com/jivison/gowon-indexer/lib/tasks"
@@ -123,17 +121,36 @@ func (r *queryResolver) WhoKnows(ctx context.Context, artist string) (*model.Who
 	}, nil
 }
 
-func (r *queryResolver) Test(ctx context.Context) (string, error) {
-	username := "flushed_emoji"
+func (r *queryResolver) WhoKnowsAlbum(ctx context.Context, artist string, album string) (*model.WhoKnowsAlbumResponse, error) {
+	indexedQuery := indexeddata.CreateIndexedQueryService()
+	indexedMutation := indexeddata.CreateIndexedMutationService()
 
-	userService := user.CreateService()
-	indexingService := indexing.CreateService()
+	dbAlbum, err := indexedMutation.GetAlbum(album, artist, false)
+	gqlAlbum := indexeddata.ConvertToGraphQLAlbum(dbAlbum)
 
-	user, _ := userService.GetUser(username)
+	if err != nil {
+		return nil, err
+	}
 
-	indexingService.Update(user)
+	whoKnows := indexedQuery.WhoKnowsAlbum(dbAlbum)
 
-	return fmt.Sprintf("Indexed user %s", username), nil
+	var whoKnowsResponse []*model.WhoKnowsAlbum
+
+	for _, whoKnowsRow := range whoKnows {
+		whoKnowsResponse = append(whoKnowsResponse, &model.WhoKnowsAlbum{
+			Album: gqlAlbum,
+			User: &model.User{
+				ID:             int(whoKnowsRow.User.ID),
+				LastFMUsername: whoKnowsRow.User.LastFMUsername,
+			},
+			Playcount: int(whoKnowsRow.Playcount),
+		})
+	}
+
+	return &model.WhoKnowsAlbumResponse{
+		Album: gqlAlbum,
+		Users: whoKnowsResponse,
+	}, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

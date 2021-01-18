@@ -1,7 +1,6 @@
 package indexing
 
 import (
-	"log"
 	"strconv"
 	"time"
 
@@ -69,6 +68,7 @@ func (i Indexing) Update(user *db.User) {
 
 		i.AddScrobble(user, savedTrack, timestamp)
 		i.indexedService.IncrementArtistCount(savedTrack.Artist, user, 1)
+		i.indexedService.IncrementAlbumCount(savedTrack.Album, user, 1)
 	}
 
 	lastTrack := tracks[len(tracks)-1]
@@ -80,17 +80,18 @@ func (i Indexing) Update(user *db.User) {
 // FullIndex indexes a user for the first time
 func (i Indexing) FullIndex(user *db.User) {
 	i.FullArtistCountIndex(user)
+	i.FullAlbumCountIndex(user)
 
 	lastScrobbled := i.lastFMService.LastScrobbledTimestamp(user.LastFMUsername)
 
 	user.SetLastIndexed(lastScrobbled.Add(time.Second))
 }
 
-// FullArtistCountIndex fully indexes a users topartists
+// FullArtistCountIndex fully indexes a users top artists
 func (i Indexing) FullArtistCountIndex(user *db.User) {
 	i.ResetArtistCounts(user)
 
-	params := lastfm.TopArtistParams{
+	params := lastfm.TopEntityParams{
 		Username: user.LastFMUsername,
 		Limit:    1000,
 		Page:     1,
@@ -129,13 +130,61 @@ func (i Indexing) FullArtistCountIndex(user *db.User) {
 	}
 }
 
+// FullAlbumCountIndex fully indexes a users top albums
+func (i Indexing) FullAlbumCountIndex(user *db.User) {
+	i.ResetAlbumCounts(user)
+
+	params := lastfm.TopEntityParams{
+		Username: user.LastFMUsername,
+		Limit:    1000,
+		Page:     1,
+	}
+
+	var topAlbums []lastfm.TopAlbum
+
+	_, firstPage := i.lastFMService.TopAlbums(params)
+
+	topAlbums = append(topAlbums, firstPage.TopAlbums.Albums...)
+
+	totalPages, _ := strconv.Atoi(firstPage.TopAlbums.Attributes.TotalPages)
+
+	paginator := helpers.Paginator{
+		PageSize:      params.Limit,
+		TotalPages:    totalPages,
+		SkipFirstPage: true,
+
+		Function: func(pp helpers.PagedParams) {
+			params.Page = pp.Page
+
+			_, response := i.lastFMService.TopAlbums(params)
+
+			topAlbums = append(topAlbums, response.TopAlbums.Albums...)
+		},
+	}
+
+	paginator.GetAll()
+
+	for _, topAlbum := range topAlbums {
+		album, _ := i.indexedService.GetAlbum(topAlbum.Name, topAlbum.Artist.Name, true)
+
+		playcount, _ := strconv.Atoi(topAlbum.Playcount)
+
+		i.indexedService.IncrementAlbumCount(album, user, int32(playcount))
+	}
+}
+
 // ResetArtistCounts deletes all of a user's artist counts
 func (i Indexing) ResetArtistCounts(user *db.User) {
 	db.Db.Model((*db.ArtistCount)(nil)).Where("user_id=?", user.ID).Delete()
 }
 
+// ResetAlbumCounts deletes all of a user's album counts
+func (i Indexing) ResetAlbumCounts(user *db.User) {
+	db.Db.Model((*db.AlbumCount)(nil)).Where("user_id=?", user.ID).Delete()
+}
+
 // AddScrobble saves a scrobble to the database
-func (i Indexing) AddScrobble(user *db.User, track *db.Track, timestamp time.Time) *db.Scrobble {
+func (i Indexing) AddScrobble(user *db.User, track *db.Track, timestamp time.Time) (*db.Scrobble, error) {
 	scrobble := &db.Scrobble{
 		UserID: user.ID,
 		User:   user,
@@ -149,10 +198,10 @@ func (i Indexing) AddScrobble(user *db.User, track *db.Track, timestamp time.Tim
 	_, err := db.Db.Model(scrobble).Insert()
 
 	if err != nil {
-		log.Panic(err)
+		return nil, err
 	}
 
-	return scrobble
+	return scrobble, nil
 }
 
 // CreateService creates an instance of the response service object

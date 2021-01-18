@@ -44,8 +44,9 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Album struct {
-		ID   func(childComplexity int) int
-		Name func(childComplexity int) int
+		Artist func(childComplexity int) int
+		ID     func(childComplexity int) int
+		Name   func(childComplexity int) int
 	}
 
 	Artist struct {
@@ -61,10 +62,10 @@ type ComplexityRoot struct {
 
 	Query struct {
 		GetUser        func(childComplexity int, username string) int
-		Test           func(childComplexity int) int
 		UserTopArtists func(childComplexity int, username string) int
 		Users          func(childComplexity int) int
 		WhoKnows       func(childComplexity int, artist string) int
+		WhoKnowsAlbum  func(childComplexity int, artist string, album string) int
 	}
 
 	TaskStartResponse struct {
@@ -101,6 +102,17 @@ type ComplexityRoot struct {
 		User      func(childComplexity int) int
 	}
 
+	WhoKnowsAlbum struct {
+		Album     func(childComplexity int) int
+		Playcount func(childComplexity int) int
+		User      func(childComplexity int) int
+	}
+
+	WhoKnowsAlbumResponse struct {
+		Album func(childComplexity int) int
+		Users func(childComplexity int) int
+	}
+
 	WhoKnowsResponse struct {
 		Artist func(childComplexity int) int
 		Users  func(childComplexity int) int
@@ -117,7 +129,7 @@ type QueryResolver interface {
 	GetUser(ctx context.Context, username string) (*model.User, error)
 	UserTopArtists(ctx context.Context, username string) (int, error)
 	WhoKnows(ctx context.Context, artist string) (*model.WhoKnowsResponse, error)
-	Test(ctx context.Context) (string, error)
+	WhoKnowsAlbum(ctx context.Context, artist string, album string) (*model.WhoKnowsAlbumResponse, error)
 }
 
 type executableSchema struct {
@@ -134,6 +146,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "Album.artist":
+		if e.complexity.Album.Artist == nil {
+			break
+		}
+
+		return e.complexity.Album.Artist(childComplexity), true
 
 	case "Album.id":
 		if e.complexity.Album.ID == nil {
@@ -211,13 +230,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetUser(childComplexity, args["username"].(string)), true
 
-	case "Query.test":
-		if e.complexity.Query.Test == nil {
-			break
-		}
-
-		return e.complexity.Query.Test(childComplexity), true
-
 	case "Query.userTopArtists":
 		if e.complexity.Query.UserTopArtists == nil {
 			break
@@ -248,6 +260,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.WhoKnows(childComplexity, args["artist"].(string)), true
+
+	case "Query.whoKnowsAlbum":
+		if e.complexity.Query.WhoKnowsAlbum == nil {
+			break
+		}
+
+		args, err := ec.field_Query_whoKnowsAlbum_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.WhoKnowsAlbum(childComplexity, args["artist"].(string), args["album"].(string)), true
 
 	case "TaskStartResponse.success":
 		if e.complexity.TaskStartResponse.Success == nil {
@@ -361,6 +385,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.WhoKnows.User(childComplexity), true
 
+	case "WhoKnowsAlbum.album":
+		if e.complexity.WhoKnowsAlbum.Album == nil {
+			break
+		}
+
+		return e.complexity.WhoKnowsAlbum.Album(childComplexity), true
+
+	case "WhoKnowsAlbum.playcount":
+		if e.complexity.WhoKnowsAlbum.Playcount == nil {
+			break
+		}
+
+		return e.complexity.WhoKnowsAlbum.Playcount(childComplexity), true
+
+	case "WhoKnowsAlbum.user":
+		if e.complexity.WhoKnowsAlbum.User == nil {
+			break
+		}
+
+		return e.complexity.WhoKnowsAlbum.User(childComplexity), true
+
+	case "WhoKnowsAlbumResponse.album":
+		if e.complexity.WhoKnowsAlbumResponse.Album == nil {
+			break
+		}
+
+		return e.complexity.WhoKnowsAlbumResponse.Album(childComplexity), true
+
+	case "WhoKnowsAlbumResponse.users":
+		if e.complexity.WhoKnowsAlbumResponse.Users == nil {
+			break
+		}
+
+		return e.complexity.WhoKnowsAlbumResponse.Users(childComplexity), true
+
 	case "WhoKnowsResponse.artist":
 		if e.complexity.WhoKnowsResponse.Artist == nil {
 			break
@@ -446,8 +505,7 @@ var sources = []*ast.Source{
   userTopArtists(username: String!): Int!
 
   whoKnows(artist: String!): WhoKnowsResponse!
-
-  test: String!
+  whoKnowsAlbum(artist: String!, album: String!): WhoKnowsAlbumResponse!
 }
 
 type Mutation {
@@ -475,6 +533,7 @@ type Artist {
 type Album {
   id: Int!
   name: String!
+  artist: Artist
 }
 
 type Track {
@@ -502,6 +561,17 @@ type WhoKnowsResponse {
 
 type WhoKnows {
   artist: Artist!
+  user: User!
+  playcount: Int!
+}
+
+type WhoKnowsAlbumResponse {
+  users: [WhoKnowsAlbum!]!
+  album: Album
+}
+
+type WhoKnowsAlbum {
+  album: Album!
   user: User!
   playcount: Int!
 }
@@ -618,6 +688,30 @@ func (ec *executionContext) field_Query_userTopArtists_args(ctx context.Context,
 		}
 	}
 	args["username"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_whoKnowsAlbum_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["artist"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("artist"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["artist"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["album"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("album"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["album"] = arg1
 	return args, nil
 }
 
@@ -742,6 +836,38 @@ func (ec *executionContext) _Album_name(ctx context.Context, field graphql.Colle
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Album_artist(ctx context.Context, field graphql.CollectedField, obj *model.Album) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Album",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Artist, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Artist)
+	fc.Result = res
+	return ec.marshalOArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtist(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Artist_id(ctx context.Context, field graphql.CollectedField, obj *model.Artist) (ret graphql.Marshaler) {
@@ -1101,7 +1227,7 @@ func (ec *executionContext) _Query_whoKnows(ctx context.Context, field graphql.C
 	return ec.marshalNWhoKnowsResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsResponse(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_test(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_whoKnowsAlbum(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1117,9 +1243,16 @@ func (ec *executionContext) _Query_test(ctx context.Context, field graphql.Colle
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_whoKnowsAlbum_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Test(rctx)
+		return ec.resolvers.Query().WhoKnowsAlbum(rctx, args["artist"].(string), args["album"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1131,9 +1264,9 @@ func (ec *executionContext) _Query_test(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*model.WhoKnowsAlbumResponse)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNWhoKnowsAlbumResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsAlbumResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1762,6 +1895,178 @@ func (ec *executionContext) _WhoKnows_playcount(ctx context.Context, field graph
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WhoKnowsAlbum_album(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnowsAlbum) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoKnowsAlbum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Album, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Album)
+	fc.Result = res
+	return ec.marshalNAlbum2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐAlbum(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WhoKnowsAlbum_user(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnowsAlbum) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoKnowsAlbum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WhoKnowsAlbum_playcount(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnowsAlbum) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoKnowsAlbum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Playcount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WhoKnowsAlbumResponse_users(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnowsAlbumResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoKnowsAlbumResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Users, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.WhoKnowsAlbum)
+	fc.Result = res
+	return ec.marshalNWhoKnowsAlbum2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsAlbumᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WhoKnowsAlbumResponse_album(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnowsAlbumResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoKnowsAlbumResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Album, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Album)
+	fc.Result = res
+	return ec.marshalOAlbum2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐAlbum(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _WhoKnowsResponse_users(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnowsResponse) (ret graphql.Marshaler) {
@@ -2947,6 +3252,8 @@ func (ec *executionContext) _Album(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "artist":
+			out.Values[i] = ec._Album_artist(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3102,7 +3409,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "test":
+		case "whoKnowsAlbum":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -3110,7 +3417,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_test(ctx, field)
+				res = ec._Query_whoKnowsAlbum(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -3329,6 +3636,72 @@ func (ec *executionContext) _WhoKnows(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var whoKnowsAlbumImplementors = []string{"WhoKnowsAlbum"}
+
+func (ec *executionContext) _WhoKnowsAlbum(ctx context.Context, sel ast.SelectionSet, obj *model.WhoKnowsAlbum) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, whoKnowsAlbumImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WhoKnowsAlbum")
+		case "album":
+			out.Values[i] = ec._WhoKnowsAlbum_album(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "user":
+			out.Values[i] = ec._WhoKnowsAlbum_user(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "playcount":
+			out.Values[i] = ec._WhoKnowsAlbum_playcount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var whoKnowsAlbumResponseImplementors = []string{"WhoKnowsAlbumResponse"}
+
+func (ec *executionContext) _WhoKnowsAlbumResponse(ctx context.Context, sel ast.SelectionSet, obj *model.WhoKnowsAlbumResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, whoKnowsAlbumResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WhoKnowsAlbumResponse")
+		case "users":
+			out.Values[i] = ec._WhoKnowsAlbumResponse_users(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "album":
+			out.Values[i] = ec._WhoKnowsAlbumResponse_album(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3614,6 +3987,16 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) marshalNAlbum2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐAlbum(ctx context.Context, sel ast.SelectionSet, v *model.Album) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Album(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtist(ctx context.Context, sel ast.SelectionSet, v *model.Artist) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -3840,6 +4223,67 @@ func (ec *executionContext) marshalNWhoKnows2ᚖgithubᚗcomᚋjivisonᚋgowon�
 		return graphql.Null
 	}
 	return ec._WhoKnows(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNWhoKnowsAlbum2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsAlbumᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.WhoKnowsAlbum) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNWhoKnowsAlbum2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsAlbum(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNWhoKnowsAlbum2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsAlbum(ctx context.Context, sel ast.SelectionSet, v *model.WhoKnowsAlbum) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._WhoKnowsAlbum(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNWhoKnowsAlbumResponse2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsAlbumResponse(ctx context.Context, sel ast.SelectionSet, v model.WhoKnowsAlbumResponse) graphql.Marshaler {
+	return ec._WhoKnowsAlbumResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNWhoKnowsAlbumResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsAlbumResponse(ctx context.Context, sel ast.SelectionSet, v *model.WhoKnowsAlbumResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._WhoKnowsAlbumResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNWhoKnowsResponse2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsResponse(ctx context.Context, sel ast.SelectionSet, v model.WhoKnowsResponse) graphql.Marshaler {

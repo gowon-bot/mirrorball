@@ -45,6 +45,20 @@ func (id IndexedQuery) WhoKnowsArtist(artist *db.Artist) []db.ArtistCount {
 	return whoKnows
 }
 
+// WhoKnowsAlbum returns a list of users who have scrobbled an album
+func (id IndexedQuery) WhoKnowsAlbum(album *db.Album) []db.AlbumCount {
+	var whoKnows []db.AlbumCount
+
+	db.Db.Model(&whoKnows).
+		Relation("Album").
+		Relation("User").
+		Where("album_id=?", album.ID).
+		Order("playcount desc", "last_fm_username desc").
+		Select()
+
+	return whoKnows
+}
+
 // CreateIndexedQueryService creates an instance of the lastfm indexed data service object
 func CreateIndexedQueryService() *IndexedQuery {
 	service := &IndexedQuery{

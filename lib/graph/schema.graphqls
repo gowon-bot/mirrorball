@@ -5,8 +5,7 @@ type Query {
   userTopArtists(username: String!): Int!
 
   whoKnows(artist: String!): WhoKnowsResponse!
-
-  test: String!
+  whoKnowsAlbum(artist: String!, album: String!): WhoKnowsAlbumResponse!
 }
 
 type Mutation {
@@ -34,6 +33,7 @@ type Artist {
 type Album {
   id: Int!
   name: String!
+  artist: Artist
 }
 
 type Track {
@@ -61,6 +61,17 @@ type WhoKnowsResponse {
 
 type WhoKnows {
   artist: Artist!
+  user: User!
+  playcount: Int!
+}
+
+type WhoKnowsAlbumResponse {
+  users: [WhoKnowsAlbum!]!
+  album: Album
+}
+
+type WhoKnowsAlbum {
+  album: Album!
   user: User!
   playcount: Int!
 }

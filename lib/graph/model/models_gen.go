@@ -3,8 +3,9 @@
 package model
 
 type Album struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID     int     `json:"id"`
+	Name   string  `json:"name"`
+	Artist *Artist `json:"artist"`
 }
 
 type Artist struct {
@@ -44,6 +45,17 @@ type WhoKnows struct {
 	Artist    *Artist `json:"artist"`
 	User      *User   `json:"user"`
 	Playcount int     `json:"playcount"`
+}
+
+type WhoKnowsAlbum struct {
+	Album     *Album `json:"album"`
+	User      *User  `json:"user"`
+	Playcount int    `json:"playcount"`
+}
+
+type WhoKnowsAlbumResponse struct {
+	Users []*WhoKnowsAlbum `json:"users"`
+	Album *Album           `json:"album"`
 }
 
 type WhoKnowsResponse struct {

@@ -6,6 +6,11 @@ type Image struct {
 	Text string `json:"#text"`
 }
 
+// RankAttributes is the struct type for
+type RankAttributes struct {
+	Rank string `json:"rank"`
+}
+
 // ErrorResponse is the struct type for a last.fm error response
 type ErrorResponse struct {
 	Error   int16  `json:"error"`
@@ -89,15 +94,13 @@ type RecentTracksParams struct {
 
 // TopArtist is the struct type for a last.fm top artist
 type TopArtist struct {
-	Attributes struct {
-		Rank string `json:"rank"`
-	} `json:"@attr"`
-	MBID       string  `json:"mbid"`
-	URL        string  `json:"url"`
-	Playcount  string  `json:"playcount"`
-	Images     []Image `json:"image"`
-	Name       string  `json:"name"`
-	Streamable string  `json:"streamable"`
+	Attributes RankAttributes `json:"@attr"`
+	MBID       string         `json:"mbid"`
+	URL        string         `json:"url"`
+	Playcount  string         `json:"playcount"`
+	Images     []Image        `json:"image"`
+	Name       string         `json:"name"`
+	Streamable string         `json:"streamable"`
 }
 
 // TopArtistsResponse is the struct type for a user.getTopArtists response from last.fm
@@ -114,12 +117,41 @@ type TopArtistsResponse struct {
 	} `json:"topartists"`
 }
 
-// TopArtistParams is the parameters for a user.getInfo response
-type TopArtistParams struct {
+// TopEntityParams is the parameters for a user.getInfo response
+type TopEntityParams struct {
 	Username string `url:"username"`
 	Limit    int    `url:"limit"`
 	Page     int    `url:"page"`
 	Period   string `url:"period"`
+}
+
+// TopAlbum is the struct type for a last.fm top album
+type TopAlbum struct {
+	Artist struct {
+		URL  string `json:"url"`
+		Name string `json:"name"`
+		MBID string `json:"mbid"`
+	} `json:"artist"`
+	Attributes RankAttributes `json:"@attr"`
+	Images     []Image        `json:"image"`
+	Playcount  string         `json:"playcount"`
+	URL        string         `json:"url"`
+	Name       string         `json:"name"`
+	MBID       string         `json:"mbid"`
+}
+
+// TopAlbumsResponse is the struct type for a user.getTopAlbums response from last.fm
+type TopAlbumsResponse struct {
+	TopAlbums struct {
+		Albums     []TopAlbum `json:"album"`
+		Attributes struct {
+			Page       string `json:"page"`
+			Total      string `json:"total"`
+			User       string `json:"user"`
+			PerPage    string `json:"perPage"`
+			TotalPages string `json:"totalPages"`
+		} `json:"@attr"`
+	} `json:"topalbums"`
 }
 
 // // TopTracksResponse is the struct type for a user.getTopTracks response from last.fm
