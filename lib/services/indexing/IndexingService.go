@@ -66,9 +66,13 @@ func (i Indexing) Update(user *db.User) {
 
 		timestamp, _ := helpers.ParseUnix(track.Timestamp.UTS)
 
-		i.AddScrobble(user, savedTrack, timestamp)
-		i.indexedService.IncrementArtistCount(savedTrack.Artist, user, 1)
-		i.indexedService.IncrementAlbumCount(savedTrack.Album, user, 1)
+		_, err := i.AddScrobble(user, savedTrack, timestamp)
+
+		if err == nil {
+			i.indexedService.IncrementArtistCount(savedTrack.Artist, user, 1)
+			i.indexedService.IncrementAlbumCount(savedTrack.Album, user, 1)
+			i.indexedService.IncrementTrackCount(savedTrack, user, 1)
+		}
 	}
 
 	lastTrack := tracks[len(tracks)-1]
@@ -81,6 +85,8 @@ func (i Indexing) Update(user *db.User) {
 func (i Indexing) FullIndex(user *db.User) {
 	i.FullArtistCountIndex(user)
 	i.FullAlbumCountIndex(user)
+	i.FullTrackCountIndex(user)
+	i.ResetScrobbles(user)
 
 	lastScrobbled := i.lastFMService.LastScrobbledTimestamp(user.LastFMUsername)
 
@@ -173,6 +179,49 @@ func (i Indexing) FullAlbumCountIndex(user *db.User) {
 	}
 }
 
+// FullTrackCountIndex fully indexes a users top albums
+func (i Indexing) FullTrackCountIndex(user *db.User) {
+	i.ResetTrackCounts(user)
+
+	params := lastfm.TopEntityParams{
+		Username: user.LastFMUsername,
+		Limit:    1000,
+		Page:     1,
+	}
+
+	var topTracks []lastfm.TopTrack
+
+	_, firstPage := i.lastFMService.TopTracks(params)
+
+	topTracks = append(topTracks, firstPage.TopTracks.Tracks...)
+
+	totalPages, _ := strconv.Atoi(firstPage.TopTracks.Attributes.TotalPages)
+
+	paginator := helpers.Paginator{
+		PageSize:      params.Limit,
+		TotalPages:    totalPages,
+		SkipFirstPage: true,
+
+		Function: func(pp helpers.PagedParams) {
+			params.Page = pp.Page
+
+			_, response := i.lastFMService.TopTracks(params)
+
+			topTracks = append(topTracks, response.TopTracks.Tracks...)
+		},
+	}
+
+	paginator.GetAll()
+
+	for _, topTrack := range topTracks {
+		album, _ := i.indexedService.GetTrack(topTrack.Name, topTrack.Artist.Name, nil, true)
+
+		playcount, _ := strconv.Atoi(topTrack.Playcount)
+
+		i.indexedService.IncrementTrackCount(album, user, int32(playcount))
+	}
+}
+
 // ResetArtistCounts deletes all of a user's artist counts
 func (i Indexing) ResetArtistCounts(user *db.User) {
 	db.Db.Model((*db.ArtistCount)(nil)).Where("user_id=?", user.ID).Delete()
@@ -181,6 +230,16 @@ func (i Indexing) ResetArtistCounts(user *db.User) {
 // ResetAlbumCounts deletes all of a user's album counts
 func (i Indexing) ResetAlbumCounts(user *db.User) {
 	db.Db.Model((*db.AlbumCount)(nil)).Where("user_id=?", user.ID).Delete()
+}
+
+// ResetTrackCounts deletes all of a user's album counts
+func (i Indexing) ResetTrackCounts(user *db.User) {
+	db.Db.Model((*db.TrackCount)(nil)).Where("user_id=?", user.ID).Delete()
+}
+
+// ResetScrobbles deletes all of a user's album scrobbles
+func (i Indexing) ResetScrobbles(user *db.User) {
+	db.Db.Model((*db.Scrobble)(nil)).Where("user_id=?", user.ID).Delete()
 }
 
 // AddScrobble saves a scrobble to the database
@@ -206,7 +265,6 @@ func (i Indexing) AddScrobble(user *db.User, track *db.Track, timestamp time.Tim
 
 // CreateService creates an instance of the response service object
 func CreateService() *Indexing {
-
 	service := &Indexing{
 		lastFMService:  lastfm.CreateAPIService(),
 		indexedService: indexeddata.CreateIndexedMutationService(),

@@ -8,6 +8,11 @@ type Album struct {
 	Artist *Artist `json:"artist"`
 }
 
+type AmbiguousTrack struct {
+	Name   string  `json:"name"`
+	Artist *Artist `json:"artist"`
+}
+
 type Artist struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
@@ -61,4 +66,15 @@ type WhoKnowsAlbumResponse struct {
 type WhoKnowsResponse struct {
 	Users  []*WhoKnows `json:"users"`
 	Artist *Artist     `json:"artist"`
+}
+
+type WhoKnowsTrack struct {
+	Track     *AmbiguousTrack `json:"track"`
+	User      *User           `json:"user"`
+	Playcount int             `json:"playcount"`
+}
+
+type WhoKnowsTrackResponse struct {
+	Users []*WhoKnowsTrack `json:"users"`
+	Track *AmbiguousTrack  `json:"track"`
 }

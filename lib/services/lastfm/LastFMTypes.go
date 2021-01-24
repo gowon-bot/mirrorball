@@ -154,44 +154,47 @@ type TopAlbumsResponse struct {
 	} `json:"topalbums"`
 }
 
-// // TopTracksResponse is the struct type for a user.getTopTracks response from last.fm
-// type TopTracksResponse struct {
-// 	TopTracks struct {
-// 		Attributes struct {
-// 			Page       string `json:"page"`
-// 			Total      string `json:"total"`
-// 			User       string `json:"user"`
-// 			PerPage    string `json:"perPage"`
-// 			TotalPages string `json:"totalPages"`
-// 		} `json:"@attr"`
+// TopTrack is the struct type for a last.fm top track
+type TopTrack struct {
+	MBID      string  `json:"mbid"`
+	Name      string  `json:"name"`
+	URL       string  `json:"url"`
+	Duration  string  `json:"duration"`
+	Playcount string  `json:"playcount"`
+	Images    []Image `json:"image"`
 
-// 		track [](struct {
-// 			MBID      string  `json:"mbid"`
-// 			Name      string  `json:"name"`
-// 			URL       string  `json:"url"`
-// 			Duration  string  `json:"duration"`
-// 			Playcount string  `json:"playcount"`
-// 			Images    []Image `json:"image"`
+	Attributes struct {
+		Rank string `json:"rank"`
+	} `json:"@attr"`
 
-// 			Attributes struct {
-// 				Rank string `json:"rank"`
-// 			} `json:"@attr"`
+	Artist struct {
+		URL  string `json:"url"`
+		Name string `json:"name"`
+		Mbid string `json:"mbid"`
+	} `json:"artist"`
 
-// 			Artist struct {
-// 				URL  string `json:"url"`
-// 				Name string `json:"name"`
-// 				Mbid string `json:"mbid"`
-// 			} `json:"artist"`
+	Streamable struct {
+		Fulltrack string `json:"fulltrack"`
+		Text      string `json:"#text"`
+	} `json:"streamable"`
+}
 
-// 			Streamable struct {
-// 				Fulltrack string `json:"fulltrack"`
-// 				Text      string `json:"#text"`
-// 			} `json:"streamable"`
-// 		})
-// 	} `json:"toptracks"`
-// }
+// TopTracksResponse is the struct type for a user.getTopTracks response from last.fm
+type TopTracksResponse struct {
+	TopTracks struct {
+		Attributes struct {
+			Page       string `json:"page"`
+			Total      string `json:"total"`
+			User       string `json:"user"`
+			PerPage    string `json:"perPage"`
+			TotalPages string `json:"totalPages"`
+		} `json:"@attr"`
 
-// // TopTracksParams is the parameters for a user.getInfo response
-// type TopTracksParams struct {
-// 	Username string `url:"username"`
-// }
+		Tracks []TopTrack `json:"track"`
+	} `json:"toptracks"`
+}
+
+// TopTracksParams is the parameters for a user.getInfo response
+type TopTracksParams struct {
+	Username string `url:"username"`
+}

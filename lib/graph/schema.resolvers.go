@@ -153,6 +153,44 @@ func (r *queryResolver) WhoKnowsAlbum(ctx context.Context, artist string, album 
 	}, nil
 }
 
+func (r *queryResolver) WhoKnowsTrack(ctx context.Context, artist string, track string) (*model.WhoKnowsTrackResponse, error) {
+	indexedQuery := indexeddata.CreateIndexedQueryService()
+	indexedMutation := indexeddata.CreateIndexedMutationService()
+
+	dbTracks, err := indexedMutation.GetTracks(track, artist)
+
+	if err != nil {
+		return nil, err
+	}
+
+	ambiguousTrack := &indexeddata.AmbiguousTrack{
+		Name:   dbTracks[0].Name,
+		Artist: dbTracks[0].Artist,
+	}
+
+	gqlTrack := indexeddata.ConvertToAmbiguousTrack(ambiguousTrack)
+
+	whoKnowsTrack := indexedQuery.WhoKnowsTrack(dbTracks)
+
+	var whoKnowsResponse []*model.WhoKnowsTrack
+
+	for _, whoKnowsRow := range whoKnowsTrack {
+		whoKnowsResponse = append(whoKnowsResponse, &model.WhoKnowsTrack{
+			Track:     gqlTrack,
+			Playcount: int(whoKnowsRow.Playcount),
+			User: &model.User{
+				ID:             int(whoKnowsRow.User.ID),
+				LastFMUsername: whoKnowsRow.User.LastFMUsername,
+			},
+		})
+	}
+
+	return &model.WhoKnowsTrackResponse{
+		Track: gqlTrack,
+		Users: whoKnowsResponse,
+	}, nil
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 

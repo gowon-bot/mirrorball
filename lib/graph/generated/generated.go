@@ -49,6 +49,11 @@ type ComplexityRoot struct {
 		Name   func(childComplexity int) int
 	}
 
+	AmbiguousTrack struct {
+		Artist func(childComplexity int) int
+		Name   func(childComplexity int) int
+	}
+
 	Artist struct {
 		ID   func(childComplexity int) int
 		Name func(childComplexity int) int
@@ -66,6 +71,7 @@ type ComplexityRoot struct {
 		Users          func(childComplexity int) int
 		WhoKnows       func(childComplexity int, artist string) int
 		WhoKnowsAlbum  func(childComplexity int, artist string, album string) int
+		WhoKnowsTrack  func(childComplexity int, artist string, track string) int
 	}
 
 	TaskStartResponse struct {
@@ -117,6 +123,17 @@ type ComplexityRoot struct {
 		Artist func(childComplexity int) int
 		Users  func(childComplexity int) int
 	}
+
+	WhoKnowsTrack struct {
+		Playcount func(childComplexity int) int
+		Track     func(childComplexity int) int
+		User      func(childComplexity int) int
+	}
+
+	WhoKnowsTrackResponse struct {
+		Track func(childComplexity int) int
+		Users func(childComplexity int) int
+	}
 }
 
 type MutationResolver interface {
@@ -130,6 +147,7 @@ type QueryResolver interface {
 	UserTopArtists(ctx context.Context, username string) (int, error)
 	WhoKnows(ctx context.Context, artist string) (*model.WhoKnowsResponse, error)
 	WhoKnowsAlbum(ctx context.Context, artist string, album string) (*model.WhoKnowsAlbumResponse, error)
+	WhoKnowsTrack(ctx context.Context, artist string, track string) (*model.WhoKnowsTrackResponse, error)
 }
 
 type executableSchema struct {
@@ -167,6 +185,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Album.Name(childComplexity), true
+
+	case "AmbiguousTrack.artist":
+		if e.complexity.AmbiguousTrack.Artist == nil {
+			break
+		}
+
+		return e.complexity.AmbiguousTrack.Artist(childComplexity), true
+
+	case "AmbiguousTrack.name":
+		if e.complexity.AmbiguousTrack.Name == nil {
+			break
+		}
+
+		return e.complexity.AmbiguousTrack.Name(childComplexity), true
 
 	case "Artist.id":
 		if e.complexity.Artist.ID == nil {
@@ -272,6 +304,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.WhoKnowsAlbum(childComplexity, args["artist"].(string), args["album"].(string)), true
+
+	case "Query.whoKnowsTrack":
+		if e.complexity.Query.WhoKnowsTrack == nil {
+			break
+		}
+
+		args, err := ec.field_Query_whoKnowsTrack_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.WhoKnowsTrack(childComplexity, args["artist"].(string), args["track"].(string)), true
 
 	case "TaskStartResponse.success":
 		if e.complexity.TaskStartResponse.Success == nil {
@@ -434,6 +478,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.WhoKnowsResponse.Users(childComplexity), true
 
+	case "WhoKnowsTrack.playcount":
+		if e.complexity.WhoKnowsTrack.Playcount == nil {
+			break
+		}
+
+		return e.complexity.WhoKnowsTrack.Playcount(childComplexity), true
+
+	case "WhoKnowsTrack.track":
+		if e.complexity.WhoKnowsTrack.Track == nil {
+			break
+		}
+
+		return e.complexity.WhoKnowsTrack.Track(childComplexity), true
+
+	case "WhoKnowsTrack.user":
+		if e.complexity.WhoKnowsTrack.User == nil {
+			break
+		}
+
+		return e.complexity.WhoKnowsTrack.User(childComplexity), true
+
+	case "WhoKnowsTrackResponse.track":
+		if e.complexity.WhoKnowsTrackResponse.Track == nil {
+			break
+		}
+
+		return e.complexity.WhoKnowsTrackResponse.Track(childComplexity), true
+
+	case "WhoKnowsTrackResponse.users":
+		if e.complexity.WhoKnowsTrackResponse.Users == nil {
+			break
+		}
+
+		return e.complexity.WhoKnowsTrackResponse.Users(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -506,6 +585,7 @@ var sources = []*ast.Source{
 
   whoKnows(artist: String!): WhoKnowsResponse!
   whoKnowsAlbum(artist: String!, album: String!): WhoKnowsAlbumResponse!
+  whoKnowsTrack(artist: String!, track: String!): WhoKnowsTrackResponse!
 }
 
 type Mutation {
@@ -543,6 +623,11 @@ type Track {
   album: Album
 }
 
+type AmbiguousTrack {
+  name: String!
+  artist: Artist!
+}
+
 type TopArtists {
   artists: [TopArtist!]!
   total: Int!
@@ -572,6 +657,17 @@ type WhoKnowsAlbumResponse {
 
 type WhoKnowsAlbum {
   album: Album!
+  user: User!
+  playcount: Int!
+}
+
+type WhoKnowsTrackResponse {
+  users: [WhoKnowsTrack!]!
+  track: AmbiguousTrack
+}
+
+type WhoKnowsTrack {
+  track: AmbiguousTrack!
   user: User!
   playcount: Int!
 }
@@ -712,6 +808,30 @@ func (ec *executionContext) field_Query_whoKnowsAlbum_args(ctx context.Context, 
 		}
 	}
 	args["album"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_whoKnowsTrack_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["artist"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("artist"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["artist"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["track"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("track"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["track"] = arg1
 	return args, nil
 }
 
@@ -868,6 +988,76 @@ func (ec *executionContext) _Album_artist(ctx context.Context, field graphql.Col
 	res := resTmp.(*model.Artist)
 	fc.Result = res
 	return ec.marshalOArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtist(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AmbiguousTrack_name(ctx context.Context, field graphql.CollectedField, obj *model.AmbiguousTrack) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AmbiguousTrack",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AmbiguousTrack_artist(ctx context.Context, field graphql.CollectedField, obj *model.AmbiguousTrack) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AmbiguousTrack",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Artist, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Artist)
+	fc.Result = res
+	return ec.marshalNArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtist(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Artist_id(ctx context.Context, field graphql.CollectedField, obj *model.Artist) (ret graphql.Marshaler) {
@@ -1267,6 +1457,48 @@ func (ec *executionContext) _Query_whoKnowsAlbum(ctx context.Context, field grap
 	res := resTmp.(*model.WhoKnowsAlbumResponse)
 	fc.Result = res
 	return ec.marshalNWhoKnowsAlbumResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsAlbumResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_whoKnowsTrack(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_whoKnowsTrack_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().WhoKnowsTrack(rctx, args["artist"].(string), args["track"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.WhoKnowsTrackResponse)
+	fc.Result = res
+	return ec.marshalNWhoKnowsTrackResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsTrackResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2134,6 +2366,178 @@ func (ec *executionContext) _WhoKnowsResponse_artist(ctx context.Context, field 
 	res := resTmp.(*model.Artist)
 	fc.Result = res
 	return ec.marshalOArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtist(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WhoKnowsTrack_track(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnowsTrack) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoKnowsTrack",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Track, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.AmbiguousTrack)
+	fc.Result = res
+	return ec.marshalNAmbiguousTrack2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐAmbiguousTrack(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WhoKnowsTrack_user(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnowsTrack) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoKnowsTrack",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WhoKnowsTrack_playcount(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnowsTrack) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoKnowsTrack",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Playcount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WhoKnowsTrackResponse_users(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnowsTrackResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoKnowsTrackResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Users, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.WhoKnowsTrack)
+	fc.Result = res
+	return ec.marshalNWhoKnowsTrack2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsTrackᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WhoKnowsTrackResponse_track(ctx context.Context, field graphql.CollectedField, obj *model.WhoKnowsTrackResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoKnowsTrackResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Track, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.AmbiguousTrack)
+	fc.Result = res
+	return ec.marshalOAmbiguousTrack2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐAmbiguousTrack(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -3265,6 +3669,38 @@ func (ec *executionContext) _Album(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
+var ambiguousTrackImplementors = []string{"AmbiguousTrack"}
+
+func (ec *executionContext) _AmbiguousTrack(ctx context.Context, sel ast.SelectionSet, obj *model.AmbiguousTrack) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ambiguousTrackImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AmbiguousTrack")
+		case "name":
+			out.Values[i] = ec._AmbiguousTrack_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "artist":
+			out.Values[i] = ec._AmbiguousTrack_artist(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var artistImplementors = []string{"Artist"}
 
 func (ec *executionContext) _Artist(ctx context.Context, sel ast.SelectionSet, obj *model.Artist) graphql.Marshaler {
@@ -3418,6 +3854,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_whoKnowsAlbum(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "whoKnowsTrack":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_whoKnowsTrack(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -3742,6 +4192,72 @@ func (ec *executionContext) _WhoKnowsResponse(ctx context.Context, sel ast.Selec
 	return out
 }
 
+var whoKnowsTrackImplementors = []string{"WhoKnowsTrack"}
+
+func (ec *executionContext) _WhoKnowsTrack(ctx context.Context, sel ast.SelectionSet, obj *model.WhoKnowsTrack) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, whoKnowsTrackImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WhoKnowsTrack")
+		case "track":
+			out.Values[i] = ec._WhoKnowsTrack_track(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "user":
+			out.Values[i] = ec._WhoKnowsTrack_user(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "playcount":
+			out.Values[i] = ec._WhoKnowsTrack_playcount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var whoKnowsTrackResponseImplementors = []string{"WhoKnowsTrackResponse"}
+
+func (ec *executionContext) _WhoKnowsTrackResponse(ctx context.Context, sel ast.SelectionSet, obj *model.WhoKnowsTrackResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, whoKnowsTrackResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WhoKnowsTrackResponse")
+		case "users":
+			out.Values[i] = ec._WhoKnowsTrackResponse_users(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "track":
+			out.Values[i] = ec._WhoKnowsTrackResponse_track(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var __DirectiveImplementors = []string{"__Directive"}
 
 func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionSet, obj *introspection.Directive) graphql.Marshaler {
@@ -3995,6 +4511,16 @@ func (ec *executionContext) marshalNAlbum2ᚖgithubᚗcomᚋjivisonᚋgowonᚑin
 		return graphql.Null
 	}
 	return ec._Album(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAmbiguousTrack2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐAmbiguousTrack(ctx context.Context, sel ast.SelectionSet, v *model.AmbiguousTrack) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AmbiguousTrack(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtist(ctx context.Context, sel ast.SelectionSet, v *model.Artist) graphql.Marshaler {
@@ -4300,6 +4826,67 @@ func (ec *executionContext) marshalNWhoKnowsResponse2ᚖgithubᚗcomᚋjivison�
 	return ec._WhoKnowsResponse(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNWhoKnowsTrack2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsTrackᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.WhoKnowsTrack) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNWhoKnowsTrack2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsTrack(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNWhoKnowsTrack2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsTrack(ctx context.Context, sel ast.SelectionSet, v *model.WhoKnowsTrack) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._WhoKnowsTrack(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNWhoKnowsTrackResponse2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsTrackResponse(ctx context.Context, sel ast.SelectionSet, v model.WhoKnowsTrackResponse) graphql.Marshaler {
+	return ec._WhoKnowsTrackResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNWhoKnowsTrackResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsTrackResponse(ctx context.Context, sel ast.SelectionSet, v *model.WhoKnowsTrackResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._WhoKnowsTrackResponse(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
 	return ec.___Directive(ctx, sel, &v)
 }
@@ -4534,6 +5121,13 @@ func (ec *executionContext) marshalOAlbum2ᚖgithubᚗcomᚋjivisonᚋgowonᚑin
 		return graphql.Null
 	}
 	return ec._Album(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOAmbiguousTrack2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐAmbiguousTrack(ctx context.Context, sel ast.SelectionSet, v *model.AmbiguousTrack) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._AmbiguousTrack(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtist(ctx context.Context, sel ast.SelectionSet, v *model.Artist) graphql.Marshaler {

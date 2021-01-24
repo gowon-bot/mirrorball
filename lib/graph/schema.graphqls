@@ -6,6 +6,7 @@ type Query {
 
   whoKnows(artist: String!): WhoKnowsResponse!
   whoKnowsAlbum(artist: String!, album: String!): WhoKnowsAlbumResponse!
+  whoKnowsTrack(artist: String!, track: String!): WhoKnowsTrackResponse!
 }
 
 type Mutation {
@@ -43,6 +44,11 @@ type Track {
   album: Album
 }
 
+type AmbiguousTrack {
+  name: String!
+  artist: Artist!
+}
+
 type TopArtists {
   artists: [TopArtist!]!
   total: Int!
@@ -72,6 +78,17 @@ type WhoKnowsAlbumResponse {
 
 type WhoKnowsAlbum {
   album: Album!
+  user: User!
+  playcount: Int!
+}
+
+type WhoKnowsTrackResponse {
+  users: [WhoKnowsTrack!]!
+  track: AmbiguousTrack
+}
+
+type WhoKnowsTrack {
+  track: AmbiguousTrack!
   user: User!
   playcount: Int!
 }

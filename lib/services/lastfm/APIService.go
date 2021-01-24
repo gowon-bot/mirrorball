@@ -151,6 +151,27 @@ func (lfm API) TopAlbums(params TopEntityParams) (*ErrorResponse, *TopAlbumsResp
 	return err, topAlbums
 }
 
+// TopTracks fetches a user's top tracks from the last.fm API
+func (lfm API) TopTracks(params TopEntityParams) (*ErrorResponse, *TopTracksResponse) {
+	if params.Page < 1 {
+		params.Page = 1
+	}
+	if params.Limit < 1 {
+		params.Limit = 1
+	}
+	if params.Period == "" {
+		params.Period = "overall"
+	}
+
+	topTracks := &TopTracksResponse{}
+
+	response := lfm.MakeRequest("user.getTopTracks", params)
+
+	err := lfm.ParseResponse(response, topTracks)
+
+	return err, topTracks
+}
+
 // ValidateUser validates that a given username exists in last.fm
 func (lfm API) ValidateUser(username string) bool {
 	err, _ := lfm.UserInfo(username)

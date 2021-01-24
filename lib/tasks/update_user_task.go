@@ -22,5 +22,5 @@ func UpdateUserTask(username string, token string) (string, error) {
 
 	webhookService.PostTo("https://webhook.site/ad3f1cff-a496-4cc5-b1f4-85acb6bb1bb8", data)
 
-	return fmt.Sprintf("Indexed user %s", username), nil
+	return fmt.Sprintf("Updated user %s", username), nil
 }

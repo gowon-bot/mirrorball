@@ -81,6 +81,24 @@ func (i IndexedMutation) GetTrack(track, artist string, album *string, create bo
 	return dbTrack, nil
 }
 
+// GetTracks returns a list of tracks from the database
+func (i IndexedMutation) GetTracks(track, artist string) ([]db.Track, error) {
+	var dbTracks []db.Track
+
+	query := db.Db.Model(&dbTracks).
+		Relation("Artist").
+		Where("track.name ILIKE ?", track).
+		Where("artist.name ILIKE ?", artist)
+
+	err := query.Select()
+
+	if err != nil {
+		return nil, nil
+	}
+
+	return dbTracks, nil
+}
+
 // SaveTrack saves a track in the database
 func (i IndexedMutation) SaveTrack(trackName, artistName string, albumName *string) *db.Track {
 
@@ -156,6 +174,29 @@ func (i IndexedMutation) GetAlbumCount(album *db.Album, user *db.User, create bo
 	return albumCount, nil
 }
 
+// GetTrackCount gets and optionally creates an track count
+func (i IndexedMutation) GetTrackCount(track *db.Track, user *db.User, create bool) (*db.TrackCount, error) {
+	trackCount := new(db.TrackCount)
+
+	err := db.Db.Model(trackCount).Where("user_id=?", user.ID).Where("track_id=?", track.ID).Limit(1).Select()
+
+	if err != nil && create == true {
+		trackCount = &db.TrackCount{
+			UserID: user.ID,
+			User:   user,
+
+			TrackID: track.ID,
+			Track:   track,
+		}
+
+		db.Db.Model(trackCount).Insert()
+	} else if err != nil {
+		return nil, err
+	}
+
+	return trackCount, nil
+}
+
 // IncrementArtistCount increments an artist's aggregated playcount by a given amount
 func (i IndexedMutation) IncrementArtistCount(artist *db.Artist, user *db.User, count int32) *db.ArtistCount {
 
@@ -196,6 +237,30 @@ func (i IndexedMutation) IncrementAlbumCount(album *db.Album, user *db.User, cou
 	return albumCount
 }
 
+// IncrementTrackCount increments an track's aggregated playcount by a given amount
+func (i IndexedMutation) IncrementTrackCount(track *db.Track, user *db.User, count int32) *db.TrackCount {
+
+	trackCount, _ := i.GetTrackCount(track, user, true)
+
+	var newPlaycount int32
+
+	_, err := db.Db.Model(trackCount).
+		Set("playcount=?", count+trackCount.Playcount).
+		Where("track_id=?", track.ID).
+		Where("user_id=?", user.ID).
+		Returning("playcount").
+		Update(&newPlaycount)
+
+	if err != nil {
+		panic(err)
+	}
+
+	trackCount.Track = track
+	trackCount.Playcount = newPlaycount
+
+	return trackCount
+}
+
 // ConvertToGraphQLArtist converts a db artist to a gql artist
 func ConvertToGraphQLArtist(artist *db.Artist) *model.Artist {
 	if artist == nil {
@@ -229,23 +294,46 @@ func ConvertToGraphQLTrack(track *db.Track) *model.Track {
 		return nil
 	}
 
-	var artist *model.Artist
-	if track.Artist != nil {
-		artist = ConvertToGraphQLArtist(track.Artist)
-	}
-
-	var album *model.Album
-	if track.Album != nil {
-		album = ConvertToGraphQLAlbum(track.Album)
-	}
-
-	return &model.Track{
+	convertedTrack := &model.Track{
 		ID:   int(track.ID),
 		Name: track.Name,
-
-		Artist: artist,
-		Album:  album,
 	}
+
+	if track.Artist != nil {
+		convertedTrack.Artist = ConvertToGraphQLArtist(track.Artist)
+	}
+
+	if track.Album != nil {
+		convertedTrack.Album = ConvertToGraphQLAlbum(track.Album)
+	}
+
+	return convertedTrack
+}
+
+// AmbiguousTrack is the type for a track with no id or album
+// this is because a track can belong to multiple albums
+// and in cases where we need to aggregate those tracks,
+// we can use AmbiguousTrack
+type AmbiguousTrack struct {
+	Name   string
+	Artist *db.Artist
+}
+
+// ConvertToAmbiguousTrack converts a db track to a gql ambiguous track
+func ConvertToAmbiguousTrack(track *AmbiguousTrack) *model.AmbiguousTrack {
+	if track == nil {
+		return nil
+	}
+
+	convertedTrack := &model.AmbiguousTrack{
+		Name: track.Name,
+	}
+
+	if track.Artist != nil {
+		convertedTrack.Artist = ConvertToGraphQLArtist(track.Artist)
+	}
+
+	return convertedTrack
 }
 
 // CreateIndexedMutationService creates an instance of the lastfm indexed service object
