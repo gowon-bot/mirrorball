@@ -67,6 +67,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		GetUser        func(childComplexity int, username string) int
+		Ping           func(childComplexity int) int
 		UserTopArtists func(childComplexity int, username string) int
 		Users          func(childComplexity int) int
 		WhoKnows       func(childComplexity int, artist string) int
@@ -142,6 +143,7 @@ type MutationResolver interface {
 	SaveTrack(ctx context.Context, artist string, album *string, track string) (*model.Track, error)
 }
 type QueryResolver interface {
+	Ping(ctx context.Context) (string, error)
 	Users(ctx context.Context) ([]*model.User, error)
 	GetUser(ctx context.Context, username string) (*model.User, error)
 	UserTopArtists(ctx context.Context, username string) (int, error)
@@ -261,6 +263,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetUser(childComplexity, args["username"].(string)), true
+
+	case "Query.ping":
+		if e.complexity.Query.Ping == nil {
+			break
+		}
+
+		return e.complexity.Query.Ping(childComplexity), true
 
 	case "Query.userTopArtists":
 		if e.complexity.Query.UserTopArtists == nil {
@@ -578,6 +587,8 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	{Name: "lib/graph/schema.graphqls", Input: `type Query {
+  ping: String!
+
   users: [User!]!
   getUser(username: String!): User!
 
@@ -1254,6 +1265,41 @@ func (ec *executionContext) _Mutation_saveTrack(ctx context.Context, field graph
 	res := resTmp.(*model.Track)
 	fc.Result = res
 	return ec.marshalNTrack2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTrack(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_ping(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Ping(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3789,6 +3835,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "ping":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_ping(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "users":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {

@@ -7,6 +7,7 @@ import (
 	"context"
 	"log"
 
+	customerrors "github.com/jivison/gowon-indexer/lib/customErrors"
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
@@ -44,6 +45,10 @@ func (r *mutationResolver) SaveTrack(ctx context.Context, artist string, album *
 	gqlTrack := indexeddata.ConvertToGraphQLTrack(savedTrack)
 
 	return gqlTrack, nil
+}
+
+func (r *queryResolver) Ping(ctx context.Context) (string, error) {
+	return "Hello from Go!", nil
 }
 
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
@@ -97,7 +102,7 @@ func (r *queryResolver) WhoKnows(ctx context.Context, artist string) (*model.Who
 	gqlArtist := indexeddata.ConvertToGraphQLArtist(dbArtist)
 
 	if err != nil {
-		return nil, err
+		return nil, customerrors.NoOneKnows(artist)
 	}
 
 	whoKnows := indexedQuery.WhoKnowsArtist(dbArtist)

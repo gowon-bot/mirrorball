@@ -20,7 +20,7 @@ func UpdateUserTask(username string, token string) (string, error) {
 
 	data := webhookService.BuildTaskCompleteRequest(token)
 
-	webhookService.PostTo("https://webhook.site/ad3f1cff-a496-4cc5-b1f4-85acb6bb1bb8", data)
+	webhookService.Post(data)
 
 	return fmt.Sprintf("Updated user %s", username), nil
 }

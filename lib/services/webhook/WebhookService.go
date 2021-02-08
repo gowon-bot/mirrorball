@@ -4,15 +4,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"os"
+
+	"github.com/joho/godotenv"
 )
 
 // Webhook holds methods for posting to webhooks
-type Webhook struct{}
+type Webhook struct {
+	webhookURL string
+}
 
-// PostTo posts to a given url with response data
-func (w Webhook) PostTo(url string, data *bytes.Buffer) {
+// Post posts to a given url with response data
+func (w Webhook) Post(data *bytes.Buffer) {
 
-	http.Post(url, "application/json", data)
+	http.Post(w.webhookURL, "application/json", data)
 }
 
 // TaskCompleteRequest is what's sent to a webhook upon task completion
@@ -39,7 +44,11 @@ func (w Webhook) BuildTaskCompleteRequest(token string) *bytes.Buffer {
 
 // CreateService creates an instance of the webhook service object
 func CreateService() *Webhook {
-	service := &Webhook{}
+	godotenv.Load()
+
+	webhookURL := os.Getenv("WEBHOOK_POST_URL")
+
+	service := &Webhook{webhookURL: webhookURL}
 
 	return service
 }
