@@ -7,7 +7,7 @@ import (
 	"context"
 	"log"
 
-	customerrors "github.com/jivison/gowon-indexer/lib/customErrors"
+	customerrors "github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
