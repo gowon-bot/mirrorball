@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/go-pg/pg/v10"
-	"github.com/go-pg/pg/v10/orm"
 	"github.com/joho/godotenv"
 )
 
@@ -32,35 +31,5 @@ func InitDB() {
 
 	db.AddQueryHook(Logger{})
 
-	// this is handled by migrations
-	// err = createSchema(db)
-
-	if err != nil {
-		log.Fatal("Error creating schema")
-	}
-
 	Db = db
-}
-
-func createSchema(db *pg.DB) error {
-	models := []interface{}{
-		(*User)(nil),
-		(*Artist)(nil),
-		(*Album)(nil),
-		(*Track)(nil),
-		(*Scrobble)(nil),
-		(*ArtistCount)(nil),
-	}
-
-	for _, model := range models {
-		err := db.Model(model).CreateTable(&orm.CreateTableOptions{
-			IfNotExists: true,
-		})
-
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

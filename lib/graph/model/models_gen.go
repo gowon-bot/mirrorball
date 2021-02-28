@@ -2,20 +2,41 @@
 
 package model
 
+import (
+	"fmt"
+	"io"
+	"strconv"
+)
+
 type Album struct {
-	ID     int     `json:"id"`
-	Name   string  `json:"name"`
-	Artist *Artist `json:"artist"`
+	Name   string   `json:"name"`
+	Artist *Artist  `json:"artist"`
+	Tracks []*Track `json:"tracks"`
+}
+
+type AlbumInput struct {
+	Artist *ArtistInput `json:"artist"`
+	Name   *string      `json:"name"`
 }
 
 type AmbiguousTrack struct {
-	Name   string  `json:"name"`
-	Artist *Artist `json:"artist"`
+	Name   string   `json:"name"`
+	Artist string   `json:"artist"`
+	Albums []*Album `json:"albums"`
 }
 
 type Artist struct {
-	ID   int    `json:"id"`
 	Name string `json:"name"`
+}
+
+type ArtistInput struct {
+	Name *string `json:"name"`
+}
+
+type GuildMember struct {
+	UserID  int    `json:"userID"`
+	GuildID string `json:"guildID"`
+	User    *User  `json:"user"`
 }
 
 type TaskStartResponse struct {
@@ -23,58 +44,92 @@ type TaskStartResponse struct {
 	Token   string `json:"token"`
 }
 
-type TopArtist struct {
-	Artist *Artist `json:"artist"`
-	Plays  int     `json:"plays"`
-	Rank   int     `json:"rank"`
-}
-
-type TopArtists struct {
-	Artists []*TopArtist `json:"artists"`
-	Total   int          `json:"total"`
-}
-
 type Track struct {
-	ID     int     `json:"id"`
 	Name   string  `json:"name"`
 	Artist *Artist `json:"artist"`
 	Album  *Album  `json:"album"`
 }
 
+type TrackInput struct {
+	Artist *ArtistInput `json:"artist"`
+	Album  *AlbumInput  `json:"album"`
+	Name   *string      `json:"name"`
+}
+
 type User struct {
-	ID             int    `json:"id"`
-	LastFMUsername string `json:"lastFMUsername"`
+	ID        int       `json:"id"`
+	Username  string    `json:"username"`
+	DiscordID string    `json:"discordID"`
+	UserType  *UserType `json:"userType"`
 }
 
-type WhoKnows struct {
-	Artist    *Artist `json:"artist"`
-	User      *User   `json:"user"`
-	Playcount int     `json:"playcount"`
-}
-
-type WhoKnowsAlbum struct {
-	Album     *Album `json:"album"`
-	User      *User  `json:"user"`
-	Playcount int    `json:"playcount"`
+type UserInput struct {
+	DiscordID      *string `json:"discordID"`
+	LastFMUsername *string `json:"lastFMUsername"`
+	WavyUsername   *string `json:"wavyUsername"`
 }
 
 type WhoKnowsAlbumResponse struct {
-	Users []*WhoKnowsAlbum `json:"users"`
-	Album *Album           `json:"album"`
+	Rows  []*WhoKnowsRow `json:"rows"`
+	Album *Album         `json:"album"`
 }
 
-type WhoKnowsResponse struct {
-	Users  []*WhoKnows `json:"users"`
-	Artist *Artist     `json:"artist"`
+type WhoKnowsArtistResponse struct {
+	Rows   []*WhoKnowsRow `json:"rows"`
+	Artist *Artist        `json:"artist"`
 }
 
-type WhoKnowsTrack struct {
-	Track     *AmbiguousTrack `json:"track"`
-	User      *User           `json:"user"`
-	Playcount int             `json:"playcount"`
+type WhoKnowsRow struct {
+	User      *User `json:"user"`
+	Playcount int   `json:"playcount"`
+}
+
+type WhoKnowsSettings struct {
+	GuildID *string `json:"guildID"`
 }
 
 type WhoKnowsTrackResponse struct {
-	Users []*WhoKnowsTrack `json:"users"`
-	Track *AmbiguousTrack  `json:"track"`
+	Rows  []*WhoKnowsRow  `json:"rows"`
+	Track *AmbiguousTrack `json:"track"`
+}
+
+type UserType string
+
+const (
+	UserTypeWavy   UserType = "Wavy"
+	UserTypeLastfm UserType = "Lastfm"
+)
+
+var AllUserType = []UserType{
+	UserTypeWavy,
+	UserTypeLastfm,
+}
+
+func (e UserType) IsValid() bool {
+	switch e {
+	case UserTypeWavy, UserTypeLastfm:
+		return true
+	}
+	return false
+}
+
+func (e UserType) String() string {
+	return string(e)
+}
+
+func (e *UserType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = UserType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid UserType", str)
+	}
+	return nil
+}
+
+func (e UserType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
