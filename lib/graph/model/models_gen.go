@@ -9,6 +9,7 @@ import (
 )
 
 type Album struct {
+	ID     int      `json:"id"`
 	Name   string   `json:"name"`
 	Artist *Artist  `json:"artist"`
 	Tracks []*Track `json:"tracks"`
@@ -26,6 +27,7 @@ type AmbiguousTrack struct {
 }
 
 type Artist struct {
+	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -45,6 +47,7 @@ type TaskStartResponse struct {
 }
 
 type Track struct {
+	ID     int     `json:"id"`
 	Name   string  `json:"name"`
 	Artist *Artist `json:"artist"`
 	Album  *Album  `json:"album"`

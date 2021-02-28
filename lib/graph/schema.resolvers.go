@@ -33,7 +33,7 @@ func (r *mutationResolver) SyncGuild(ctx context.Context, guildID string, discor
 }
 
 func (r *mutationResolver) FullIndex(ctx context.Context, user model.UserInput) (*model.TaskStartResponse, error) {
-	panic(fmt.Errorf("not implemented"))
+	return controllers.FullIndex(user)
 }
 
 func (r *mutationResolver) Update(ctx context.Context, user model.UserInput) (*model.TaskStartResponse, error) {

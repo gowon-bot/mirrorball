@@ -46,10 +46,12 @@ type GuildMember {
 }
 
 type Artist {
+  id: Int!
   name: String!
 }
 
 type Album {
+  id: Int!
   name: String!
   artist: Artist!
 
@@ -57,6 +59,7 @@ type Album {
 }
 
 type Track {
+  id: Int!
   name: String!
   artist: Artist!
   album: Album

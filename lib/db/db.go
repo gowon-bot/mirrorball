@@ -29,7 +29,7 @@ func InitDB() {
 
 	db := pg.Connect(parsedOptions)
 
-	db.AddQueryHook(Logger{})
+	// db.AddQueryHook(Logger{})
 
 	Db = db
 }

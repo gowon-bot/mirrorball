@@ -1,11 +1,13 @@
 package tasks
 
 import (
+	"encoding/json"
 	"log"
 
 	"github.com/RichardKnop/machinery/v1/config"
 	"github.com/RichardKnop/machinery/v1/tasks"
 	"github.com/RichardKnop/machinery/v2"
+	"github.com/jivison/gowon-indexer/lib/db"
 
 	redisbackend "github.com/RichardKnop/machinery/v1/backends/redis"
 	redisbroker "github.com/RichardKnop/machinery/v1/brokers/redis"
@@ -22,13 +24,15 @@ type GowonTaskServer struct {
 }
 
 // SendIndexUserTask starts an index task
-func (gts GowonTaskServer) SendIndexUserTask(username string, token string) {
+func (gts GowonTaskServer) SendIndexUserTask(user *db.User, token string) {
+	bytesArray, _ := json.Marshal(user)
+
 	signature := &tasks.Signature{
 		Name: "index_user",
 		Args: []tasks.Arg{
 			{
 				Type:  "string",
-				Value: username,
+				Value: string(bytesArray),
 			},
 			{
 				Type:  "string",

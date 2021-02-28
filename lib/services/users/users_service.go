@@ -3,6 +3,7 @@ package users
 import (
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
+	"github.com/jivison/gowon-indexer/lib/graph/model"
 )
 
 // Users holds methods for interacting with users
@@ -21,12 +22,37 @@ func (u Users) FindUserByDiscordID(discordID string) *db.User {
 	return user
 }
 
+// FindUserByInput finds a user from a generic graphql input
+func (u Users) FindUserByInput(userInput model.UserInput) *db.User {
+	user := new(db.User)
+
+	query := db.Db.Model(user)
+
+	if userInput.DiscordID != nil {
+		query = query.Where("discord_id = ?", userInput.DiscordID)
+	}
+	if userInput.LastFMUsername != nil {
+		query = query.Where("user_type = 'Lastfm'").Where("username = ?", userInput.LastFMUsername)
+	}
+	if userInput.WavyUsername != nil {
+		query = query.Where("user_type = 'Wavy'").Where("username = ?", userInput.WavyUsername)
+	}
+
+	err := query.Select()
+
+	if err != nil {
+		return nil
+	}
+
+	return user
+}
+
 // CreateUser creates a user if one doesn't already exist
 func (u Users) CreateUser(username, discordID, userType string) (*db.User, error) {
 	existingUser := u.FindUserByDiscordID(discordID)
 
 	if existingUser != nil {
-		return nil, customerrors.EntityAlreadyExists("user")
+		return nil, customerrors.EntityAlreadyExistsError("user")
 	}
 
 	user := &db.User{
@@ -49,7 +75,7 @@ func (u Users) DeleteUser(discordID string) error {
 	existingUser := u.FindUserByDiscordID(discordID)
 
 	if existingUser == nil {
-		return customerrors.EntityDoesntExist("user")
+		return customerrors.EntityDoesntExistError("user")
 	}
 
 	_, err := db.Db.Model(existingUser).WherePK().Delete()
