@@ -16,7 +16,25 @@ type Indexing struct {
 
 // FullIndex downloads all of a users data and caches it
 func (i Indexing) FullIndex(user *db.User) error {
-	return i.fullArtistCountIndex(user)
+	err := i.fullArtistCountIndex(user)
+
+	if err != nil {
+		return err
+	}
+
+	err = i.fullAlbumCountIndex(user)
+
+	if err != nil {
+		return err
+	}
+
+	err = i.fullTrackCountIndex(user)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (i Indexing) fullArtistCountIndex(user *db.User) error {
@@ -33,13 +51,60 @@ func (i Indexing) fullArtistCountIndex(user *db.User) error {
 
 		playcount, _ := strconv.Atoi(topArtist.Playcount)
 
-		i.incrementArtistCount(artist, user, int32(playcount))
+		i.IncrementArtistCount(artist, user, int32(playcount))
 	}
 
 	return nil
 }
 
-func (i Indexing) incrementArtistCount(artist *db.Artist, user *db.User, playcount int32) (*db.ArtistCount, error) {
+func (i Indexing) fullAlbumCountIndex(user *db.User) error {
+	i.resetAlbumCounts(user)
+
+	topAlbums, err := i.lastFMService.AllTopAlbums(user.Username)
+
+	if err != nil {
+		return err
+	}
+
+	for _, topAlbum := range topAlbums {
+		album, _ := i.GetAlbum(model.AlbumInput{
+			Name:   &topAlbum.Name,
+			Artist: &model.ArtistInput{Name: &topAlbum.Artist.Name},
+		}, true)
+
+		playcount, _ := strconv.Atoi(topAlbum.Playcount)
+
+		i.IncrementAlbumCount(album, user, int32(playcount))
+	}
+
+	return nil
+}
+
+func (i Indexing) fullTrackCountIndex(user *db.User) error {
+	i.resetTrackCounts(user)
+
+	topTracks, err := i.lastFMService.AllTopTracks(user.Username)
+
+	if err != nil {
+		return err
+	}
+
+	for _, topTrack := range topTracks {
+		track, _ := i.GetTrack(model.TrackInput{
+			Name:   &topTrack.Name,
+			Artist: &model.ArtistInput{Name: &topTrack.Artist.Name},
+		}, true)
+
+		playcount, _ := strconv.Atoi(topTrack.Playcount)
+
+		i.IncrementTrackCount(track, user, int32(playcount))
+	}
+
+	return nil
+}
+
+// IncrementArtistCount increments an artist's aggregated playcount by a given amount
+func (i Indexing) IncrementArtistCount(artist *db.Artist, user *db.User, playcount int32) (*db.ArtistCount, error) {
 	artistCount, err := i.GetArtistCount(artist, user, true)
 
 	if err != nil {
@@ -63,6 +128,62 @@ func (i Indexing) incrementArtistCount(artist *db.Artist, user *db.User, playcou
 	}
 
 	return artistCount, nil
+}
+
+// IncrementAlbumCount increments an album's aggregated playcount by a given amount
+func (i Indexing) IncrementAlbumCount(album *db.Album, user *db.User, count int32) (*db.AlbumCount, error) {
+
+	albumCount, err := i.GetAlbumCount(album, user, true)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var newPlaycount int32
+
+	_, err = db.Db.Model(albumCount).
+		Set("playcount=?", count+albumCount.Playcount).
+		Where("album_id=?", album.ID).
+		Where("user_id=?", user.ID).
+		Returning("playcount").
+		Update(&newPlaycount)
+
+	if err != nil {
+		return nil, customerrors.DatabaseUnknownError()
+	}
+
+	albumCount.Album = album
+	albumCount.Playcount = newPlaycount
+
+	return albumCount, nil
+}
+
+// IncrementTrackCount increments an track's aggregated playcount by a given amount
+func (i Indexing) IncrementTrackCount(track *db.Track, user *db.User, count int32) (*db.TrackCount, error) {
+
+	trackCount, err := i.GetTrackCount(track, user, true)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var newPlaycount int32
+
+	_, err = db.Db.Model(trackCount).
+		Set("playcount=?", count+trackCount.Playcount).
+		Where("track_id=?", track.ID).
+		Where("user_id=?", user.ID).
+		Returning("playcount").
+		Update(&newPlaycount)
+
+	if err != nil {
+		return nil, customerrors.DatabaseUnknownError()
+	}
+
+	trackCount.Track = track
+	trackCount.Playcount = newPlaycount
+
+	return trackCount, nil
 }
 
 func (i Indexing) resetArtistCounts(user *db.User) {

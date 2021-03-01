@@ -7,11 +7,9 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/google/go-querystring/query"
-	"github.com/jivison/gowon-indexer/lib/customerrors"
 	helpers "github.com/jivison/gowon-indexer/lib/helpers/api"
 	"github.com/joho/godotenv"
 )
@@ -207,43 +205,6 @@ func (lfm API) LastScrobbledTimestamp(username string) time.Time {
 	}
 
 	return timestamp
-}
-
-// AllTopArtists returns all of a users top artists through each page
-func (lfm API) AllTopArtists(username string) ([]TopArtist, error) {
-	params := TopEntityParams{Username: username, Limit: 1000, Page: 1}
-
-	var topArtists []TopArtist
-
-	err, firstPage := lfm.TopArtists(params)
-
-	if err != nil {
-		return topArtists, customerrors.LastFMError(err.Message, int(err.Error))
-	}
-
-	topArtists = append(topArtists, firstPage.TopArtists.Artists...)
-
-	totalPages, _ := strconv.Atoi(firstPage.TopArtists.Attributes.TotalPages)
-
-	paginator := helpers.Paginator{
-		PageSize:      params.Limit,
-		TotalPages:    totalPages,
-		SkipFirstPage: true,
-
-		Function: func(pp helpers.PagedParams) {
-			log.Printf("Fetching page %d", pp.Page)
-
-			params.Page = pp.Page
-
-			_, response := lfm.TopArtists(params)
-
-			topArtists = append(topArtists, response.TopArtists.Artists...)
-		},
-	}
-
-	paginator.GetAll()
-
-	return topArtists, nil
 }
 
 // CreateAPIService creates an instance of the lastfm api service object
