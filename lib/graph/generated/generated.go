@@ -72,7 +72,7 @@ type ComplexityRoot struct {
 		Login               func(childComplexity int, username string, discordID string, userType model.UserType) int
 		Logout              func(childComplexity int, discordID string) int
 		RemoveUserFromGuild func(childComplexity int, discordID string, guildID string) int
-		SyncGuild           func(childComplexity int, guildID string, discordIDs []int) int
+		SyncGuild           func(childComplexity int, guildID string, discordIDs []string) int
 		Update              func(childComplexity int, user model.UserInput) int
 	}
 
@@ -127,7 +127,7 @@ type MutationResolver interface {
 	Logout(ctx context.Context, discordID string) (*string, error)
 	AddUserToGuild(ctx context.Context, discordID string, guildID string) (*model.GuildMember, error)
 	RemoveUserFromGuild(ctx context.Context, discordID string, guildID string) (*string, error)
-	SyncGuild(ctx context.Context, guildID string, discordIDs []int) (*string, error)
+	SyncGuild(ctx context.Context, guildID string, discordIDs []string) (*string, error)
 	FullIndex(ctx context.Context, user model.UserInput) (*model.TaskStartResponse, error)
 	Update(ctx context.Context, user model.UserInput) (*model.TaskStartResponse, error)
 }
@@ -306,7 +306,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SyncGuild(childComplexity, args["guildID"].(string), args["discordIDs"].([]int)), true
+		return e.complexity.Mutation.SyncGuild(childComplexity, args["guildID"].(string), args["discordIDs"].([]string)), true
 
 	case "Mutation.update":
 		if e.complexity.Mutation.Update == nil {
@@ -562,7 +562,7 @@ type Mutation {
   # GuildMember syncing
   addUserToGuild(discordID: String!, guildID: String!): GuildMember
   removeUserFromGuild(discordID: String!, guildID: String!): Void
-  syncGuild(guildID: String!, discordIDs: [Int!]!): Void
+  syncGuild(guildID: String!, discordIDs: [String!]!): Void
 
   # .fm indexing
   fullIndex(user: UserInput!): TaskStartResponse
@@ -808,10 +808,10 @@ func (ec *executionContext) field_Mutation_syncGuild_args(ctx context.Context, r
 		}
 	}
 	args["guildID"] = arg0
-	var arg1 []int
+	var arg1 []string
 	if tmp, ok := rawArgs["discordIDs"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("discordIDs"))
-		arg1, err = ec.unmarshalNInt2ᚕintᚄ(ctx, tmp)
+		arg1, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1552,7 +1552,7 @@ func (ec *executionContext) _Mutation_syncGuild(ctx context.Context, field graph
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SyncGuild(rctx, args["guildID"].(string), args["discordIDs"].([]int))
+		return ec.resolvers.Mutation().SyncGuild(rctx, args["guildID"].(string), args["discordIDs"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4486,36 +4486,6 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) unmarshalNInt2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]int, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNInt2int(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalNInt2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalNInt2int(ctx, sel, v[i])
-	}
-
-	return ret
-}
-
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -4529,6 +4499,36 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNTrack2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTrack(ctx context.Context, sel ast.SelectionSet, v *model.Track) graphql.Marshaler {

@@ -89,3 +89,15 @@ type TrackCount struct {
 	TrackID int64
 	Track   *Track `pg:"rel:has-one"`
 }
+
+/*
+* Guild sync structures
+ */
+
+// GuildMember represents a discord user in a guild
+type GuildMember struct {
+	GuildID string
+
+	User   *User `pg:"rel:has-one"`
+	UserID int64
+}

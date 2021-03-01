@@ -14,7 +14,7 @@ type Mutation {
   # GuildMember syncing
   addUserToGuild(discordID: String!, guildID: String!): GuildMember
   removeUserFromGuild(discordID: String!, guildID: String!): Void
-  syncGuild(guildID: String!, discordIDs: [Int!]!): Void
+  syncGuild(guildID: String!, discordIDs: [String!]!): Void
 
   # .fm indexing
   fullIndex(user: UserInput!): TaskStartResponse

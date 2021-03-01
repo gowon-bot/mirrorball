@@ -1,6 +1,7 @@
 package users
 
 import (
+	"github.com/go-pg/pg/v10"
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
@@ -85,6 +86,19 @@ func (u Users) DeleteUser(discordID string) error {
 	}
 
 	return nil
+}
+
+// GetUsersByDiscordIDs returns a list of users that have one of the given discord ids
+func (u Users) GetUsersByDiscordIDs(discordIDs []string) ([]*db.User, error) {
+	var users []*db.User
+
+	err := db.Db.Model(&users).Where("discord_id IN (?)", pg.In(discordIDs)).Select()
+
+	if err != nil {
+		return users, nil
+	}
+
+	return users, nil
 }
 
 // CreateService creates an instance of the users service object

@@ -21,15 +21,15 @@ func (r *mutationResolver) Logout(ctx context.Context, discordID string) (*strin
 }
 
 func (r *mutationResolver) AddUserToGuild(ctx context.Context, discordID string, guildID string) (*model.GuildMember, error) {
-	panic(fmt.Errorf("not implemented"))
+	return controllers.AddUserToGuild(discordID, guildID)
 }
 
 func (r *mutationResolver) RemoveUserFromGuild(ctx context.Context, discordID string, guildID string) (*string, error) {
-	panic(fmt.Errorf("not implemented"))
+	return controllers.RemoveUserFromGuild(discordID, guildID)
 }
 
-func (r *mutationResolver) SyncGuild(ctx context.Context, guildID string, discordIDs []int) (*string, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *mutationResolver) SyncGuild(ctx context.Context, guildID string, discordIDs []string) (*string, error) {
+	return controllers.SyncGuild(discordIDs, guildID)
 }
 
 func (r *mutationResolver) FullIndex(ctx context.Context, user model.UserInput) (*model.TaskStartResponse, error) {
