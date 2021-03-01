@@ -21,3 +21,20 @@ func PresentWhoKnowsArtistResponse(artist *db.Artist, artistCounts []db.ArtistCo
 		Artist: PresentArtist(artist),
 	}
 }
+
+// PresentWhoKnowsAlbumResponse builds a graphql who knows album response from an album and db album counts
+func PresentWhoKnowsAlbumResponse(album *db.Album, albumCounts []db.AlbumCount) *model.WhoKnowsAlbumResponse {
+	var whoKnowsRows []*model.WhoKnowsRow
+
+	for _, albumCount := range albumCounts {
+		whoKnowsRows = append(whoKnowsRows, &model.WhoKnowsRow{
+			User:      PresentUser(albumCount.User),
+			Playcount: int(albumCount.Playcount),
+		})
+	}
+
+	return &model.WhoKnowsAlbumResponse{
+		Rows:  whoKnowsRows,
+		Album: PresentAlbum(album),
+	}
+}

@@ -45,7 +45,7 @@ func (r *queryResolver) WhoKnowsArtist(ctx context.Context, artist model.ArtistI
 }
 
 func (r *queryResolver) WhoKnowsAlbum(ctx context.Context, album model.AlbumInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsAlbumResponse, error) {
-	panic(fmt.Errorf("not implemented"))
+	return controllers.WhoKnowsAlbum(album, settings)
 }
 
 func (r *queryResolver) WhoKnowsTrack(ctx context.Context, track model.TrackInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsTrackResponse, error) {

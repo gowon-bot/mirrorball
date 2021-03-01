@@ -22,3 +22,19 @@ func WhoKnowsArtist(artistInput model.ArtistInput, settings *model.WhoKnowsSetti
 
 	return presenters.PresentWhoKnowsArtistResponse(artist, whoKnows), nil
 }
+
+// WhoKnowsAlbum returns a list of who has plays of an album
+func WhoKnowsAlbum(albumInput model.AlbumInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsAlbumResponse, error) {
+	indexingService := indexing.CreateService()
+	analysisService := analysis.CreateService()
+
+	album, err := indexingService.GetAlbum(albumInput, false)
+
+	if err != nil {
+		return nil, err
+	}
+
+	whoKnows, err := analysisService.WhoKnowsAlbum(album, settings)
+
+	return presenters.PresentWhoKnowsAlbumResponse(album, whoKnows), nil
+}
