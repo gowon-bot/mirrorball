@@ -8,6 +8,7 @@ import (
 	"errors"
 	"strconv"
 	"sync"
+	"sync/atomic"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -77,6 +78,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		GuildMembers   func(childComplexity int, guildID string) int
 		WhoKnowsAlbum  func(childComplexity int, album model.AlbumInput, settings *model.WhoKnowsSettings) int
 		WhoKnowsArtist func(childComplexity int, artist model.ArtistInput, settings *model.WhoKnowsSettings) int
 		WhoKnowsTrack  func(childComplexity int, track model.TrackInput, settings *model.WhoKnowsSettings) int
@@ -135,6 +137,7 @@ type QueryResolver interface {
 	WhoKnowsArtist(ctx context.Context, artist model.ArtistInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsArtistResponse, error)
 	WhoKnowsAlbum(ctx context.Context, album model.AlbumInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsAlbumResponse, error)
 	WhoKnowsTrack(ctx context.Context, track model.TrackInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsTrackResponse, error)
+	GuildMembers(ctx context.Context, guildID string) ([]*model.GuildMember, error)
 }
 
 type executableSchema struct {
@@ -319,6 +322,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Update(childComplexity, args["user"].(model.UserInput)), true
+
+	case "Query.guildMembers":
+		if e.complexity.Query.GuildMembers == nil {
+			break
+		}
+
+		args, err := ec.field_Query_guildMembers_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GuildMembers(childComplexity, args["guildID"].(string)), true
 
 	case "Query.whoKnowsAlbum":
 		if e.complexity.Query.WhoKnowsAlbum == nil {
@@ -553,13 +568,16 @@ type Query {
   whoKnowsArtist(artist: ArtistInput!, settings: WhoKnowsSettings): WhoKnowsArtistResponse
   whoKnowsAlbum(album: AlbumInput!, settings: WhoKnowsSettings): WhoKnowsAlbumResponse
   whoKnowsTrack(track: TrackInput!, settings: WhoKnowsSettings): WhoKnowsTrackResponse
+
+  # Guild members
+  guildMembers(guildID: String!): [GuildMember!]!
 }
 
 type Mutation {
   login(username: String!, discordID: String!, userType: UserType!): User
   logout(discordID: String!): Void
 
-  # GuildMember syncing
+  # Guild member syncing
   addUserToGuild(discordID: String!, guildID: String!): GuildMember
   removeUserFromGuild(discordID: String!, guildID: String!): Void
   syncGuild(guildID: String!, discordIDs: [String!]!): Void
@@ -676,6 +694,7 @@ input TrackInput {
 
 input WhoKnowsSettings {
   guildID: String
+  limit: Int
 }
 `, BuiltIn: false},
 }
@@ -847,6 +866,21 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_guildMembers_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["guildID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("guildID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["guildID"] = arg0
 	return args, nil
 }
 
@@ -1759,6 +1793,48 @@ func (ec *executionContext) _Query_whoKnowsTrack(ctx context.Context, field grap
 	res := resTmp.(*model.WhoKnowsTrackResponse)
 	fc.Result = res
 	return ec.marshalOWhoKnowsTrackResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoKnowsTrackResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_guildMembers(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_guildMembers_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GuildMembers(rctx, args["guildID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.GuildMember)
+	fc.Result = res
+	return ec.marshalNGuildMember2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐGuildMemberᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3677,6 +3753,14 @@ func (ec *executionContext) unmarshalInputWhoKnowsSettings(ctx context.Context, 
 			if err != nil {
 				return it, err
 			}
+		case "limit":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+			it.Limit, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -3916,6 +4000,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_whoKnowsTrack(ctx, field)
+				return res
+			})
+		case "guildMembers":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_guildMembers(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		case "__type":
@@ -4471,6 +4569,53 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) marshalNGuildMember2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐGuildMemberᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.GuildMember) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNGuildMember2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐGuildMember(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNGuildMember2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐGuildMember(ctx context.Context, sel ast.SelectionSet, v *model.GuildMember) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._GuildMember(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -4939,6 +5084,21 @@ func (ec *executionContext) marshalOGuildMember2ᚖgithubᚗcomᚋjivisonᚋgowo
 		return graphql.Null
 	}
 	return ec._GuildMember(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalInt(*v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

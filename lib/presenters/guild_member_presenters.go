@@ -19,3 +19,14 @@ func PresentGuildMember(guildMember *db.GuildMember) *model.GuildMember {
 		User:    user,
 	}
 }
+
+// PresentGuildMembers converts a list of database guild members into a a list of graphql guild members
+func PresentGuildMembers(guildMembers []db.GuildMember) []*model.GuildMember {
+	var builtGuildMembers []*model.GuildMember
+
+	for _, guildMember := range guildMembers {
+		builtGuildMembers = append(builtGuildMembers, PresentGuildMember(&guildMember))
+	}
+
+	return builtGuildMembers
+}

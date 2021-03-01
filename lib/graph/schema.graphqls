@@ -5,13 +5,16 @@ type Query {
   whoKnowsArtist(artist: ArtistInput!, settings: WhoKnowsSettings): WhoKnowsArtistResponse
   whoKnowsAlbum(album: AlbumInput!, settings: WhoKnowsSettings): WhoKnowsAlbumResponse
   whoKnowsTrack(track: TrackInput!, settings: WhoKnowsSettings): WhoKnowsTrackResponse
+
+  # Guild members
+  guildMembers(guildID: String!): [GuildMember!]!
 }
 
 type Mutation {
   login(username: String!, discordID: String!, userType: UserType!): User
   logout(discordID: String!): Void
 
-  # GuildMember syncing
+  # Guild member syncing
   addUserToGuild(discordID: String!, guildID: String!): GuildMember
   removeUserFromGuild(discordID: String!, guildID: String!): Void
   syncGuild(guildID: String!, discordIDs: [String!]!): Void
@@ -128,4 +131,5 @@ input TrackInput {
 
 input WhoKnowsSettings {
   guildID: String
+  limit: Int
 }

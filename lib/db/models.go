@@ -9,6 +9,8 @@ type User struct {
 	Username    string
 	UserType    string
 	LastIndexed time.Time
+
+	GuildMembers *[]GuildMember `pg:"rel:has-many"`
 }
 
 /*

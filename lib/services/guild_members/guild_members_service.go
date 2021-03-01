@@ -58,6 +58,19 @@ func (gm GuildMembers) ClearGuild(guildID string) error {
 	return nil
 }
 
+// ListGuildMembers lists the guild members in a given guild
+func (gm GuildMembers) ListGuildMembers(guildID string) ([]db.GuildMember, error) {
+	var guildMembers []db.GuildMember
+
+	err := db.Db.Model(&guildMembers).Where("guild_id = ?", guildID).Select()
+
+	if err != nil {
+		return guildMembers, customerrors.DatabaseUnknownError()
+	}
+
+	return guildMembers, nil
+}
+
 // CreateService creates an instance of the guild members service object
 func CreateService() *GuildMembers {
 	service := &GuildMembers{}

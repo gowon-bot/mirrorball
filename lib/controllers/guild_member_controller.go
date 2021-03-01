@@ -71,3 +71,16 @@ func SyncGuild(discordIDs []string, guildID string) (*string, error) {
 
 	return nil, nil
 }
+
+// GuildMembers lists the guild members in a given server
+func GuildMembers(guildID string) ([]*model.GuildMember, error) {
+	guildMembersService := guildmembers.CreateService()
+
+	guildMembers, err := guildMembersService.ListGuildMembers(guildID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return presenters.PresentGuildMembers(guildMembers), nil
+}

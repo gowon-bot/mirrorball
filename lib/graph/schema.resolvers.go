@@ -41,7 +41,7 @@ func (r *mutationResolver) Update(ctx context.Context, user model.UserInput) (*m
 }
 
 func (r *queryResolver) WhoKnowsArtist(ctx context.Context, artist model.ArtistInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsArtistResponse, error) {
-	panic(fmt.Errorf("not implemented"))
+	return controllers.WhoKnowsArtist(artist, settings)
 }
 
 func (r *queryResolver) WhoKnowsAlbum(ctx context.Context, album model.AlbumInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsAlbumResponse, error) {
@@ -50,6 +50,10 @@ func (r *queryResolver) WhoKnowsAlbum(ctx context.Context, album model.AlbumInpu
 
 func (r *queryResolver) WhoKnowsTrack(ctx context.Context, track model.TrackInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsTrackResponse, error) {
 	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) GuildMembers(ctx context.Context, guildID string) ([]*model.GuildMember, error) {
+	return controllers.GuildMembers(guildID)
 }
 
 // Mutation returns generated.MutationResolver implementation.
