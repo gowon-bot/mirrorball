@@ -3,6 +3,7 @@ package lastfm
 import (
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	helpers "github.com/jivison/gowon-indexer/lib/helpers/api"
@@ -117,4 +118,47 @@ func (lfm API) AllTopTracks(username string) ([]TopTrack, error) {
 	paginator.GetAll()
 
 	return topTracks, nil
+}
+
+// AllScrobblesSince returns all of a users scrobbles since a certain date
+func (lfm API) AllScrobblesSince(username string, since time.Time) ([]RecentTrack, error) {
+	var tracks []RecentTrack
+
+	params := RecentTracksParams{
+		Username: username,
+		Period:   "overall",
+		Limit:    1000,
+		From:     strconv.FormatInt(since.Unix(), 10),
+	}
+
+	err, recentTracks := lfm.RecentTracks(params)
+
+	if err != nil {
+		return tracks, customerrors.LastFMError(err.Message, int(err.Error))
+	}
+
+	tracks = append(tracks, recentTracks.RecentTracks.Tracks...)
+
+	if recentTracks.RecentTracks.Attributes.Total == "0" {
+		return tracks, nil
+	}
+
+	if totalPages, _ := strconv.Atoi(recentTracks.RecentTracks.Attributes.TotalPages); totalPages > 1 {
+		paginator := helpers.Paginator{
+			PageSize:      1000,
+			TotalPages:    totalPages,
+			SkipFirstPage: true,
+
+			Function: func(pp helpers.PagedParams) {
+				params.Page = pp.Page
+				_, response := lfm.RecentTracks(params)
+
+				tracks = append(tracks, response.RecentTracks.Tracks...)
+			},
+		}
+
+		paginator.GetAll()
+	}
+
+	return tracks, nil
 }

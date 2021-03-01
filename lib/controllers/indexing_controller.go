@@ -26,3 +26,22 @@ func FullIndex(userInput model.UserInput) (*model.TaskStartResponse, error) {
 
 	return responseService.BuildTaskStartResponse(token, true), nil
 }
+
+// Update downloads the latest data and updates the cache
+func Update(userInput model.UserInput) (*model.TaskStartResponse, error) {
+	usersService := users.CreateService()
+	responseService := response.CreateService()
+
+	user := usersService.FindUserByInput(userInput)
+	token := responseService.GenerateToken()
+
+	if user == nil {
+		return nil, customerrors.EntityDoesntExistError("user")
+	} else if user.IsWavyUser() {
+		return nil, customerrors.WavyNotSupportedError()
+	}
+
+	tasks.TaskServer.SendUpdateUserTask(user, token)
+
+	return responseService.BuildTaskStartResponse(token, true), nil
+}

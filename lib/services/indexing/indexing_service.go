@@ -2,10 +2,12 @@ package indexing
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
+	helpers "github.com/jivison/gowon-indexer/lib/helpers/api"
 	"github.com/jivison/gowon-indexer/lib/services/lastfm"
 )
 
@@ -16,6 +18,7 @@ type Indexing struct {
 
 // FullIndex downloads all of a users data and caches it
 func (i Indexing) FullIndex(user *db.User) error {
+	startTime := time.Now()
 	err := i.fullArtistCountIndex(user)
 
 	if err != nil {
@@ -29,6 +32,19 @@ func (i Indexing) FullIndex(user *db.User) error {
 	}
 
 	err = i.fullTrackCountIndex(user)
+
+	if err != nil {
+		return err
+	}
+
+	user.SetLastIndexed(startTime)
+
+	return nil
+}
+
+// Update updates the cache with the newest data
+func (i Indexing) Update(user *db.User) error {
+	err := i.updateUser(user)
 
 	if err != nil {
 		return err
@@ -99,6 +115,49 @@ func (i Indexing) fullTrackCountIndex(user *db.User) error {
 
 		i.IncrementTrackCount(track, user, int32(playcount))
 	}
+
+	return nil
+}
+
+func (i Indexing) updateUser(user *db.User) error {
+	tracks, err := i.lastFMService.AllScrobblesSince(user.Username, user.LastIndexed)
+
+	if err != nil {
+		return nil
+	}
+
+	for _, track := range tracks {
+		if track.Attributes.IsNowPlaying == "true" {
+			continue
+		}
+
+		var album *string
+
+		if track.Album.Text != "" {
+			album = &track.Album.Text
+		}
+
+		cachedTrack, _ := i.GetTrack(model.TrackInput{
+			Name:   &track.Name,
+			Artist: &model.ArtistInput{Name: &track.Artist.Text},
+			Album:  &model.AlbumInput{Name: album},
+		}, true)
+
+		timestamp, _ := helpers.ParseUnix(track.Timestamp.UTS)
+
+		_, err := i.AddPlay(user, cachedTrack, timestamp)
+
+		if err == nil {
+			i.IncrementArtistCount(cachedTrack.Artist, user, 1)
+			i.IncrementAlbumCount(cachedTrack.Album, user, 1)
+			i.IncrementTrackCount(cachedTrack, user, 1)
+		}
+	}
+
+	lastTrack := tracks[len(tracks)-1]
+	lastTimestamp, _ := helpers.ParseUnix(lastTrack.Timestamp.UTS)
+
+	user.SetLastIndexed(lastTimestamp)
 
 	return nil
 }
@@ -196,6 +255,27 @@ func (i Indexing) resetAlbumCounts(user *db.User) {
 
 func (i Indexing) resetTrackCounts(user *db.User) {
 	db.Db.Model((*db.TrackCount)(nil)).Where("user_id=?", user.ID).Delete()
+}
+
+// AddPlay saves a play to the database
+func (i Indexing) AddPlay(user *db.User, track *db.Track, scrobbledAt time.Time) (*db.Play, error) {
+	scrobble := &db.Play{
+		UserID: user.ID,
+		User:   user,
+
+		TrackID: track.ID,
+		Track:   track,
+
+		ScrobbledAt: scrobbledAt,
+	}
+
+	_, err := db.Db.Model(scrobble).Insert()
+
+	if err != nil {
+		return nil, customerrors.DatabaseUnknownError()
+	}
+
+	return scrobble, nil
 }
 
 // CreateService creates an instance of the indexing service object

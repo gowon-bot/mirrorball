@@ -45,13 +45,15 @@ func (gts GowonTaskServer) SendIndexUserTask(user *db.User, token string) {
 }
 
 // SendUpdateUserTask starts an update task
-func (gts GowonTaskServer) SendUpdateUserTask(username string, token string) {
+func (gts GowonTaskServer) SendUpdateUserTask(user *db.User, token string) {
+	bytesArray, _ := json.Marshal(user)
+
 	signature := &tasks.Signature{
 		Name: "update_user",
 		Args: []tasks.Arg{
 			{
 				Type:  "string",
-				Value: username,
+				Value: string(bytesArray),
 			},
 			{
 				Type:  "string",

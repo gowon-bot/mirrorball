@@ -37,7 +37,7 @@ func (r *mutationResolver) FullIndex(ctx context.Context, user model.UserInput) 
 }
 
 func (r *mutationResolver) Update(ctx context.Context, user model.UserInput) (*model.TaskStartResponse, error) {
-	panic(fmt.Errorf("not implemented"))
+	return controllers.Update(user)
 }
 
 func (r *queryResolver) WhoKnowsArtist(ctx context.Context, artist model.ArtistInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsArtistResponse, error) {
