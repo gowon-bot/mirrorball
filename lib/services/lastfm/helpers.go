@@ -1,7 +1,6 @@
 package lastfm
 
 import (
-	"log"
 	"strconv"
 	"time"
 
@@ -31,8 +30,6 @@ func (lfm API) AllTopArtists(username string) ([]TopArtist, error) {
 		SkipFirstPage: true,
 
 		Function: func(pp helpers.PagedParams) {
-			log.Printf("Fetching page %d", pp.Page)
-
 			params.Page = pp.Page
 
 			_, response := lfm.TopArtists(params)
@@ -68,8 +65,6 @@ func (lfm API) AllTopAlbums(username string) ([]TopAlbum, error) {
 		SkipFirstPage: true,
 
 		Function: func(pp helpers.PagedParams) {
-			log.Printf("Fetching page %d", pp.Page)
-
 			params.Page = pp.Page
 
 			_, response := lfm.TopAlbums(params)
@@ -105,8 +100,6 @@ func (lfm API) AllTopTracks(username string) ([]TopTrack, error) {
 		SkipFirstPage: true,
 
 		Function: func(pp helpers.PagedParams) {
-			log.Printf("Fetching page %d", pp.Page)
-
 			params.Page = pp.Page
 
 			_, response := lfm.TopTracks(params)

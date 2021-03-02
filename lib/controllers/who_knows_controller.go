@@ -20,6 +20,10 @@ func WhoKnowsArtist(artistInput model.ArtistInput, settings *model.WhoKnowsSetti
 
 	whoKnows, err := analysisService.WhoKnowsArtist(artist, settings)
 
+	if err != nil {
+		return nil, err
+	}
+
 	return presenters.PresentWhoKnowsArtistResponse(artist, whoKnows), nil
 }
 
@@ -36,5 +40,29 @@ func WhoKnowsAlbum(albumInput model.AlbumInput, settings *model.WhoKnowsSettings
 
 	whoKnows, err := analysisService.WhoKnowsAlbum(album, settings)
 
+	if err != nil {
+		return nil, err
+	}
+
 	return presenters.PresentWhoKnowsAlbumResponse(album, whoKnows), nil
+}
+
+// WhoKnowsTrack returns a list of who has plays of an track
+func WhoKnowsTrack(trackInput model.TrackInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsTrackResponse, error) {
+	indexingService := indexing.CreateService()
+	analysisService := analysis.CreateService()
+
+	tracks, err := indexingService.GetTracks(trackInput, false)
+
+	if err != nil {
+		return nil, err
+	}
+
+	whoKnows, err := analysisService.WhoKnowsTrack(tracks, settings)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return presenters.PresentWhoKnowsTrackResponse(tracks, whoKnows), nil
 }

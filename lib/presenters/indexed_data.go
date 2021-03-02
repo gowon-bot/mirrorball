@@ -26,3 +26,41 @@ func PresentAlbum(album *db.Album) *model.Album {
 
 	return builtAlbum
 }
+
+// PresentTrack converts a database track into a graphql track
+func PresentTrack(track *db.Track) *model.Track {
+	builtTrack := &model.Track{
+		ID:   int(track.ID),
+		Name: track.Name,
+	}
+
+	if track.Artist != nil {
+		builtTrack.Artist = PresentArtist(track.Artist)
+	}
+	if track.Album != nil {
+		builtTrack.Album = PresentAlbum(track.Album)
+	}
+
+	return builtTrack
+}
+
+// PresentAmbiguousTrack converts a database track into a graphql ambiguous track
+func PresentAmbiguousTrack(tracks []db.Track) *model.AmbiguousTrack {
+	track := tracks[0]
+
+	builtTrack := &model.AmbiguousTrack{
+		Name: track.Name,
+	}
+
+	if track.Artist != nil {
+		builtTrack.Artist = track.Artist.Name
+	}
+
+	for _, track := range tracks {
+		if track.Album != nil {
+			builtTrack.Albums = append(builtTrack.Albums, PresentAlbum(track.Album))
+		}
+	}
+
+	return builtTrack
+}

@@ -38,3 +38,11 @@ func PresentWhoKnowsAlbumResponse(album *db.Album, albumCounts []db.AlbumCount) 
 		Album: PresentAlbum(album),
 	}
 }
+
+// PresentWhoKnowsTrackResponse builds a graphql who knows track response from a list of tracks and gql who knows track rows
+func PresentWhoKnowsTrackResponse(tracks []db.Track, whoKnowsRows []*model.WhoKnowsRow) *model.WhoKnowsTrackResponse {
+	return &model.WhoKnowsTrackResponse{
+		Rows:  whoKnowsRows,
+		Track: PresentAmbiguousTrack(tracks),
+	}
+}

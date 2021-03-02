@@ -66,9 +66,28 @@ func (i Indexing) GetTrack(trackInput model.TrackInput, create bool) (*db.Track,
 
 	if err != nil && create == true && trackInput.Name != nil && trackInput.SafeGetArtistName() != nil {
 		track = i.SaveTrack(*trackInput.Name, *trackInput.SafeGetArtistName(), trackInput.SafeGetAlbumName())
+	} else if err != nil {
+		return nil, customerrors.EntityDoesntExistError("track")
 	}
 
 	return track, nil
+}
+
+// GetTracks returns a list of tracks from the database
+func (i Indexing) GetTracks(trackInput model.TrackInput, create bool) ([]db.Track, error) {
+	var tracks []db.Track
+
+	query := db.Db.Model(&tracks).
+		Relation("Artist").
+		Relation("Album")
+
+	err := ParseTrackInput(query, trackInput).Select()
+
+	if err != nil {
+		return nil, customerrors.EntityDoesntExistError("track")
+	}
+
+	return tracks, nil
 }
 
 // GetArtistCount gets and optionally creates an artist count

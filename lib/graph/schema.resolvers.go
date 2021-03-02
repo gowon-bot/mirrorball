@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jivison/gowon-indexer/lib/controllers"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
@@ -49,7 +48,7 @@ func (r *queryResolver) WhoKnowsAlbum(ctx context.Context, album model.AlbumInpu
 }
 
 func (r *queryResolver) WhoKnowsTrack(ctx context.Context, track model.TrackInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsTrackResponse, error) {
-	panic(fmt.Errorf("not implemented"))
+	return controllers.WhoKnowsTrack(track, settings)
 }
 
 func (r *queryResolver) GuildMembers(ctx context.Context, guildID string) ([]*model.GuildMember, error) {
