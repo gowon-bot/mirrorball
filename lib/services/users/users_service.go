@@ -53,7 +53,7 @@ func (u Users) CreateUser(username, discordID, userType string) (*db.User, error
 	existingUser := u.FindUserByDiscordID(discordID)
 
 	if existingUser != nil {
-		return nil, customerrors.EntityAlreadyExistsError("user")
+		return existingUser, customerrors.EntityAlreadyExistsError("user")
 	}
 
 	user := &db.User{
@@ -99,6 +99,22 @@ func (u Users) GetUsersByDiscordIDs(discordIDs []string) ([]*db.User, error) {
 	}
 
 	return users, nil
+}
+
+// ChangeUsername changes a user's username
+func (u Users) ChangeUsername(user *db.User, username, userType string) (*db.User, error) {
+	// TODO: delete data
+
+	user.Username = username
+	user.UserType = userType
+
+	_, err := db.Db.Model(user).WherePK().Update()
+
+	if err != nil {
+		return nil, customerrors.DatabaseUnknownError()
+	}
+
+	return user, nil
 }
 
 // CreateService creates an instance of the users service object

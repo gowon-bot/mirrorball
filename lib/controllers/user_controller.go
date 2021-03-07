@@ -13,6 +13,16 @@ func Login(username, discordID, userType string) (*model.User, error) {
 	user, err := usersService.CreateUser(username, discordID, userType)
 
 	if err != nil {
+		if user != nil {
+			if user.Username == username && user.UserType == userType {
+				return presenters.PresentUser(user), nil
+			}
+
+			user, _ = usersService.ChangeUsername(user, username, userType)
+
+			return presenters.PresentUser(user), nil
+		}
+
 		return nil, err
 	}
 

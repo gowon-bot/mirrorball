@@ -79,6 +79,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		GuildMembers   func(childComplexity int, guildID string) int
+		Ping           func(childComplexity int) int
 		WhoKnowsAlbum  func(childComplexity int, album model.AlbumInput, settings *model.WhoKnowsSettings) int
 		WhoKnowsArtist func(childComplexity int, artist model.ArtistInput, settings *model.WhoKnowsSettings) int
 		WhoKnowsTrack  func(childComplexity int, track model.TrackInput, settings *model.WhoKnowsSettings) int
@@ -134,6 +135,7 @@ type MutationResolver interface {
 	Update(ctx context.Context, user model.UserInput) (*model.TaskStartResponse, error)
 }
 type QueryResolver interface {
+	Ping(ctx context.Context) (string, error)
 	WhoKnowsArtist(ctx context.Context, artist model.ArtistInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsArtistResponse, error)
 	WhoKnowsAlbum(ctx context.Context, album model.AlbumInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsAlbumResponse, error)
 	WhoKnowsTrack(ctx context.Context, track model.TrackInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsTrackResponse, error)
@@ -334,6 +336,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GuildMembers(childComplexity, args["guildID"].(string)), true
+
+	case "Query.ping":
+		if e.complexity.Query.Ping == nil {
+			break
+		}
+
+		return e.complexity.Query.Ping(childComplexity), true
 
 	case "Query.whoKnowsAlbum":
 		if e.complexity.Query.WhoKnowsAlbum == nil {
@@ -564,6 +573,8 @@ var sources = []*ast.Source{
 	{Name: "lib/graph/schema.graphqls", Input: `scalar Void
 
 type Query {
+  ping: String!
+
   # Who knows
   whoKnowsArtist(artist: ArtistInput!, settings: WhoKnowsSettings): WhoKnowsArtistResponse
   whoKnowsAlbum(album: AlbumInput!, settings: WhoKnowsSettings): WhoKnowsAlbumResponse
@@ -1676,6 +1687,41 @@ func (ec *executionContext) _Mutation_update(ctx context.Context, field graphql.
 	res := resTmp.(*model.TaskStartResponse)
 	fc.Result = res
 	return ec.marshalOTaskStartResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTaskStartResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_ping(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Ping(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_whoKnowsArtist(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3969,6 +4015,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "ping":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_ping(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "whoKnowsArtist":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {

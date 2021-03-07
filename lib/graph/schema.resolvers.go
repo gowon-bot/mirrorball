@@ -39,6 +39,10 @@ func (r *mutationResolver) Update(ctx context.Context, user model.UserInput) (*m
 	return controllers.Update(user)
 }
 
+func (r *queryResolver) Ping(ctx context.Context) (string, error) {
+	return controllers.Ping()
+}
+
 func (r *queryResolver) WhoKnowsArtist(ctx context.Context, artist model.ArtistInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsArtistResponse, error) {
 	return controllers.WhoKnowsArtist(artist, settings)
 }

@@ -1,6 +1,8 @@
 scalar Void
 
 type Query {
+  ping: String!
+
   # Who knows
   whoKnowsArtist(artist: ArtistInput!, settings: WhoKnowsSettings): WhoKnowsArtistResponse
   whoKnowsAlbum(album: AlbumInput!, settings: WhoKnowsSettings): WhoKnowsAlbumResponse

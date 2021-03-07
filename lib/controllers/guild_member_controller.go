@@ -1,6 +1,9 @@
 package controllers
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
 	"github.com/jivison/gowon-indexer/lib/presenters"
@@ -10,6 +13,8 @@ import (
 
 // AddUserToGuild adds a member to a guild in the cache
 func AddUserToGuild(discordID, guildID string) (*model.GuildMember, error) {
+	log.Print(fmt.Sprintf("Adding %s to %s", discordID, guildID))
+
 	usersService := users.CreateService()
 	guildMembersService := guildmembers.CreateService()
 
