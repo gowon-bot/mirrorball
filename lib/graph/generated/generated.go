@@ -86,8 +86,9 @@ type ComplexityRoot struct {
 	}
 
 	TaskStartResponse struct {
-		Success func(childComplexity int) int
-		Token   func(childComplexity int) int
+		Success  func(childComplexity int) int
+		TaskName func(childComplexity int) int
+		Token    func(childComplexity int) int
 	}
 
 	Track struct {
@@ -387,6 +388,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TaskStartResponse.Success(childComplexity), true
 
+	case "TaskStartResponse.taskName":
+		if e.complexity.TaskStartResponse.TaskName == nil {
+			break
+		}
+
+		return e.complexity.TaskStartResponse.TaskName(childComplexity), true
+
 	case "TaskStartResponse.token":
 		if e.complexity.TaskStartResponse.Token == nil {
 			break
@@ -654,6 +662,7 @@ type AmbiguousTrack {
 ##################
 
 type TaskStartResponse {
+  taskName: String!
   success: Boolean!
   token: String!
 }
@@ -1952,6 +1961,41 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TaskStartResponse_taskName(ctx context.Context, field graphql.CollectedField, obj *model.TaskStartResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TaskStartResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TaskName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TaskStartResponse_success(ctx context.Context, field graphql.CollectedField, obj *model.TaskStartResponse) (ret graphql.Marshaler) {
@@ -4102,6 +4146,11 @@ func (ec *executionContext) _TaskStartResponse(ctx context.Context, sel ast.Sele
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("TaskStartResponse")
+		case "taskName":
+			out.Values[i] = ec._TaskStartResponse_taskName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "success":
 			out.Values[i] = ec._TaskStartResponse_success(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

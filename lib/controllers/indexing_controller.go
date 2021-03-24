@@ -24,7 +24,7 @@ func FullIndex(userInput model.UserInput) (*model.TaskStartResponse, error) {
 
 	tasks.TaskServer.SendIndexUserTask(user, token)
 
-	return responseService.BuildTaskStartResponse(token, true), nil
+	return responseService.BuildTaskStartResponse("index_user", token, true), nil
 }
 
 // Update downloads the latest data and updates the cache
@@ -41,7 +41,11 @@ func Update(userInput model.UserInput) (*model.TaskStartResponse, error) {
 		return nil, customerrors.WavyNotSupportedError()
 	}
 
+	if user.LastIndexed.IsZero() {
+		return FullIndex(userInput)
+	}
+
 	tasks.TaskServer.SendUpdateUserTask(user, token)
 
-	return responseService.BuildTaskStartResponse(token, true), nil
+	return responseService.BuildTaskStartResponse("update_user", token, true), nil
 }

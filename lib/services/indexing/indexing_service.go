@@ -154,10 +154,12 @@ func (i Indexing) updateUser(user *db.User) error {
 		}
 	}
 
-	lastTrack := tracks[len(tracks)-1]
-	lastTimestamp, _ := helpers.ParseUnix(lastTrack.Timestamp.UTS)
+	if len(tracks) > 0 {
+		lastTrack := tracks[len(tracks)-1]
+		lastTimestamp, _ := helpers.ParseUnix(lastTrack.Timestamp.UTS)
 
-	user.SetLastIndexed(lastTimestamp)
+		user.SetLastIndexed(lastTimestamp)
+	}
 
 	return nil
 }

@@ -42,8 +42,9 @@ type GuildMember struct {
 }
 
 type TaskStartResponse struct {
-	Success bool   `json:"success"`
-	Token   string `json:"token"`
+	TaskName string `json:"taskName"`
+	Success  bool   `json:"success"`
+	Token    string `json:"token"`
 }
 
 type Track struct {

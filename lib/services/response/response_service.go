@@ -11,10 +11,11 @@ import (
 type Response struct{}
 
 // BuildTaskStartResponse builds a task start response
-func (r Response) BuildTaskStartResponse(token string, success bool) *model.TaskStartResponse {
+func (r Response) BuildTaskStartResponse(taskName, token string, success bool) *model.TaskStartResponse {
 	return &model.TaskStartResponse{
-		Success: success,
-		Token:   token,
+		Success:  success,
+		Token:    token,
+		TaskName: taskName,
 	}
 }
 

@@ -82,6 +82,7 @@ type AmbiguousTrack {
 ##################
 
 type TaskStartResponse {
+  taskName: String!
   success: Boolean!
   token: String!
 }
