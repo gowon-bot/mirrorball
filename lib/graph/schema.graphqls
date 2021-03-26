@@ -10,6 +10,11 @@ type Query {
 
   # Guild members
   guildMembers(guildID: String!): [GuildMember!]!
+
+  # Top tracks/albums
+  artistTopTracks(user: UserInput!, artist: ArtistInput!): ArtistTopTracksResponse
+  artistTopAlbums(user: UserInput!, artist: ArtistInput!): ArtistTopAlbumsResponse
+  albumTopTracks(user: UserInput!, album: AlbumInput!): AlbumTopTracksResponse
 }
 
 type Mutation {
@@ -55,6 +60,12 @@ type Artist {
   name: String!
 }
 
+type ArtistCount {
+  id: Int!
+  artist: Artist!
+  playcount: Int!
+}
+
 type Album {
   id: Int!
   name: String!
@@ -62,6 +73,13 @@ type Album {
 
   tracks: [Track!]
 }
+
+type AlbumCount {
+  id: Int!
+  album: Album!
+  playcount: Int!
+}
+
 
 type Track {
   id: Int!
@@ -87,6 +105,7 @@ type TaskStartResponse {
   token: String!
 }
 
+# Who Knows
 type WhoKnowsRow {
   user: User!
   playcount: Int!
@@ -106,6 +125,24 @@ type WhoKnowsTrackResponse {
   rows: [WhoKnowsRow!]!
   track: AmbiguousTrack!
 }
+
+# Top tracks/albums
+# TODO: change ambiguous track type to be a "count" type
+type ArtistTopTracksResponse {
+  artist: Artist!
+  topTracks: [AmbiguousTrack!]!
+}
+
+type ArtistTopAlbumsResponse {
+  artist: Artist!
+  topAlbums: [AlbumCount!]!
+}
+
+type AlbumTopTracksResponse {
+  album: Album!
+  topTracks: [AmbiguousTrack!]!
+}
+
 
 ###############
 # Input Types #

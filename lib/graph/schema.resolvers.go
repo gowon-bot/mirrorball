@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jivison/gowon-indexer/lib/controllers"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
@@ -57,6 +58,18 @@ func (r *queryResolver) WhoKnowsTrack(ctx context.Context, track model.TrackInpu
 
 func (r *queryResolver) GuildMembers(ctx context.Context, guildID string) ([]*model.GuildMember, error) {
 	return controllers.GuildMembers(guildID)
+}
+
+func (r *queryResolver) ArtistTopTracks(ctx context.Context, user model.UserInput, artist model.ArtistInput) (*model.ArtistTopTracksResponse, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) ArtistTopAlbums(ctx context.Context, user model.UserInput, artist model.ArtistInput) (*model.ArtistTopAlbumsResponse, error) {
+	return controllers.ArtistTopAlbums(user, artist)
+}
+
+func (r *queryResolver) AlbumTopTracks(ctx context.Context, user model.UserInput, album model.AlbumInput) (*model.AlbumTopTracksResponse, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 // Mutation returns generated.MutationResolver implementation.

@@ -15,9 +15,20 @@ type Album struct {
 	Tracks []*Track `json:"tracks"`
 }
 
+type AlbumCount struct {
+	ID        int    `json:"id"`
+	Album     *Album `json:"album"`
+	Playcount int    `json:"playcount"`
+}
+
 type AlbumInput struct {
 	Artist *ArtistInput `json:"artist"`
 	Name   *string      `json:"name"`
+}
+
+type AlbumTopTracksResponse struct {
+	Album     *Album            `json:"album"`
+	TopTracks []*AmbiguousTrack `json:"topTracks"`
 }
 
 type AmbiguousTrack struct {
@@ -31,8 +42,24 @@ type Artist struct {
 	Name string `json:"name"`
 }
 
+type ArtistCount struct {
+	ID        int     `json:"id"`
+	Artist    *Artist `json:"artist"`
+	Playcount int     `json:"playcount"`
+}
+
 type ArtistInput struct {
 	Name *string `json:"name"`
+}
+
+type ArtistTopAlbumsResponse struct {
+	Artist    *Artist       `json:"artist"`
+	TopAlbums []*AlbumCount `json:"topAlbums"`
+}
+
+type ArtistTopTracksResponse struct {
+	Artist    *Artist           `json:"artist"`
+	TopTracks []*AmbiguousTrack `json:"topTracks"`
 }
 
 type GuildMember struct {
