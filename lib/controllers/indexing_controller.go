@@ -9,12 +9,23 @@ import (
 )
 
 // FullIndex downloads a users full data and caches it
-func FullIndex(userInput model.UserInput) (*model.TaskStartResponse, error) {
+func FullIndex(userInput model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error) {
 	usersService := users.CreateService()
 	responseService := response.CreateService()
 
 	user := usersService.FindUserByInput(userInput)
+
 	token := responseService.GenerateToken()
+
+	if user == nil && forceUserCreate != nil && *forceUserCreate == true {
+		newUser, err := usersService.CreateUserFromInput(userInput)
+
+		if err != nil {
+			return nil, err
+		}
+
+		user = newUser
+	}
 
 	if user == nil {
 		return nil, customerrors.EntityDoesntExistError("user")
@@ -28,12 +39,22 @@ func FullIndex(userInput model.UserInput) (*model.TaskStartResponse, error) {
 }
 
 // Update downloads the latest data and updates the cache
-func Update(userInput model.UserInput) (*model.TaskStartResponse, error) {
+func Update(userInput model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error) {
 	usersService := users.CreateService()
 	responseService := response.CreateService()
 
 	user := usersService.FindUserByInput(userInput)
 	token := responseService.GenerateToken()
+
+	if user == nil && forceUserCreate != nil && *forceUserCreate == true {
+		newUser, err := usersService.CreateUserFromInput(userInput)
+
+		if err != nil {
+			return nil, err
+		}
+
+		user = newUser
+	}
 
 	if user == nil {
 		return nil, customerrors.EntityDoesntExistError("user")
@@ -42,7 +63,9 @@ func Update(userInput model.UserInput) (*model.TaskStartResponse, error) {
 	}
 
 	if user.LastIndexed.IsZero() {
-		return FullIndex(userInput)
+		indexForceUserCreate := false
+
+		return FullIndex(userInput, &indexForceUserCreate)
 	}
 
 	tasks.TaskServer.SendUpdateUserTask(user, token)

@@ -69,12 +69,12 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AddUserToGuild      func(childComplexity int, discordID string, guildID string) int
-		FullIndex           func(childComplexity int, user model.UserInput) int
+		FullIndex           func(childComplexity int, user model.UserInput, forceUserCreate *bool) int
 		Login               func(childComplexity int, username string, discordID string, userType model.UserType) int
 		Logout              func(childComplexity int, discordID string) int
 		RemoveUserFromGuild func(childComplexity int, discordID string, guildID string) int
 		SyncGuild           func(childComplexity int, guildID string, discordIDs []string) int
-		Update              func(childComplexity int, user model.UserInput) int
+		Update              func(childComplexity int, user model.UserInput, forceUserCreate *bool) int
 	}
 
 	Query struct {
@@ -132,8 +132,8 @@ type MutationResolver interface {
 	AddUserToGuild(ctx context.Context, discordID string, guildID string) (*model.GuildMember, error)
 	RemoveUserFromGuild(ctx context.Context, discordID string, guildID string) (*string, error)
 	SyncGuild(ctx context.Context, guildID string, discordIDs []string) (*string, error)
-	FullIndex(ctx context.Context, user model.UserInput) (*model.TaskStartResponse, error)
-	Update(ctx context.Context, user model.UserInput) (*model.TaskStartResponse, error)
+	FullIndex(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error)
+	Update(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error)
 }
 type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
@@ -264,7 +264,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.FullIndex(childComplexity, args["user"].(model.UserInput)), true
+		return e.complexity.Mutation.FullIndex(childComplexity, args["user"].(model.UserInput), args["forceUserCreate"].(*bool)), true
 
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
@@ -324,7 +324,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Update(childComplexity, args["user"].(model.UserInput)), true
+		return e.complexity.Mutation.Update(childComplexity, args["user"].(model.UserInput), args["forceUserCreate"].(*bool)), true
 
 	case "Query.guildMembers":
 		if e.complexity.Query.GuildMembers == nil {
@@ -602,8 +602,8 @@ type Mutation {
   syncGuild(guildID: String!, discordIDs: [String!]!): Void
 
   # .fm indexing
-  fullIndex(user: UserInput!): TaskStartResponse
-  update(user: UserInput!): TaskStartResponse
+  fullIndex(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
+  update(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
 }
 
 ##############
@@ -760,6 +760,15 @@ func (ec *executionContext) field_Mutation_fullIndex_args(ctx context.Context, r
 		}
 	}
 	args["user"] = arg0
+	var arg1 *bool
+	if tmp, ok := rawArgs["forceUserCreate"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("forceUserCreate"))
+		arg1, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["forceUserCreate"] = arg1
 	return args, nil
 }
 
@@ -871,6 +880,15 @@ func (ec *executionContext) field_Mutation_update_args(ctx context.Context, rawA
 		}
 	}
 	args["user"] = arg0
+	var arg1 *bool
+	if tmp, ok := rawArgs["forceUserCreate"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("forceUserCreate"))
+		arg1, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["forceUserCreate"] = arg1
 	return args, nil
 }
 
@@ -1645,7 +1663,7 @@ func (ec *executionContext) _Mutation_fullIndex(ctx context.Context, field graph
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().FullIndex(rctx, args["user"].(model.UserInput))
+		return ec.resolvers.Mutation().FullIndex(rctx, args["user"].(model.UserInput), args["forceUserCreate"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1684,7 +1702,7 @@ func (ec *executionContext) _Mutation_update(ctx context.Context, field graphql.
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Update(rctx, args["user"].(model.UserInput))
+		return ec.resolvers.Mutation().Update(rctx, args["user"].(model.UserInput), args["forceUserCreate"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

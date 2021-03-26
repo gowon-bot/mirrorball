@@ -1,6 +1,8 @@
 package users
 
 import (
+	"strings"
+
 	"github.com/go-pg/pg/v10"
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
@@ -69,6 +71,41 @@ func (u Users) CreateUser(username, discordID, userType string) (*db.User, error
 	}
 
 	return user, nil
+}
+
+// CreateUser creates a user from input if one doesn't already exist
+func (u Users) CreateUserFromInput(input model.UserInput) (*db.User, error) {
+	var userType *string
+	var username *string
+
+	if input.WavyUsername != nil {
+		userTypeString := model.UserTypeWavy.String()
+		userType = &userTypeString
+		username = input.WavyUsername
+	}
+	if input.LastFMUsername != nil {
+		userTypeString := model.UserTypeLastfm.String()
+		userType = &userTypeString
+		username = input.LastFMUsername
+	}
+
+	if username == nil || userType == nil || input.DiscordID == nil {
+		missingArguments := []string{}
+
+		if username == nil {
+			missingArguments = append(missingArguments, "username")
+		}
+		if userType == nil {
+			missingArguments = append(missingArguments, "user type")
+		}
+		if input.DiscordID == nil {
+			missingArguments = append(missingArguments, "discord ID")
+		}
+
+		return nil, customerrors.InsufficientArgumentsSupplied(strings.Join(missingArguments, ", "))
+	}
+
+	return u.CreateUser(*username, *input.DiscordID, *userType)
 }
 
 // DeleteUser deletes a user if one exists

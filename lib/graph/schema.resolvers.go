@@ -31,12 +31,12 @@ func (r *mutationResolver) SyncGuild(ctx context.Context, guildID string, discor
 	return controllers.SyncGuild(discordIDs, guildID)
 }
 
-func (r *mutationResolver) FullIndex(ctx context.Context, user model.UserInput) (*model.TaskStartResponse, error) {
-	return controllers.FullIndex(user)
+func (r *mutationResolver) FullIndex(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error) {
+	return controllers.FullIndex(user, forceUserCreate)
 }
 
-func (r *mutationResolver) Update(ctx context.Context, user model.UserInput) (*model.TaskStartResponse, error) {
-	return controllers.Update(user)
+func (r *mutationResolver) Update(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error) {
+	return controllers.Update(user, forceUserCreate)
 }
 
 func (r *queryResolver) Ping(ctx context.Context) (string, error) {

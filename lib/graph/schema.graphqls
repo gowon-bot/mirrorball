@@ -22,8 +22,8 @@ type Mutation {
   syncGuild(guildID: String!, discordIDs: [String!]!): Void
 
   # .fm indexing
-  fullIndex(user: UserInput!): TaskStartResponse
-  update(user: UserInput!): TaskStartResponse
+  fullIndex(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
+  update(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
 }
 
 ##############
