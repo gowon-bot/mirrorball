@@ -4,16 +4,31 @@ type Query {
   ping: String!
 
   # Who knows
-  whoKnowsArtist(artist: ArtistInput!, settings: WhoKnowsSettings): WhoKnowsArtistResponse
-  whoKnowsAlbum(album: AlbumInput!, settings: WhoKnowsSettings): WhoKnowsAlbumResponse
-  whoKnowsTrack(track: TrackInput!, settings: WhoKnowsSettings): WhoKnowsTrackResponse
+  whoKnowsArtist(
+    artist: ArtistInput!
+    settings: WhoKnowsSettings
+  ): WhoKnowsArtistResponse
+  whoKnowsAlbum(
+    album: AlbumInput!
+    settings: WhoKnowsSettings
+  ): WhoKnowsAlbumResponse
+  whoKnowsTrack(
+    track: TrackInput!
+    settings: WhoKnowsSettings
+  ): WhoKnowsTrackResponse
 
   # Guild members
   guildMembers(guildID: String!): [GuildMember!]!
 
-  # Top tracks/albums
-  artistTopTracks(user: UserInput!, artist: ArtistInput!): ArtistTopTracksResponse
-  artistTopAlbums(user: UserInput!, artist: ArtistInput!): ArtistTopAlbumsResponse
+  # Counts
+  artistTopTracks(
+    user: UserInput!
+    artist: ArtistInput!
+  ): ArtistTopTracksResponse
+  artistTopAlbums(
+    user: UserInput!
+    artist: ArtistInput!
+  ): ArtistTopAlbumsResponse
   albumTopTracks(user: UserInput!, album: AlbumInput!): AlbumTopTracksResponse
 }
 
@@ -61,7 +76,6 @@ type Artist {
 }
 
 type ArtistCount {
-  id: Int!
   artist: Artist!
   playcount: Int!
 }
@@ -75,11 +89,9 @@ type Album {
 }
 
 type AlbumCount {
-  id: Int!
   album: Album!
   playcount: Int!
 }
-
 
 type Track {
   id: Int!
@@ -93,6 +105,11 @@ type AmbiguousTrack {
   artist: String!
 
   albums: [Album!]
+}
+
+type AmbiguousTrackCount {
+  name: String!
+  playcount: Int!
 }
 
 ##################
@@ -126,11 +143,10 @@ type WhoKnowsTrackResponse {
   track: AmbiguousTrack!
 }
 
-# Top tracks/albums
-# TODO: change ambiguous track type to be a "count" type
+# Counts
 type ArtistTopTracksResponse {
   artist: Artist!
-  topTracks: [AmbiguousTrack!]!
+  topTracks: [AmbiguousTrackCount!]!
 }
 
 type ArtistTopAlbumsResponse {
@@ -140,9 +156,8 @@ type ArtistTopAlbumsResponse {
 
 type AlbumTopTracksResponse {
   album: Album!
-  topTracks: [AmbiguousTrack!]!
+  topTracks: [AmbiguousTrackCount!]!
 }
-
 
 ###############
 # Input Types #

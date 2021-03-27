@@ -31,3 +31,25 @@ func ArtistTopAlbums(userInput model.UserInput, artistInput model.ArtistInput) (
 
 	return presenters.PresentArtistTopAlbums(artist, topAlbums), nil
 }
+
+func ArtistTopTracks(userInput model.UserInput, artistInput model.ArtistInput) (*model.ArtistTopTracksResponse, error) {
+	usersService := users.CreateService()
+	indexingService := indexing.CreateService()
+	analysisService := analysis.CreateService()
+
+	user := usersService.FindUserByInput(userInput)
+
+	if user == nil {
+		return nil, customerrors.EntityDoesntExistError("user")
+	}
+
+	artist, err := indexingService.GetArtist(artistInput, false)
+
+	if err != nil {
+		return nil, err
+	}
+
+	topTracks, err := analysisService.ArtistTopTracks(user.ID, artist.ID)
+
+	return presenters.PresentArtistTopTracks(artist, topTracks), nil
+}

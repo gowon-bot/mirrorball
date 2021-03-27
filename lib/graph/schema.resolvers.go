@@ -61,7 +61,7 @@ func (r *queryResolver) GuildMembers(ctx context.Context, guildID string) ([]*mo
 }
 
 func (r *queryResolver) ArtistTopTracks(ctx context.Context, user model.UserInput, artist model.ArtistInput) (*model.ArtistTopTracksResponse, error) {
-	panic(fmt.Errorf("not implemented"))
+	return controllers.ArtistTopTracks(user, artist)
 }
 
 func (r *queryResolver) ArtistTopAlbums(ctx context.Context, user model.UserInput, artist model.ArtistInput) (*model.ArtistTopAlbumsResponse, error) {
