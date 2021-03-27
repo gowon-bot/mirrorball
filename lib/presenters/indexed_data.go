@@ -13,6 +13,17 @@ func PresentArtist(artist *db.Artist) *model.Artist {
 	}
 }
 
+// PresentArtists converts a ist of database artists into a list of graphql artists
+func PresentArtists(artists []db.Artist) []*model.Artist {
+	var presentedArtists []*model.Artist
+
+	for _, artist := range artists {
+		presentedArtists = append(presentedArtists, PresentArtist(&artist))
+	}
+
+	return presentedArtists
+}
+
 // PresentAlbum converts a database album into a graphql album
 func PresentAlbum(album *db.Album) *model.Album {
 	builtAlbum := &model.Album{

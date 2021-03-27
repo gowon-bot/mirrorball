@@ -72,6 +72,10 @@ func (r *queryResolver) AlbumTopTracks(ctx context.Context, user model.UserInput
 	panic(fmt.Errorf("not implemented"))
 }
 
+func (r *queryResolver) SearchArtist(ctx context.Context, criteria model.ArtistSearchCriteria, settings *model.SearchSettings) (*model.ArtistSearchResults, error) {
+	return controllers.SearchArtist(criteria, settings)
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 

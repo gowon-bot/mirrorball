@@ -55,6 +55,21 @@ type ArtistInput struct {
 	Name *string `json:"name"`
 }
 
+type ArtistSearchCriteria struct {
+	Keywords *string `json:"keywords"`
+}
+
+type ArtistSearchResult struct {
+	ArtistID        int    `json:"artistID"`
+	ArtistName      string `json:"artistName"`
+	ListenerCount   int    `json:"listenerCount"`
+	GlobalPlaycount int    `json:"globalPlaycount"`
+}
+
+type ArtistSearchResults struct {
+	Artists []*ArtistSearchResult `json:"artists"`
+}
+
 type ArtistTopAlbumsResponse struct {
 	Artist    *Artist       `json:"artist"`
 	TopAlbums []*AlbumCount `json:"topAlbums"`
@@ -69,6 +84,11 @@ type GuildMember struct {
 	UserID  int    `json:"userID"`
 	GuildID string `json:"guildID"`
 	User    *User  `json:"user"`
+}
+
+type SearchSettings struct {
+	Exact *bool      `json:"exact"`
+	User  *UserInput `json:"user"`
 }
 
 type TaskStartResponse struct {

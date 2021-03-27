@@ -30,6 +30,12 @@ type Query {
     artist: ArtistInput!
   ): ArtistTopAlbumsResponse
   albumTopTracks(user: UserInput!, album: AlbumInput!): AlbumTopTracksResponse
+
+  # Search
+  searchArtist(
+    criteria: ArtistSearchCriteria!
+    settings: SearchSettings
+  ): ArtistSearchResults
 }
 
 type Mutation {
@@ -159,6 +165,18 @@ type AlbumTopTracksResponse {
   topTracks: [AmbiguousTrackCount!]!
 }
 
+# Search
+type ArtistSearchResults {
+  artists: [ArtistSearchResult!]!
+}
+
+type ArtistSearchResult {
+  artistID: Int!
+  artistName: String!
+  listenerCount: Int!
+  globalPlaycount: Int!
+}
+
 ###############
 # Input Types #
 ###############
@@ -187,4 +205,13 @@ input TrackInput {
 input WhoKnowsSettings {
   guildID: String
   limit: Int
+}
+
+input ArtistSearchCriteria {
+  keywords: String
+}
+
+input SearchSettings {
+  exact: Boolean
+  user: UserInput
 }
