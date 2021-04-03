@@ -149,8 +149,11 @@ func (i Indexing) updateUser(user *db.User) error {
 
 		if err == nil {
 			i.IncrementArtistCount(cachedTrack.Artist, user, 1)
-			i.IncrementAlbumCount(cachedTrack.Album, user, 1)
 			i.IncrementTrackCount(cachedTrack, user, 1)
+
+			if cachedTrack.Album != nil {
+				i.IncrementAlbumCount(cachedTrack.Album, user, 1)
+			}
 		}
 	}
 
