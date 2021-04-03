@@ -1,31 +1,79 @@
+scalar Void
+
 type Query {
   ping: String!
 
-  users: [User!]!
-  getUser(username: String!): User!
+  # Who knows
+  whoKnowsArtist(
+    artist: ArtistInput!
+    settings: WhoKnowsSettings
+  ): WhoKnowsArtistResponse
+  whoKnowsAlbum(
+    album: AlbumInput!
+    settings: WhoKnowsSettings
+  ): WhoKnowsAlbumResponse
+  whoKnowsTrack(
+    track: TrackInput!
+    settings: WhoKnowsSettings
+  ): WhoKnowsTrackResponse
 
-  userTopArtists(username: String!): Int!
+  # Guild members
+  guildMembers(guildID: String!): [GuildMember!]!
 
-  whoKnows(artist: String!): WhoKnowsResponse!
-  whoKnowsAlbum(artist: String!, album: String!): WhoKnowsAlbumResponse!
-  whoKnowsTrack(artist: String!, track: String!): WhoKnowsTrackResponse!
+  # Counts
+  artistTopTracks(
+    user: UserInput!
+    artist: ArtistInput!
+  ): ArtistTopTracksResponse
+  artistTopAlbums(
+    user: UserInput!
+    artist: ArtistInput!
+  ): ArtistTopAlbumsResponse
+  albumTopTracks(user: UserInput!, album: AlbumInput!): AlbumTopTracksResponse
+
+  # Search
+  searchArtist(
+    criteria: ArtistSearchCriteria!
+    settings: SearchSettings
+  ): ArtistSearchResults
 }
 
 type Mutation {
-  indexUser(username: String!): TaskStartResponse!
-  updateUser(username: String!): TaskStartResponse!
+  login(username: String!, discordID: String!, userType: UserType!): User
+  logout(discordID: String!): Void
 
-  saveTrack(artist: String!, album: String, track: String!): Track!
+  # Guild member syncing
+  addUserToGuild(discordID: String!, guildID: String!): GuildMember
+  removeUserFromGuild(discordID: String!, guildID: String!): Void
+  syncGuild(guildID: String!, discordIDs: [String!]!): Void
+
+  # .fm indexing
+  fullIndex(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
+  update(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
+}
+
+##############
+# Base Types #
+##############
+
+enum UserType {
+  Wavy
+  Lastfm
 }
 
 type User {
   id: Int!
-  lastFMUsername: String!
+  username: String!
+  discordID: String!
+
+  userType: UserType
 }
 
-type TaskStartResponse {
-  success: Boolean!
-  token: String!
+type GuildMember {
+  userID: Int!
+  guildID: String!
+
+  user: User
 }
 
 type Artist {
@@ -33,10 +81,22 @@ type Artist {
   name: String!
 }
 
+type ArtistCount {
+  artist: Artist!
+  playcount: Int!
+}
+
 type Album {
   id: Int!
   name: String!
-  artist: Artist
+  artist: Artist!
+
+  tracks: [Track!]
+}
+
+type AlbumCount {
+  album: Album!
+  playcount: Int!
 }
 
 type Track {
@@ -48,49 +108,110 @@ type Track {
 
 type AmbiguousTrack {
   name: String!
-  artist: Artist!
+  artist: String!
+
+  albums: [Album!]
 }
 
-type TopArtists {
-  artists: [TopArtist!]!
-  total: Int!
+type AmbiguousTrackCount {
+  name: String!
+  playcount: Int!
 }
 
-type TopArtist {
-  artist: Artist!
-  plays: Int!
-  rank: Int!
+##################
+# Response Types #
+##################
+
+type TaskStartResponse {
+  taskName: String!
+  success: Boolean!
+  token: String!
 }
 
-type WhoKnowsResponse {
-  users: [WhoKnows!]!
-  artist: Artist
-}
-
-type WhoKnows {
-  artist: Artist!
+# Who Knows
+type WhoKnowsRow {
   user: User!
   playcount: Int!
+}
+
+type WhoKnowsArtistResponse {
+  rows: [WhoKnowsRow!]!
+  artist: Artist!
 }
 
 type WhoKnowsAlbumResponse {
-  users: [WhoKnowsAlbum!]!
-  album: Album
-}
-
-type WhoKnowsAlbum {
+  rows: [WhoKnowsRow!]!
   album: Album!
-  user: User!
-  playcount: Int!
 }
 
 type WhoKnowsTrackResponse {
-  users: [WhoKnowsTrack!]!
-  track: AmbiguousTrack
+  rows: [WhoKnowsRow!]!
+  track: AmbiguousTrack!
 }
 
-type WhoKnowsTrack {
-  track: AmbiguousTrack!
-  user: User!
-  playcount: Int!
+# Counts
+type ArtistTopTracksResponse {
+  artist: Artist!
+  topTracks: [AmbiguousTrackCount!]!
+}
+
+type ArtistTopAlbumsResponse {
+  artist: Artist!
+  topAlbums: [AlbumCount!]!
+}
+
+type AlbumTopTracksResponse {
+  album: Album!
+  topTracks: [AmbiguousTrackCount!]!
+}
+
+# Search
+type ArtistSearchResults {
+  artists: [ArtistSearchResult!]!
+}
+
+type ArtistSearchResult {
+  artistID: Int!
+  artistName: String!
+  listenerCount: Int!
+  globalPlaycount: Int!
+}
+
+###############
+# Input Types #
+###############
+
+input UserInput {
+  discordID: String
+  lastFMUsername: String
+  wavyUsername: String
+}
+
+input ArtistInput {
+  name: String
+}
+
+input AlbumInput {
+  artist: ArtistInput
+  name: String
+}
+
+input TrackInput {
+  artist: ArtistInput
+  album: AlbumInput
+  name: String
+}
+
+input WhoKnowsSettings {
+  guildID: String
+  limit: Int
+}
+
+input ArtistSearchCriteria {
+  keywords: String
+}
+
+input SearchSettings {
+  exact: Boolean
+  user: UserInput
 }

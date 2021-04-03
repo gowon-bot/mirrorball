@@ -4,38 +4,35 @@ import "time"
 
 // User is the database model for a last.fm user
 type User struct {
-	ID             int64
-	LastFMUsername string
-	LastIndexed    time.Time
+	ID          int64
+	DiscordID   string
+	Username    string
+	UserType    string
+	LastIndexed time.Time
 
-	Scrobbles *[]Scrobble `pg:"rel:has-many"`
+	GuildMembers *[]GuildMember `pg:"rel:has-many"`
 }
 
-/**
-* Last.fm Structures
+/*
+* Indexing Models
  */
 
-// Artist represents an artist in Last.fm
+// Artist represents a cached artist
 type Artist struct {
 	ID   int64
 	Name string
-
-	Albums *[]Album `pg:"rel:has-many"`
-	Tracks *[]Track `pg:"rel:has-many"`
 }
 
-// Album represents an album in Last.fm
+// Album represents a cached artist
 type Album struct {
 	ID   int64
 	Name string
 
 	ArtistID int64
 	Artist   *Artist `pg:"rel:has-one"`
-
-	Tracks *[]Track `pg:"rel:has-many"`
 }
 
-// Track represents a track in Last.fm
+// Track represents a cached artist
 type Track struct {
 	ID   int64
 	Name string
@@ -43,13 +40,13 @@ type Track struct {
 	ArtistID int64
 	Artist   *Artist `pg:"rel:has-one"`
 
-	AlbumID int64
+	AlbumID *int64
 	Album   *Album `pg:"rel:has-one"`
 }
 
-// Scrobble represents a Last.fm scrobble
-type Scrobble struct {
-	Timestamp time.Time
+// Play represents a single play of a song (eg. a Last.fm scrobble)
+type Play struct {
+	ScrobbledAt time.Time
 
 	UserID int64
 	User   *User `pg:"rel:has-one"`
@@ -58,11 +55,11 @@ type Scrobble struct {
 	Track   *Track `pg:"rel:has-one"`
 }
 
-/**
+/*
 * Aggregated Structures
  */
 
-// ArtistCount is the model for aggregated artist plays
+// ArtistCount represents aggregated artist plays
 type ArtistCount struct {
 	Playcount int32
 
@@ -73,7 +70,7 @@ type ArtistCount struct {
 	Artist   *Artist `pg:"rel:has-one"`
 }
 
-// AlbumCount is the model for aggregated album plays
+// AlbumCount represents aggregated album plays
 type AlbumCount struct {
 	Playcount int32
 
@@ -84,7 +81,7 @@ type AlbumCount struct {
 	Album   *Album `pg:"rel:has-one"`
 }
 
-// TrackCount is the model for aggregated track plays
+// TrackCount represents aggregated track plays
 type TrackCount struct {
 	Playcount int32
 
@@ -93,4 +90,16 @@ type TrackCount struct {
 
 	TrackID int64
 	Track   *Track `pg:"rel:has-one"`
+}
+
+/*
+* Guild sync structures
+ */
+
+// GuildMember represents a discord user in a guild
+type GuildMember struct {
+	GuildID string
+
+	User   *User `pg:"rel:has-one"`
+	UserID int64
 }

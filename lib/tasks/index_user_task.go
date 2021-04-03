@@ -1,20 +1,21 @@
 package tasks
 
 import (
+	"encoding/json"
 	"fmt"
 
+	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/services/indexing"
-	"github.com/jivison/gowon-indexer/lib/services/user"
 	"github.com/jivison/gowon-indexer/lib/services/webhook"
 )
 
 // IndexUserTask fully indexes a user
-func IndexUserTask(username string, token string) (string, error) {
-	webhookService := webhook.CreateService()
-	userService := user.CreateService()
+func IndexUserTask(userJSON string, token string) (string, error) {
 	indexingService := indexing.CreateService()
+	webhookService := webhook.CreateService()
 
-	user, _ := userService.GetUser(username)
+	user := &db.User{}
+	json.Unmarshal([]byte(userJSON), user)
 
 	indexingService.FullIndex(user)
 
@@ -22,5 +23,5 @@ func IndexUserTask(username string, token string) (string, error) {
 
 	webhookService.Post(data)
 
-	return fmt.Sprintf("Indexed user %s", username), nil
+	return fmt.Sprintf("Indexed user %s (%s)", user.Username, user.UserType), nil
 }

@@ -1,20 +1,21 @@
 package tasks
 
 import (
+	"encoding/json"
 	"fmt"
 
+	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/services/indexing"
-	"github.com/jivison/gowon-indexer/lib/services/user"
 	"github.com/jivison/gowon-indexer/lib/services/webhook"
 )
 
 // UpdateUserTask updates a user with the latest data
-func UpdateUserTask(username string, token string) (string, error) {
-	webhookService := webhook.CreateService()
-	userService := user.CreateService()
+func UpdateUserTask(userJSON string, token string) (string, error) {
 	indexingService := indexing.CreateService()
+	webhookService := webhook.CreateService()
 
-	user, _ := userService.GetUser(username)
+	user := &db.User{}
+	json.Unmarshal([]byte(userJSON), user)
 
 	indexingService.Update(user)
 
@@ -22,5 +23,5 @@ func UpdateUserTask(username string, token string) (string, error) {
 
 	webhookService.Post(data)
 
-	return fmt.Sprintf("Updated user %s", username), nil
+	return fmt.Sprintf("Updated user %s (%s)", user.Username, user.UserType), nil
 }

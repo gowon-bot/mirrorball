@@ -5,195 +5,75 @@ package graph
 
 import (
 	"context"
-	"log"
+	"fmt"
 
-	customerrors "github.com/jivison/gowon-indexer/lib/customerrors"
-	"github.com/jivison/gowon-indexer/lib/db"
+	"github.com/jivison/gowon-indexer/lib/controllers"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
-	"github.com/jivison/gowon-indexer/lib/services/indexeddata"
-	"github.com/jivison/gowon-indexer/lib/services/response"
-	"github.com/jivison/gowon-indexer/lib/services/user"
-	"github.com/jivison/gowon-indexer/lib/tasks"
 )
 
-func (r *mutationResolver) IndexUser(ctx context.Context, username string) (*model.TaskStartResponse, error) {
-	responseService := response.CreateService()
-
-	token := responseService.GenerateToken()
-
-	tasks.TaskServer.SendIndexUserTask(username, token)
-
-	return responseService.BuildTaskStartResponse(token), nil
+func (r *mutationResolver) Login(ctx context.Context, username string, discordID string, userType model.UserType) (*model.User, error) {
+	return controllers.Login(username, discordID, userType.String())
 }
 
-func (r *mutationResolver) UpdateUser(ctx context.Context, username string) (*model.TaskStartResponse, error) {
-	responseService := response.CreateService()
-
-	token := responseService.GenerateToken()
-
-	tasks.TaskServer.SendUpdateUserTask(username, token)
-
-	return responseService.BuildTaskStartResponse(token), nil
+func (r *mutationResolver) Logout(ctx context.Context, discordID string) (*string, error) {
+	return controllers.Logout(discordID)
 }
 
-func (r *mutationResolver) SaveTrack(ctx context.Context, artist string, album *string, track string) (*model.Track, error) {
-	indexedService := indexeddata.CreateIndexedMutationService()
+func (r *mutationResolver) AddUserToGuild(ctx context.Context, discordID string, guildID string) (*model.GuildMember, error) {
+	return controllers.AddUserToGuild(discordID, guildID)
+}
 
-	savedTrack := indexedService.SaveTrack(artist, track, album)
+func (r *mutationResolver) RemoveUserFromGuild(ctx context.Context, discordID string, guildID string) (*string, error) {
+	return controllers.RemoveUserFromGuild(discordID, guildID)
+}
 
-	gqlTrack := indexeddata.ConvertToGraphQLTrack(savedTrack)
+func (r *mutationResolver) SyncGuild(ctx context.Context, guildID string, discordIDs []string) (*string, error) {
+	return controllers.SyncGuild(discordIDs, guildID)
+}
 
-	return gqlTrack, nil
+func (r *mutationResolver) FullIndex(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error) {
+	return controllers.FullIndex(user, forceUserCreate)
+}
+
+func (r *mutationResolver) Update(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error) {
+	return controllers.Update(user, forceUserCreate)
 }
 
 func (r *queryResolver) Ping(ctx context.Context) (string, error) {
-	return "Hello from Go!", nil
+	return controllers.Ping()
 }
 
-func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	var dbUsers []db.User
-	var resultUsers []*model.User
-
-	err := db.Db.Model(&dbUsers).Select()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, user := range dbUsers {
-		resultUsers = append(resultUsers, &model.User{
-			ID:             int(user.ID),
-			LastFMUsername: user.LastFMUsername,
-		})
-	}
-
-	return resultUsers, nil
+func (r *queryResolver) WhoKnowsArtist(ctx context.Context, artist model.ArtistInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsArtistResponse, error) {
+	return controllers.WhoKnowsArtist(artist, settings)
 }
 
-func (r *queryResolver) GetUser(ctx context.Context, username string) (*model.User, error) {
-	userService := user.CreateService()
-
-	user, err := userService.GetUser(username)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &model.User{
-		ID:             int(user.ID),
-		LastFMUsername: user.LastFMUsername,
-	}, nil
+func (r *queryResolver) WhoKnowsAlbum(ctx context.Context, album model.AlbumInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsAlbumResponse, error) {
+	return controllers.WhoKnowsAlbum(album, settings)
 }
 
-func (r *queryResolver) UserTopArtists(ctx context.Context, username string) (int, error) {
-	indexedQuery := indexeddata.CreateIndexedQueryService()
-
-	count := indexedQuery.UserTopArtists(username)
-
-	return count, nil
+func (r *queryResolver) WhoKnowsTrack(ctx context.Context, track model.TrackInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsTrackResponse, error) {
+	return controllers.WhoKnowsTrack(track, settings)
 }
 
-func (r *queryResolver) WhoKnows(ctx context.Context, artist string) (*model.WhoKnowsResponse, error) {
-	indexedQuery := indexeddata.CreateIndexedQueryService()
-	indexedMutation := indexeddata.CreateIndexedMutationService()
-
-	dbArtist, err := indexedMutation.GetArtist(artist, false)
-	gqlArtist := indexeddata.ConvertToGraphQLArtist(dbArtist)
-
-	if err != nil {
-		return nil, customerrors.NoOneKnows(artist)
-	}
-
-	whoKnows := indexedQuery.WhoKnowsArtist(dbArtist)
-
-	var whoKnowsResponse []*model.WhoKnows
-
-	for _, whoKnowsRow := range whoKnows {
-		whoKnowsResponse = append(whoKnowsResponse, &model.WhoKnows{
-			Artist: gqlArtist,
-			User: &model.User{
-				ID:             int(whoKnowsRow.User.ID),
-				LastFMUsername: whoKnowsRow.User.LastFMUsername,
-			},
-			Playcount: int(whoKnowsRow.Playcount),
-		})
-	}
-
-	return &model.WhoKnowsResponse{
-		Artist: gqlArtist,
-		Users:  whoKnowsResponse,
-	}, nil
+func (r *queryResolver) GuildMembers(ctx context.Context, guildID string) ([]*model.GuildMember, error) {
+	return controllers.GuildMembers(guildID)
 }
 
-func (r *queryResolver) WhoKnowsAlbum(ctx context.Context, artist string, album string) (*model.WhoKnowsAlbumResponse, error) {
-	indexedQuery := indexeddata.CreateIndexedQueryService()
-	indexedMutation := indexeddata.CreateIndexedMutationService()
-
-	dbAlbum, err := indexedMutation.GetAlbum(album, artist, false)
-	gqlAlbum := indexeddata.ConvertToGraphQLAlbum(dbAlbum)
-
-	if err != nil {
-		return nil, err
-	}
-
-	whoKnows := indexedQuery.WhoKnowsAlbum(dbAlbum)
-
-	var whoKnowsResponse []*model.WhoKnowsAlbum
-
-	for _, whoKnowsRow := range whoKnows {
-		whoKnowsResponse = append(whoKnowsResponse, &model.WhoKnowsAlbum{
-			Album: gqlAlbum,
-			User: &model.User{
-				ID:             int(whoKnowsRow.User.ID),
-				LastFMUsername: whoKnowsRow.User.LastFMUsername,
-			},
-			Playcount: int(whoKnowsRow.Playcount),
-		})
-	}
-
-	return &model.WhoKnowsAlbumResponse{
-		Album: gqlAlbum,
-		Users: whoKnowsResponse,
-	}, nil
+func (r *queryResolver) ArtistTopTracks(ctx context.Context, user model.UserInput, artist model.ArtistInput) (*model.ArtistTopTracksResponse, error) {
+	return controllers.ArtistTopTracks(user, artist)
 }
 
-func (r *queryResolver) WhoKnowsTrack(ctx context.Context, artist string, track string) (*model.WhoKnowsTrackResponse, error) {
-	indexedQuery := indexeddata.CreateIndexedQueryService()
-	indexedMutation := indexeddata.CreateIndexedMutationService()
+func (r *queryResolver) ArtistTopAlbums(ctx context.Context, user model.UserInput, artist model.ArtistInput) (*model.ArtistTopAlbumsResponse, error) {
+	return controllers.ArtistTopAlbums(user, artist)
+}
 
-	dbTracks, err := indexedMutation.GetTracks(track, artist)
+func (r *queryResolver) AlbumTopTracks(ctx context.Context, user model.UserInput, album model.AlbumInput) (*model.AlbumTopTracksResponse, error) {
+	panic(fmt.Errorf("not implemented"))
+}
 
-	if err != nil {
-		return nil, err
-	}
-
-	ambiguousTrack := &indexeddata.AmbiguousTrack{
-		Name:   dbTracks[0].Name,
-		Artist: dbTracks[0].Artist,
-	}
-
-	gqlTrack := indexeddata.ConvertToAmbiguousTrack(ambiguousTrack)
-
-	whoKnowsTrack := indexedQuery.WhoKnowsTrack(dbTracks)
-
-	var whoKnowsResponse []*model.WhoKnowsTrack
-
-	for _, whoKnowsRow := range whoKnowsTrack {
-		whoKnowsResponse = append(whoKnowsResponse, &model.WhoKnowsTrack{
-			Track:     gqlTrack,
-			Playcount: int(whoKnowsRow.Playcount),
-			User: &model.User{
-				ID:             int(whoKnowsRow.User.ID),
-				LastFMUsername: whoKnowsRow.User.LastFMUsername,
-			},
-		})
-	}
-
-	return &model.WhoKnowsTrackResponse{
-		Track: gqlTrack,
-		Users: whoKnowsResponse,
-	}, nil
+func (r *queryResolver) SearchArtist(ctx context.Context, criteria model.ArtistSearchCriteria, settings *model.SearchSettings) (*model.ArtistSearchResults, error) {
+	return controllers.SearchArtist(criteria, settings)
 }
 
 // Mutation returns generated.MutationResolver implementation.
