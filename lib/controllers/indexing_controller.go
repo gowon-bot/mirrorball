@@ -14,7 +14,6 @@ func FullIndex(userInput model.UserInput, forceUserCreate *bool) (*model.TaskSta
 	responseService := response.CreateService()
 
 	user := usersService.FindUserByInput(userInput)
-
 	token := responseService.GenerateToken()
 
 	if user == nil && forceUserCreate != nil && *forceUserCreate == true {

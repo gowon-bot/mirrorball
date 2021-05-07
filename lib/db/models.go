@@ -4,7 +4,7 @@ import "time"
 
 // User is the database model for a last.fm user
 type User struct {
-	ID          int64
+	ID          int64 `pg:",pk"`
 	DiscordID   string
 	Username    string
 	UserType    string
@@ -19,13 +19,13 @@ type User struct {
 
 // Artist represents a cached artist
 type Artist struct {
-	ID   int64
+	ID   int64 `pg:",pk"`
 	Name string
 }
 
 // Album represents a cached artist
 type Album struct {
-	ID   int64
+	ID   int64 `pg:",pk"`
 	Name string
 
 	ArtistID int64
@@ -34,7 +34,7 @@ type Album struct {
 
 // Track represents a cached artist
 type Track struct {
-	ID   int64
+	ID   int64 `pg:",pk"`
 	Name string
 
 	ArtistID int64
@@ -46,6 +46,7 @@ type Track struct {
 
 // Play represents a single play of a song (eg. a Last.fm scrobble)
 type Play struct {
+	ID          int64 `pg:",pk"`
 	ScrobbledAt time.Time
 
 	UserID int64
@@ -61,6 +62,7 @@ type Play struct {
 
 // ArtistCount represents aggregated artist plays
 type ArtistCount struct {
+	ID        int64 `pg:",pk"`
 	Playcount int32
 
 	UserID int64
@@ -72,6 +74,7 @@ type ArtistCount struct {
 
 // AlbumCount represents aggregated album plays
 type AlbumCount struct {
+	ID        int64 `pg:",pk"`
 	Playcount int32
 
 	UserID int64
@@ -83,6 +86,7 @@ type AlbumCount struct {
 
 // TrackCount represents aggregated track plays
 type TrackCount struct {
+	ID        int64 `pg:",pk"`
 	Playcount int32
 
 	UserID int64

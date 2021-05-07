@@ -17,7 +17,11 @@ func IndexUserTask(userJSON string, token string) (string, error) {
 	user := &db.User{}
 	json.Unmarshal([]byte(userJSON), user)
 
-	indexingService.FullIndex(user)
+	err := indexingService.FullIndex(user)
+
+	if err != nil {
+		panic(err)
+	}
 
 	data := webhookService.BuildTaskCompleteRequest(token)
 

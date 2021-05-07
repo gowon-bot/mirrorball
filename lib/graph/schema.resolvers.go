@@ -76,6 +76,10 @@ func (r *queryResolver) SearchArtist(ctx context.Context, criteria model.ArtistS
 	return controllers.SearchArtist(criteria, settings)
 }
 
+func (r *queryResolver) Plays(ctx context.Context, user model.UserInput, pageInput *model.PageInput) ([]*model.Play, error) {
+	return controllers.Plays(user, pageInput)
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 

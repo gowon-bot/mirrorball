@@ -75,3 +75,21 @@ func PresentAmbiguousTrack(tracks []db.Track) *model.AmbiguousTrack {
 
 	return builtTrack
 }
+
+func PresentPlay(play *db.Play) *model.Play {
+
+	builtPlay := &model.Play{
+		ID:          int(play.ID),
+		ScrobbledAt: int(play.ScrobbledAt.UTC().Unix()),
+	}
+
+	if play.User != nil {
+		builtPlay.User = PresentUser(play.User)
+	}
+
+	if play.Track != nil {
+		builtPlay.Track = PresentTrack(play.Track)
+	}
+
+	return builtPlay
+}

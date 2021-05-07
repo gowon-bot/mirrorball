@@ -43,3 +43,15 @@ func ParseTrackInput(query *orm.Query, trackInput model.TrackInput) *orm.Query {
 
 	return query
 }
+
+func ParsePageInput(query *orm.Query, pageInput *model.PageInput) *orm.Query {
+	if pageInput == nil {
+		return query
+	}
+
+	if pageInput.Limit != nil {
+		query = query.Limit(*pageInput.Limit)
+	}
+
+	return query
+}
