@@ -4,10 +4,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jivison/gowon-indexer/lib/constants"
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
-	"github.com/jivison/gowon-indexer/lib/graph/model"
-	helpers "github.com/jivison/gowon-indexer/lib/helpers/api"
+	apihelpers "github.com/jivison/gowon-indexer/lib/helpers/api"
+	dbhelpers "github.com/jivison/gowon-indexer/lib/helpers/database"
+
 	"github.com/jivison/gowon-indexer/lib/services/lastfm"
 )
 
@@ -37,6 +39,7 @@ func (i Indexing) FullIndex(user *db.User) error {
 		return err
 	}
 
+	i.resetPlays(user)
 	user.SetLastIndexed(startTime)
 
 	return nil
@@ -62,12 +65,31 @@ func (i Indexing) fullArtistCountIndex(user *db.User) error {
 		return err
 	}
 
-	for _, topArtist := range topArtists {
-		artist, _ := i.GetArtist(model.ArtistInput{Name: &topArtist.Name}, true)
+	var topArtistNames []string
 
+	for _, artist := range topArtists {
+		topArtistNames = append(topArtistNames, artist.Name)
+	}
+
+	artistMap, err := i.ConvertArtists(topArtistNames)
+
+	if err != nil {
+		return err
+	}
+
+	var artistCounts []*db.ArtistCount
+
+	for _, topArtist := range topArtists {
+		artist, _ := artistMap[topArtist.Name]
 		playcount, _ := strconv.Atoi(topArtist.Playcount)
 
-		i.IncrementArtistCount(artist, user, int32(playcount))
+		artistCounts = append(artistCounts, &db.ArtistCount{Artist: &artist, ArtistID: artist.ID, User: user, UserID: user.ID, Playcount: int32(playcount)})
+	}
+
+	_, err = db.Db.Model(&artistCounts).Insert()
+
+	if err != nil {
+		return customerrors.DatabaseUnknownError()
 	}
 
 	return nil
@@ -82,15 +104,40 @@ func (i Indexing) fullAlbumCountIndex(user *db.User) error {
 		return err
 	}
 
-	for _, topAlbum := range topAlbums {
-		album, _ := i.GetAlbum(model.AlbumInput{
-			Name:   &topAlbum.Name,
-			Artist: &model.ArtistInput{Name: &topAlbum.Artist.Name},
-		}, true)
+	var topAlbumNames []AlbumToConvert
 
+	for _, topAlbum := range topAlbums {
+		topAlbumNames = append(topAlbumNames, AlbumToConvert{
+			ArtistName: topAlbum.Artist.Name,
+			AlbumName:  topAlbum.Name,
+		})
+	}
+
+	albumMap, err := i.ConvertAlbums(topAlbumNames)
+
+	if err != nil {
+		return err
+	}
+
+	var albumCounts []*db.AlbumCount
+
+	for _, topAlbum := range topAlbums {
+		album, _ := albumMap[topAlbum.Artist.Name][topAlbum.Name]
 		playcount, _ := strconv.Atoi(topAlbum.Playcount)
 
-		i.IncrementAlbumCount(album, user, int32(playcount))
+		albumCounts = append(albumCounts, &db.AlbumCount{
+			Album:     &album,
+			AlbumID:   album.ID,
+			User:      user,
+			UserID:    user.ID,
+			Playcount: int32(playcount),
+		})
+	}
+
+	_, err = db.Db.Model(&albumCounts).Insert()
+
+	if err != nil {
+		return customerrors.DatabaseUnknownError()
 	}
 
 	return nil
@@ -105,64 +152,82 @@ func (i Indexing) fullTrackCountIndex(user *db.User) error {
 		return err
 	}
 
-	for _, topTrack := range topTracks {
-		track, _ := i.GetTrack(model.TrackInput{
-			Name:   &topTrack.Name,
-			Artist: &model.ArtistInput{Name: &topTrack.Artist.Name},
-		}, true)
+	var topTrackNames []TrackToConvert
 
+	for _, topTrack := range topTracks {
+		topTrackNames = append(topTrackNames, TrackToConvert{
+			ArtistName: topTrack.Artist.Name,
+			TrackName:  topTrack.Name,
+		})
+	}
+
+	tracksMap, err := i.ConvertTracks(topTrackNames)
+
+	if err != nil {
+		return nil
+	}
+
+	var trackCounts []*db.TrackCount
+
+	for _, topTrack := range topTracks {
+		albumName := ""
+
+		track, _ := tracksMap[topTrack.Artist.Name][albumName][topTrack.Name]
 		playcount, _ := strconv.Atoi(topTrack.Playcount)
 
-		i.IncrementTrackCount(track, user, int32(playcount))
+		trackCounts = append(trackCounts, &db.TrackCount{
+			Track:     &track,
+			TrackID:   track.ID,
+			User:      user,
+			UserID:    user.ID,
+			Playcount: int32(playcount),
+		})
+	}
+
+	_, err = db.Db.Model(&trackCounts).Insert()
+
+	if err != nil {
+		return customerrors.DatabaseUnknownError()
 	}
 
 	return nil
 }
 
 func (i Indexing) updateUser(user *db.User) error {
-	tracks, err := i.lastFMService.AllScrobblesSince(user.Username, user.LastIndexed)
+	recentTracks, err := i.lastFMService.AllScrobblesSince(user.Username, user.LastIndexed)
 
 	if err != nil {
+		return err
+	} else if len(recentTracks) == 0 {
 		return nil
 	}
 
-	for _, track := range tracks {
-		if track.Attributes.IsNowPlaying == "true" {
-			continue
-		}
+	var scrobbles []lastfm.RecentTrack
 
-		var album *string
-
-		if track.Album.Text != "" {
-			album = &track.Album.Text
-		}
-
-		cachedTrack, _ := i.GetTrack(model.TrackInput{
-			Name:   &track.Name,
-			Artist: &model.ArtistInput{Name: &track.Artist.Text},
-			Album:  &model.AlbumInput{Name: album},
-		}, true)
-
-		timestamp, _ := helpers.ParseUnix(track.Timestamp.UTS)
-
-		_, err := i.AddPlay(user, cachedTrack, timestamp)
-
-		if err == nil {
-			i.IncrementArtistCount(cachedTrack.Artist, user, 1)
-			i.IncrementTrackCount(cachedTrack, user, 1)
-
-			if cachedTrack.Album != nil {
-				i.IncrementAlbumCount(cachedTrack.Album, user, 1)
-			}
-		}
+	if recentTracks[0].Attributes.IsNowPlaying == "true" {
+		scrobbles = append(scrobbles, recentTracks[1:]...)
+	} else {
+		scrobbles = recentTracks
 	}
 
-	if len(tracks) > 0 {
-		lastTrack := tracks[len(tracks)-1]
-		lastTimestamp, _ := helpers.ParseUnix(lastTrack.Timestamp.UTS)
-
-		user.SetLastIndexed(lastTimestamp)
+	if len(scrobbles) < 1 {
+		return nil
 	}
+
+	artistCounts, albumCounts, trackCounts, plays, err := i.GenerateCountsFromScrobbles(scrobbles, *user)
+
+	err = i.createOrUpdateCounts(*user, artistCounts, albumCounts, trackCounts)
+
+	if err != nil {
+		return err
+	}
+
+	dbhelpers.InsertManyPlays(plays, constants.ChunkSize)
+
+	firstTrack := scrobbles[0]
+	lastTimestamp, _ := apihelpers.ParseUnix(firstTrack.Timestamp.UTS)
+
+	user.SetLastIndexed(lastTimestamp)
 
 	return nil
 }
@@ -262,6 +327,10 @@ func (i Indexing) resetTrackCounts(user *db.User) {
 	db.Db.Model((*db.TrackCount)(nil)).Where("user_id=?", user.ID).Delete()
 }
 
+func (i Indexing) resetPlays(user *db.User) {
+	db.Db.Model((*db.Play)(nil)).Where("user_id=?", user.ID).Delete()
+}
+
 // AddPlay saves a play to the database
 func (i Indexing) AddPlay(user *db.User, track *db.Track, scrobbledAt time.Time) (*db.Play, error) {
 	scrobble := &db.Play{
@@ -281,6 +350,28 @@ func (i Indexing) AddPlay(user *db.User, track *db.Track, scrobbledAt time.Time)
 	}
 
 	return scrobble, nil
+}
+
+func (i Indexing) createOrUpdateCounts(user db.User, artistCounts []db.ArtistCount, albumCounts []db.AlbumCount, trackCounts []db.TrackCount) error {
+	_, err := dbhelpers.UpdateOrCreateManyArtistCounts(artistCounts, user.ID)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = dbhelpers.UpdateOrCreateManyAlbumCounts(albumCounts, user.ID)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = dbhelpers.UpdateOrCreateManyTrackCounts(trackCounts, user.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // CreateService creates an instance of the indexing service object

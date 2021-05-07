@@ -1,4 +1,4 @@
-package helpers
+package apihelpers
 
 // PagedParams is the struct type for the parameters passed into the pagination function
 type PagedParams struct {

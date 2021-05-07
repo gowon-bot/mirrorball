@@ -86,6 +86,17 @@ type GuildMember struct {
 	User    *User  `json:"user"`
 }
 
+type PageInput struct {
+	Limit *int `json:"limit"`
+}
+
+type Play struct {
+	ID          int    `json:"id"`
+	ScrobbledAt int    `json:"scrobbledAt"`
+	User        *User  `json:"user"`
+	Track       *Track `json:"track"`
+}
+
 type SearchSettings struct {
 	Exact *bool      `json:"exact"`
 	User  *UserInput `json:"user"`

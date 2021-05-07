@@ -1,4 +1,5 @@
 scalar Void
+scalar Date
 
 type Query {
   ping: String!
@@ -36,6 +37,9 @@ type Query {
     criteria: ArtistSearchCriteria!
     settings: SearchSettings
   ): ArtistSearchResults
+
+  # Plays
+  plays(user: UserInput!, pageInput: PageInput): [Play!]!
 }
 
 type Mutation {
@@ -116,6 +120,13 @@ type AmbiguousTrack {
 type AmbiguousTrackCount {
   name: String!
   playcount: Int!
+}
+
+type Play {
+  id: Int!
+  scrobbledAt: Int!
+  user: User!
+  track: Track!
 }
 
 ##################
@@ -214,4 +225,8 @@ input ArtistSearchCriteria {
 input SearchSettings {
   exact: Boolean
   user: UserInput
+}
+
+input PageInput {
+  limit: Int
 }
