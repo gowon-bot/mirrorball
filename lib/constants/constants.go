@@ -1,3 +1,3 @@
 package constants
 
-const ChunkSize = 2500
+const ChunkSize = 1000
