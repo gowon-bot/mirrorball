@@ -40,6 +40,9 @@ type Query {
 
   # Plays
   plays(user: UserInput!, pageInput: PageInput): [Play!]!
+  artistPlays(user: UserInput!, settings: ArtistPlaysSettings): [ArtistCount!]!
+  albumPlays(user: UserInput!, settings: AlbumPlaysSettings): [AlbumCount!]!
+  trackPlays(user: UserInput!, settings: TrackPlaysSettings): [AmbiguousTrackCount!]!
 }
 
 type Mutation {
@@ -229,4 +232,22 @@ input SearchSettings {
 
 input PageInput {
   limit: Int
+}
+
+input ArtistPlaysSettings {
+  pageInput: PageInput
+  artist: ArtistInput
+  sort: String
+}
+
+input AlbumPlaysSettings {
+  pageInput: PageInput
+  album: AlbumInput
+  sort: String
+}
+
+input TrackPlaysSettings {
+  pageInput: PageInput
+  track: TrackInput
+  sort: String
 }

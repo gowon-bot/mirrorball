@@ -80,6 +80,18 @@ func (r *queryResolver) Plays(ctx context.Context, user model.UserInput, pageInp
 	return controllers.Plays(user, pageInput)
 }
 
+func (r *queryResolver) ArtistPlays(ctx context.Context, user model.UserInput, settings *model.ArtistPlaysSettings) ([]*model.ArtistCount, error) {
+	return controllers.ArtistPlays(user, settings)
+}
+
+func (r *queryResolver) AlbumPlays(ctx context.Context, user model.UserInput, settings *model.AlbumPlaysSettings) ([]*model.AlbumCount, error) {
+	return controllers.AlbumPlays(user, settings)
+}
+
+func (r *queryResolver) TrackPlays(ctx context.Context, user model.UserInput, settings *model.TrackPlaysSettings) ([]*model.AmbiguousTrackCount, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 

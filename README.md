@@ -10,7 +10,7 @@ Install [sql-migrate](https://github.com/rubenv/sql-migrate), and then copy `dbc
 
 *Note regarding 'WEBHOOK_URL', this is the url that the indexer posts to when it's done running tasks. If you have Gowon bot running, this defaults to localhost:3000. If you don't have/want Gowon bot running, I suggest using https://webhook.site for testing*
 
-Ensure there exists a database called `gowon-indexer`, and then to run all migrations with `sql-migrate`, simple navigate the project root and run `sql-migrate up`.
+Ensure there exists a database called `gowon-indexer`, and then to run all migrations with `sql-migrate`, simply navigate the project root and run `sql-migrate up`.
 
 To run the bot, simply run `go run server.go`. `go build` will generate an executable.
 
@@ -30,7 +30,7 @@ The indexer processes requests as follows:
 
 1. `lib/graph/schema.resolvers.go` - This is the file that gqlgen generates that holds all the resolvers
 
-2. `lib/controllers` - Every resolver hands off logic to a control of the same name, accepting the same parameters and returning the same types as the resolver. Controllers typically handle high level logic.
+2. `lib/controllers` - Every resolver hands off logic to a controller of the same name, accepting the same parameters and returning the same types as the resolver. Controllers typically handle high level logic.
 
 3. `lib/services` - Similar functions grouped into services handle database interaction and most detailed logic
 

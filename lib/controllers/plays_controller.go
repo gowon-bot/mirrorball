@@ -24,11 +24,43 @@ func Plays(userInput model.UserInput, pageInput *model.PageInput) ([]*model.Play
 		return nil, err
 	}
 
-	var builtPlays []*model.Play
+	return presenters.PresentPlays(plays), nil
+}
 
-	for _, play := range plays {
-		builtPlays = append(builtPlays, presenters.PresentPlay(&play))
+func ArtistPlays(userInput model.UserInput, settings *model.ArtistPlaysSettings) ([]*model.ArtistCount, error) {
+	usersService := users.CreateService()
+	indexingService := indexing.CreateService()
+
+	user := usersService.FindUserByInput(userInput)
+
+	if user == nil {
+		return nil, customerrors.EntityDoesntExistError("user")
 	}
 
-	return builtPlays, nil
+	plays, err := indexingService.GetArtistPlays(*user, settings)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return presenters.PresentArtistCounts(plays), nil
+}
+
+func AlbumPlays(userInput model.UserInput, settings *model.AlbumPlaysSettings) ([]*model.AlbumCount, error) {
+	usersService := users.CreateService()
+	indexingService := indexing.CreateService()
+
+	user := usersService.FindUserByInput(userInput)
+
+	if user == nil {
+		return nil, customerrors.EntityDoesntExistError("user")
+	}
+
+	plays, err := indexingService.GetAlbumPlays(*user, settings)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return presenters.PresentAlbumCounts(plays), nil
 }

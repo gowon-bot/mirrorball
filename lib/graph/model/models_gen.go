@@ -25,6 +25,12 @@ type AlbumInput struct {
 	Name   *string      `json:"name"`
 }
 
+type AlbumPlaysSettings struct {
+	PageInput *PageInput  `json:"pageInput"`
+	Album     *AlbumInput `json:"album"`
+	Sort      *string     `json:"sort"`
+}
+
 type AlbumTopTracksResponse struct {
 	Album     *Album                 `json:"album"`
 	TopTracks []*AmbiguousTrackCount `json:"topTracks"`
@@ -53,6 +59,12 @@ type ArtistCount struct {
 
 type ArtistInput struct {
 	Name *string `json:"name"`
+}
+
+type ArtistPlaysSettings struct {
+	PageInput *PageInput   `json:"pageInput"`
+	Artist    *ArtistInput `json:"artist"`
+	Sort      *string      `json:"sort"`
 }
 
 type ArtistSearchCriteria struct {
@@ -119,6 +131,12 @@ type TrackInput struct {
 	Artist *ArtistInput `json:"artist"`
 	Album  *AlbumInput  `json:"album"`
 	Name   *string      `json:"name"`
+}
+
+type TrackPlaysSettings struct {
+	PageInput *PageInput  `json:"pageInput"`
+	Track     *TrackInput `json:"track"`
+	Sort      *string     `json:"sort"`
 }
 
 type User struct {
