@@ -43,6 +43,9 @@ type Query {
   artistPlays(user: UserInput!, settings: ArtistPlaysSettings): [ArtistCount!]!
   albumPlays(user: UserInput!, settings: AlbumPlaysSettings): [AlbumCount!]!
   trackPlays(user: UserInput!, settings: TrackPlaysSettings): [AmbiguousTrackCount!]!
+
+  # Ratings
+  ratings(settings: RatingsSettings): [Rating!]!
 }
 
 type Mutation {
@@ -57,6 +60,9 @@ type Mutation {
   # .fm indexing
   fullIndex(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
   update(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
+
+  # Ratings
+  importRatings(csv: String!, user: UserInput!): Void
 }
 
 ##############
@@ -130,6 +136,11 @@ type Play {
   scrobbledAt: Int!
   user: User!
   track: Track!
+}
+
+type Rating {
+  album: [Album!]!
+  rating: Int!
 }
 
 ##################
@@ -250,4 +261,10 @@ input TrackPlaysSettings {
   pageInput: PageInput
   track: TrackInput
   sort: String
+}
+
+input RatingsSettings {
+  user: UserInput
+  album: AlbumInput
+  pageInput: PageInput
 }

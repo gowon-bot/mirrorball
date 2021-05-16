@@ -56,6 +56,31 @@ type Play struct {
 	Track   *Track `pg:"rel:has-one"`
 }
 
+type RateYourMusicAlbum struct {
+	ID              int64 `pg:",pk"`
+	RateYourMusicID string
+	ReleaseYear     *int
+
+	Albums []Album `pg:"many2many:rate_your_music_album_albums"`
+}
+
+type RateYourMusicAlbumAlbum struct {
+	RateYourMusicAlbumID int64
+	AlbumID              int64
+}
+
+// Rating represents a single user's rating from rateyourmusic
+type Rating struct {
+	ID     int `pg:",pk"`
+	Rating int
+
+	UserID int64
+	User   *User `pg:"rel:has-one"`
+
+	RateYourMusicAlbumID int64
+	RateYourMusicAlbum   *RateYourMusicAlbum `pg:"rel:has-one"`
+}
+
 /*
 * Aggregated Structures
  */

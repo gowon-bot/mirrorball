@@ -1,15 +1,13 @@
-package main
+package rateyourmusic
 
 import (
 	"encoding/csv"
 	"io"
-	"log"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/gookit/color"
+	"github.com/jivison/gowon-indexer/lib/customerrors"
 )
 
 // RYM Album, First Name,Last Name,First Name localized, Last Name localized,Title,Release_Date,Rating,Ownership,Purchase Date,Media Type,Review
@@ -24,7 +22,7 @@ const (
 	Rating             = 7
 )
 
-type RYMSAlbumRating = struct {
+type RawRateYourMusicRating = struct {
 	RYMID            string
 	Title            string
 	ArtistName       string
@@ -37,16 +35,11 @@ var asianCharacters = `[\p{Hangul}\p{Han}\p{Katakana}\p{Hiragana}]`
 var containsAsianCharacters = regexp.MustCompile(asianCharacters + "+")
 var artistLocalization = regexp.MustCompile(`([^\[]+) \[([^\]]+)\]`)
 
-func parseRYMSExport(filename string) []RYMSAlbumRating {
-	csvfile, err := os.Open(filename)
-	if err != nil {
-		log.Fatalln("Couldn't open the csv file", err)
-	}
-
-	r := csv.NewReader(csvfile)
+func (rym RateYourMusic) ParseRYMSExport(csvString string) ([]RawRateYourMusicRating, error) {
+	r := csv.NewReader(strings.NewReader(csvString))
 	r.LazyQuotes = true
 
-	var albumRatings []RYMSAlbumRating
+	var albumRatings []RawRateYourMusicRating
 
 	for {
 		record, err := r.Read()
@@ -54,7 +47,7 @@ func parseRYMSExport(filename string) []RYMSAlbumRating {
 			break
 		}
 		if err != nil {
-			log.Fatal(err)
+			return nil, customerrors.CSVParseError()
 		}
 		// Header
 		if strings.HasPrefix(record[0], "RYM") {
@@ -65,7 +58,7 @@ func parseRYMSExport(filename string) []RYMSAlbumRating {
 		artistNameLocalized := combineNames(record[FirstNameLocalized], record[LastNameLocalized])
 		localization := artistLocalization.FindAllStringSubmatch(artistName, 1)
 
-		row := RYMSAlbumRating{}
+		row := RawRateYourMusicRating{}
 		row.RYMID = record[RYMID]
 		row.Title = record[Title]
 		row.Rating, _ = strconv.Atoi(record[Rating])
@@ -86,24 +79,7 @@ func parseRYMSExport(filename string) []RYMSAlbumRating {
 		albumRatings = append(albumRatings, row)
 	}
 
-	return albumRatings
-}
-
-func main() {
-	ratings := parseRYMSExport("samplerymsdata.csv")
-
-	grey := color.FgGray.Render
-	cyan := color.FgCyan.Render
-	yellow := color.FgYellow.Render
-
-	log.Print("WJSN ratings:")
-	for _, rating := range ratings {
-		// if rating.ArtistName == "WJSN" {
-		ratingDisplay := displayRating(rating.Rating)
-
-		log.Print(grey(rating.ArtistName), " - ", cyan(rating.Title), ": ", yellow(ratingDisplay))
-		// }
-	}
+	return albumRatings, nil
 }
 
 func combineNames(firstName string, lastName string) string {

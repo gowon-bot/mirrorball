@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
 	"github.com/joho/godotenv"
 )
 
@@ -26,6 +27,8 @@ func InitDB() {
 	if err != nil {
 		log.Fatal("Error parsing database url")
 	}
+
+	orm.RegisterTable((*RateYourMusicAlbumAlbum)(nil))
 
 	db := pg.Connect(parsedOptions)
 

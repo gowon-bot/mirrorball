@@ -109,6 +109,17 @@ type Play struct {
 	Track       *Track `json:"track"`
 }
 
+type Rating struct {
+	Album  []*Album `json:"album"`
+	Rating int      `json:"rating"`
+}
+
+type RatingsSettings struct {
+	User      *UserInput  `json:"user"`
+	Album     *AlbumInput `json:"album"`
+	PageInput *PageInput  `json:"pageInput"`
+}
+
 type SearchSettings struct {
 	Exact *bool      `json:"exact"`
 	User  *UserInput `json:"user"`

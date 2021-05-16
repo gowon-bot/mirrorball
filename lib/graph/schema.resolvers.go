@@ -40,6 +40,10 @@ func (r *mutationResolver) Update(ctx context.Context, user model.UserInput, for
 	return controllers.Update(user, forceUserCreate)
 }
 
+func (r *mutationResolver) ImportRatings(ctx context.Context, csv string, user model.UserInput) (*string, error) {
+	return controllers.ImportRatings(csv, user)
+}
+
 func (r *queryResolver) Ping(ctx context.Context) (string, error) {
 	return controllers.Ping()
 }
@@ -89,6 +93,10 @@ func (r *queryResolver) AlbumPlays(ctx context.Context, user model.UserInput, se
 }
 
 func (r *queryResolver) TrackPlays(ctx context.Context, user model.UserInput, settings *model.TrackPlaysSettings) ([]*model.AmbiguousTrackCount, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) Ratings(ctx context.Context, settings *model.RatingsSettings) ([]*model.Rating, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
