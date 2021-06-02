@@ -39,3 +39,17 @@ func PresentRatings(ratings []db.Rating) []*model.Rating {
 
 	return builtRatings
 }
+
+func PresentRateYourMusicArtist(album db.RateYourMusicAlbum) *model.RateYourMusicArtist {
+	builtArtist := model.RateYourMusicArtist{}
+
+	if album.ArtistName != "" {
+		builtArtist.ArtistName = album.ArtistName
+	}
+
+	if album.ArtistNativeName != nil {
+		builtArtist.ArtistNativeName = album.ArtistNativeName
+	}
+
+	return &builtArtist
+}

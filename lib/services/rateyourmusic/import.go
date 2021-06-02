@@ -109,7 +109,7 @@ func (rym RateYourMusic) convertAlbumsFromRatings(rawAlbums []RawRateYourMusicRa
 	var albumList []indexing.AlbumToConvert
 
 	for _, album := range rawAlbums {
-		albumList = append(albumList, rym.generateAlbumCombinations(album)...)
+		albumList = append(albumList, album.AllAlbums...)
 	}
 
 	albumsMap, err := rym.indexingService.ConvertAlbums(albumList)
@@ -117,23 +117,23 @@ func (rym RateYourMusic) convertAlbumsFromRatings(rawAlbums []RawRateYourMusicRa
 	return albumsMap, err
 }
 
-func (rym RateYourMusic) generateAlbumCombinations(rawAlbum RawRateYourMusicRating) []indexing.AlbumToConvert {
-	var combinations []indexing.AlbumToConvert
+// func (rym RateYourMusic) generateAlbumCombinations(rawAlbum RawRateYourMusicRating) []indexing.AlbumToConvert {
+// 	var combinations []indexing.AlbumToConvert
 
-	combinations = append(combinations, indexing.AlbumToConvert{
-		ArtistName: rawAlbum.ArtistName,
-		AlbumName:  rawAlbum.Title,
-	})
+// 	combinations = append(combinations, indexing.AlbumToConvert{
+// 		ArtistName: rawAlbum.ArtistName,
+// 		AlbumName:  rawAlbum.Title,
+// 	})
 
-	if rawAlbum.ArtistNativeName != nil {
-		combinations = append(combinations, indexing.AlbumToConvert{
-			ArtistName: *rawAlbum.ArtistNativeName,
-			AlbumName:  rawAlbum.Title,
-		})
-	}
+// 	if rawAlbum.ArtistNativeName != nil {
+// 		combinations = append(combinations, indexing.AlbumToConvert{
+// 			ArtistName: *rawAlbum.ArtistNativeName,
+// 			AlbumName:  rawAlbum.Title,
+// 		})
+// 	}
 
-	return combinations
-}
+// 	return combinations
+// }
 
 func (rym RateYourMusic) createRateYourMusicAlbumAlbums(albums []RawRateYourMusicRating, rymsAlbumsMap RateYourMusicAlbumMap) error {
 	albumsMap, err := rym.convertAlbumsFromRatings(albums)
@@ -145,7 +145,7 @@ func (rym RateYourMusic) createRateYourMusicAlbumAlbums(albums []RawRateYourMusi
 	var albumAlbumsToCreate []db.RateYourMusicAlbumAlbum
 
 	for _, album := range albums {
-		for _, combination := range rym.generateAlbumCombinations(album) {
+		for _, combination := range album.AllAlbums {
 
 			dbAlbum := albumsMap[combination.ArtistName][combination.AlbumName]
 

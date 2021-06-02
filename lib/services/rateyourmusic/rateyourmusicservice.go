@@ -28,6 +28,18 @@ func (rym RateYourMusic) GetRatings(settings *model.RatingsSettings) ([]db.Ratin
 	return ratings, nil
 }
 
+func (rym RateYourMusic) GetArtist(keywords string) (*db.RateYourMusicAlbum, error) {
+	album := new(db.RateYourMusicAlbum)
+
+	err := db.Db.Model(album).Where("artist_name ILIKE ?", keywords).WhereOr("artist_native_name ILIKE ?", keywords).Limit(1).Select()
+
+	if err != nil {
+		return album, customerrors.EntityDoesntExistError("artist")
+	}
+
+	return album, nil
+}
+
 // CreateService creates an instance of the indexing service object
 func CreateService() *RateYourMusic {
 	service := &RateYourMusic{

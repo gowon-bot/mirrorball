@@ -100,6 +100,10 @@ func (r *queryResolver) Ratings(ctx context.Context, settings *model.RatingsSett
 	return controllers.Ratings(settings)
 }
 
+func (r *queryResolver) RateYourMusicArtist(ctx context.Context, keywords string) (*model.RateYourMusicArtist, error) {
+	return controllers.RateYourMusicArtist(keywords)
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 

@@ -127,20 +127,21 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AlbumPlays      func(childComplexity int, user model.UserInput, settings *model.AlbumPlaysSettings) int
-		AlbumTopTracks  func(childComplexity int, user model.UserInput, album model.AlbumInput) int
-		ArtistPlays     func(childComplexity int, user model.UserInput, settings *model.ArtistPlaysSettings) int
-		ArtistTopAlbums func(childComplexity int, user model.UserInput, artist model.ArtistInput) int
-		ArtistTopTracks func(childComplexity int, user model.UserInput, artist model.ArtistInput) int
-		GuildMembers    func(childComplexity int, guildID string) int
-		Ping            func(childComplexity int) int
-		Plays           func(childComplexity int, user model.UserInput, pageInput *model.PageInput) int
-		Ratings         func(childComplexity int, settings *model.RatingsSettings) int
-		SearchArtist    func(childComplexity int, criteria model.ArtistSearchCriteria, settings *model.SearchSettings) int
-		TrackPlays      func(childComplexity int, user model.UserInput, settings *model.TrackPlaysSettings) int
-		WhoKnowsAlbum   func(childComplexity int, album model.AlbumInput, settings *model.WhoKnowsSettings) int
-		WhoKnowsArtist  func(childComplexity int, artist model.ArtistInput, settings *model.WhoKnowsSettings) int
-		WhoKnowsTrack   func(childComplexity int, track model.TrackInput, settings *model.WhoKnowsSettings) int
+		AlbumPlays          func(childComplexity int, user model.UserInput, settings *model.AlbumPlaysSettings) int
+		AlbumTopTracks      func(childComplexity int, user model.UserInput, album model.AlbumInput) int
+		ArtistPlays         func(childComplexity int, user model.UserInput, settings *model.ArtistPlaysSettings) int
+		ArtistTopAlbums     func(childComplexity int, user model.UserInput, artist model.ArtistInput) int
+		ArtistTopTracks     func(childComplexity int, user model.UserInput, artist model.ArtistInput) int
+		GuildMembers        func(childComplexity int, guildID string) int
+		Ping                func(childComplexity int) int
+		Plays               func(childComplexity int, user model.UserInput, pageInput *model.PageInput) int
+		RateYourMusicArtist func(childComplexity int, keywords string) int
+		Ratings             func(childComplexity int, settings *model.RatingsSettings) int
+		SearchArtist        func(childComplexity int, criteria model.ArtistSearchCriteria, settings *model.SearchSettings) int
+		TrackPlays          func(childComplexity int, user model.UserInput, settings *model.TrackPlaysSettings) int
+		WhoKnowsAlbum       func(childComplexity int, album model.AlbumInput, settings *model.WhoKnowsSettings) int
+		WhoKnowsArtist      func(childComplexity int, artist model.ArtistInput, settings *model.WhoKnowsSettings) int
+		WhoKnowsTrack       func(childComplexity int, track model.TrackInput, settings *model.WhoKnowsSettings) int
 	}
 
 	RateYourMusicAlbum struct {
@@ -149,6 +150,11 @@ type ComplexityRoot struct {
 		RateYourMusicID  func(childComplexity int) int
 		ReleaseYear      func(childComplexity int) int
 		Title            func(childComplexity int) int
+	}
+
+	RateYourMusicArtist struct {
+		ArtistName       func(childComplexity int) int
+		ArtistNativeName func(childComplexity int) int
 	}
 
 	Rating struct {
@@ -222,6 +228,7 @@ type QueryResolver interface {
 	AlbumPlays(ctx context.Context, user model.UserInput, settings *model.AlbumPlaysSettings) ([]*model.AlbumCount, error)
 	TrackPlays(ctx context.Context, user model.UserInput, settings *model.TrackPlaysSettings) ([]*model.AmbiguousTrackCount, error)
 	Ratings(ctx context.Context, settings *model.RatingsSettings) ([]*model.Rating, error)
+	RateYourMusicArtist(ctx context.Context, keywords string) (*model.RateYourMusicArtist, error)
 }
 
 type executableSchema struct {
@@ -657,6 +664,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Plays(childComplexity, args["user"].(model.UserInput), args["pageInput"].(*model.PageInput)), true
 
+	case "Query.rateYourMusicArtist":
+		if e.complexity.Query.RateYourMusicArtist == nil {
+			break
+		}
+
+		args, err := ec.field_Query_rateYourMusicArtist_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.RateYourMusicArtist(childComplexity, args["keywords"].(string)), true
+
 	case "Query.ratings":
 		if e.complexity.Query.Ratings == nil {
 			break
@@ -763,6 +782,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RateYourMusicAlbum.Title(childComplexity), true
+
+	case "RateYourMusicArtist.artistName":
+		if e.complexity.RateYourMusicArtist.ArtistName == nil {
+			break
+		}
+
+		return e.complexity.RateYourMusicArtist.ArtistName(childComplexity), true
+
+	case "RateYourMusicArtist.artistNativeName":
+		if e.complexity.RateYourMusicArtist.ArtistNativeName == nil {
+			break
+		}
+
+		return e.complexity.RateYourMusicArtist.ArtistNativeName(childComplexity), true
 
 	case "Rating.rateYourMusicAlbum":
 		if e.complexity.Rating.RateYourMusicAlbum == nil {
@@ -1023,6 +1056,7 @@ type Query {
 
   # Ratings
   ratings(settings: RatingsSettings): [Rating!]!
+  rateYourMusicArtist(keywords: String!): RateYourMusicArtist
 }
 
 type Mutation {
@@ -1124,6 +1158,11 @@ type RateYourMusicAlbum {
 	rateYourMusicID: String!
 	title: String!
 	releaseYear: Int
+	artistName: String!
+	artistNativeName: String
+}
+
+type RateYourMusicArtist {
 	artistName: String!
 	artistNativeName: String
 }
@@ -1251,7 +1290,6 @@ input TrackPlaysSettings {
 input RatingsSettings {
   user: UserInput
   album: AlbumInput
-  artist: ArtistInput
   pageInput: PageInput
 }`, BuiltIn: false},
 }
@@ -1624,6 +1662,21 @@ func (ec *executionContext) field_Query_plays_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["pageInput"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_rateYourMusicArtist_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["keywords"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keywords"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["keywords"] = arg0
 	return args, nil
 }
 
@@ -3818,6 +3871,45 @@ func (ec *executionContext) _Query_ratings(ctx context.Context, field graphql.Co
 	return ec.marshalNRating2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRatingᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_rateYourMusicArtist(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_rateYourMusicArtist_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().RateYourMusicArtist(rctx, args["keywords"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.RateYourMusicArtist)
+	fc.Result = res
+	return ec.marshalORateYourMusicArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRateYourMusicArtist(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4035,6 +4127,73 @@ func (ec *executionContext) _RateYourMusicAlbum_artistNativeName(ctx context.Con
 	}()
 	fc := &graphql.FieldContext{
 		Object:     "RateYourMusicAlbum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ArtistNativeName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RateYourMusicArtist_artistName(ctx context.Context, field graphql.CollectedField, obj *model.RateYourMusicArtist) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RateYourMusicArtist",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ArtistName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RateYourMusicArtist_artistNativeName(ctx context.Context, field graphql.CollectedField, obj *model.RateYourMusicArtist) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RateYourMusicArtist",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -6056,14 +6215,6 @@ func (ec *executionContext) unmarshalInputRatingsSettings(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-		case "artist":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("artist"))
-			it.Artist, err = ec.unmarshalOArtistInput2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtistInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "pageInput":
 			var err error
 
@@ -6924,6 +7075,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "rateYourMusicArtist":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_rateYourMusicArtist(ctx, field)
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -6969,6 +7131,35 @@ func (ec *executionContext) _RateYourMusicAlbum(ctx context.Context, sel ast.Sel
 			}
 		case "artistNativeName":
 			out.Values[i] = ec._RateYourMusicAlbum_artistNativeName(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var rateYourMusicArtistImplementors = []string{"RateYourMusicArtist"}
+
+func (ec *executionContext) _RateYourMusicArtist(ctx context.Context, sel ast.SelectionSet, obj *model.RateYourMusicArtist) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rateYourMusicArtistImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RateYourMusicArtist")
+		case "artistName":
+			out.Values[i] = ec._RateYourMusicArtist_artistName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "artistNativeName":
+			out.Values[i] = ec._RateYourMusicArtist_artistNativeName(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8434,6 +8625,13 @@ func (ec *executionContext) unmarshalOPageInput2ᚖgithubᚗcomᚋjivisonᚋgowo
 	}
 	res, err := ec.unmarshalInputPageInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalORateYourMusicArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRateYourMusicArtist(ctx context.Context, sel ast.SelectionSet, v *model.RateYourMusicArtist) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RateYourMusicArtist(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalORatingsSettings2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRatingsSettings(ctx context.Context, v interface{}) (*model.RatingsSettings, error) {

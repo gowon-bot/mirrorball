@@ -43,7 +43,7 @@ func (i Indexing) ConvertAlbums(albumNames []AlbumToConvert) (AlbumsMap, error) 
 	var albums []db.Album
 	albumsMap := AlbumsMap{}
 
-	albumsToSearch := i.generateAlbumsToSearch(albumNames)
+	albumsToSearch := i.GenerateAlbumsToSearch(albumNames)
 
 	albums, err := helpers.SelectAlbumsWhereInMany(albumsToSearch, constants.ChunkSize)
 
@@ -86,7 +86,7 @@ func (i Indexing) ConvertTracks(trackNames []TrackToConvert) (TracksMap, error) 
 	var tracks []db.Track
 	tracksMap := TracksMap{}
 
-	tracksToSearch := i.generateTracksToSearch(trackNames)
+	tracksToSearch := i.GenerateTracksToSearch(trackNames)
 
 	tracks, err := helpers.SelectTracksWhereInMany(tracksToSearch, constants.ChunkSize)
 

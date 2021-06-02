@@ -46,6 +46,7 @@ type Query {
 
   # Ratings
   ratings(settings: RatingsSettings): [Rating!]!
+  rateYourMusicArtist(keywords: String!): RateYourMusicArtist
 }
 
 type Mutation {
@@ -147,6 +148,11 @@ type RateYourMusicAlbum {
 	rateYourMusicID: String!
 	title: String!
 	releaseYear: Int
+	artistName: String!
+	artistNativeName: String
+}
+
+type RateYourMusicArtist {
 	artistName: String!
 	artistNativeName: String
 }

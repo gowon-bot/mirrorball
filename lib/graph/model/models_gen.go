@@ -117,16 +117,20 @@ type RateYourMusicAlbum struct {
 	ArtistNativeName *string `json:"artistNativeName"`
 }
 
+type RateYourMusicArtist struct {
+	ArtistName       string  `json:"artistName"`
+	ArtistNativeName *string `json:"artistNativeName"`
+}
+
 type Rating struct {
 	RateYourMusicAlbum *RateYourMusicAlbum `json:"rateYourMusicAlbum"`
 	Rating             int                 `json:"rating"`
 }
 
 type RatingsSettings struct {
-	User      *UserInput   `json:"user"`
-	Album     *AlbumInput  `json:"album"`
-	Artist    *ArtistInput `json:"artist"`
-	PageInput *PageInput   `json:"pageInput"`
+	User      *UserInput  `json:"user"`
+	Album     *AlbumInput `json:"album"`
+	PageInput *PageInput  `json:"pageInput"`
 }
 
 type SearchSettings struct {

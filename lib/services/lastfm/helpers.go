@@ -121,7 +121,7 @@ func (lfm API) AllScrobblesSince(username string, since time.Time) ([]RecentTrac
 		Username: username,
 		Period:   "overall",
 		Limit:    1000,
-		From:     strconv.FormatInt(since.UTC().Unix()+1, 10),
+		From:     strconv.FormatInt(since.UTC().Unix()-1, 10),
 	}
 
 	err, recentTracks := lfm.RecentTracks(params)

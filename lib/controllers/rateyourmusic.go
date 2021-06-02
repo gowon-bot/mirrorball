@@ -52,3 +52,15 @@ func Ratings(settings *model.RatingsSettings) ([]*model.Rating, error) {
 
 	return presenters.PresentRatings(ratings), nil
 }
+
+func RateYourMusicArtist(keywords string) (*model.RateYourMusicArtist, error) {
+	rymsService := rateyourmusic.CreateService()
+
+	album, err := rymsService.GetArtist(keywords)
+
+	if err != nil {
+		return nil, nil
+	}
+
+	return presenters.PresentRateYourMusicArtist(*album), nil
+}

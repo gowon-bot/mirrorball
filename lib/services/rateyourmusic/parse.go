@@ -7,7 +7,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jivison/gowon-indexer/lib/constants"
 	"github.com/jivison/gowon-indexer/lib/customerrors"
+	"github.com/jivison/gowon-indexer/lib/graph/model"
+	dbhelpers "github.com/jivison/gowon-indexer/lib/helpers/database"
+	helpers "github.com/jivison/gowon-indexer/lib/helpers/generic"
+	"github.com/jivison/gowon-indexer/lib/services/indexing"
 )
 
 // RYM Album, First Name,Last Name,First Name localized, Last Name localized,Title,Release_Date,Rating,Ownership,Purchase Date,Media Type,Review
@@ -29,6 +34,7 @@ type RawRateYourMusicRating = struct {
 	ArtistNativeName *string
 	Rating           int
 	ReleaseYear      int
+	AllAlbums        []indexing.AlbumToConvert
 }
 
 var asianCharacters = `[\p{Hangul}\p{Han}\p{Katakana}\p{Hiragana}]`
@@ -50,31 +56,43 @@ func (rym RateYourMusic) ParseRYMSExport(csvString string) ([]RawRateYourMusicRa
 			return nil, customerrors.CSVParseError()
 		}
 		// Header
-		if strings.HasPrefix(record[0], "RYM") {
+		if strings.HasPrefix(record[0], "RYM") || record[Rating] == "0" {
 			continue
 		}
 
-		artistName := combineNames(record[FirstName], record[LastName])
-		artistNameLocalized := combineNames(record[FirstNameLocalized], record[LastNameLocalized])
-		localization := artistLocalization.FindAllStringSubmatch(artistName, 1)
+		artistName := fixAmpersands(combineNames(record[FirstName], record[LastName]))
+		artistNameLocalized := fixAmpersands(combineNames(record[FirstNameLocalized], record[LastNameLocalized]))
+
+		title := fixAmpersands(record[Title])
 
 		row := RawRateYourMusicRating{}
+		if len(artistNameLocalized) > 0 {
+			row.ArtistName = artistNameLocalized
+			row.ArtistNativeName = &artistName
+		} else {
+			nativeArtistNames := removeLocalizedArtistNames(artistName)
+			localizedArtistNames := removeNativeArtistNames(artistName)
+
+			row.ArtistName = localizedArtistNames
+			row.ArtistNativeName = &nativeArtistNames
+		}
+
+		_, err = rym.indexingService.GetAlbum(model.AlbumInput{
+			Artist: &model.ArtistInput{Name: &row.ArtistName},
+			Name:   &title,
+		}, true)
+
+		if err != nil {
+			return nil, err
+		}
+
+		albums, _ := rym.generateRawAlbumCombinations(record)
+
 		row.RYMID = record[RYMID]
-		row.Title = record[Title]
+		row.Title = title
 		row.Rating, _ = strconv.Atoi(record[Rating])
 		row.ReleaseYear, _ = strconv.Atoi(record[ReleaseYear])
-
-		if len(localization) > 0 && len(localization[0]) == 3 {
-			row.ArtistName = localization[0][2]
-			row.ArtistNativeName = &localization[0][1]
-		} else {
-			if containsAsianCharacters.FindStringIndex(artistName) != nil && artistNameLocalized != "" {
-				row.ArtistName = artistNameLocalized
-				row.ArtistNativeName = &artistName
-			} else {
-				row.ArtistName = artistName
-			}
-		}
+		row.AllAlbums = albums
 
 		albumRatings = append(albumRatings, row)
 	}
@@ -92,4 +110,101 @@ func combineNames(firstName string, lastName string) string {
 	}
 
 	return name
+}
+
+func (rym RateYourMusic) generateRawAlbumCombinations(record []string) ([]indexing.AlbumToConvert, error) {
+	releaseTitle := fixAmpersands(record[Title])
+	artistName := fixAmpersands(record[LastName])
+
+	var artistsToCheck []indexing.AlbumToConvert
+
+	var individualArtistNames []string
+
+	splitOnAnds := regexp.MustCompile(`( & | ,)`).Split(artistName, -1)
+
+	for _, split := range splitOnAnds {
+		trimmedSplit := strings.TrimSpace(split)
+		localization := parseLocalization(trimmedSplit)
+
+		if localization != nil {
+			individualArtistNames = append(individualArtistNames, localization.Localized, localization.Native)
+		} else {
+			individualArtistNames = append(individualArtistNames, trimmedSplit)
+		}
+	}
+
+	for _, permutation := range helpers.Combinations(individualArtistNames) {
+		artistsToCheck = append(artistsToCheck, indexing.AlbumToConvert{ArtistName: joinArtists(permutation), AlbumName: releaseTitle})
+	}
+
+	filteredArtists, err := rym.filterOutNonExistantCombinations(artistsToCheck)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return filteredArtists, nil
+}
+
+func (rym RateYourMusic) filterOutNonExistantCombinations(combinationsToCheck []indexing.AlbumToConvert) ([]indexing.AlbumToConvert, error) {
+	var combos []indexing.AlbumToConvert
+
+	searchableAlbums := rym.indexingService.GenerateAlbumsToSearch(combinationsToCheck)
+
+	databaseAlbums, err := dbhelpers.SelectAlbumsWhereInMany(searchableAlbums, constants.ChunkSize)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, album := range databaseAlbums {
+		combos = append(combos, indexing.AlbumToConvert{ArtistName: album.Artist.Name, AlbumName: album.Name})
+	}
+
+	return combos, nil
+}
+
+func joinArtists(artists []string) string {
+	if len(artists) == 1 {
+		return artists[0]
+	} else if len(artists) == 2 {
+		return artists[0] + " & " + artists[1]
+	} else {
+		secondLastIndex := len(artists) - 1
+		return strings.Join(artists[1:secondLastIndex], ", ") + artists[len(artists)-1]
+	}
+}
+
+func fixAmpersands(str string) string {
+	return strings.ReplaceAll(str, "&amp;", "&")
+}
+
+// regex functions
+var nativeArtistNamesRegex = regexp.MustCompile(`\[([^\]]+)\]`)
+var localizedArtistNamesRegex = regexp.MustCompile(`(^|[&\,] ?)[^&,\[]+ \[([^\]]+)\]`)
+
+type Localization = struct {
+	Localized string
+	Native    string
+}
+
+func parseLocalization(name string) *Localization {
+	localization := artistLocalization.FindAllStringSubmatch(name, 1)
+
+	if len(localization) > 0 && len(localization[0]) == 3 {
+		return &Localization{
+			Localized: localization[0][2],
+			Native:    localization[0][1],
+		}
+	}
+
+	return nil
+}
+
+func removeLocalizedArtistNames(artistName string) string {
+	return nativeArtistNamesRegex.ReplaceAllString(artistName, "")
+}
+
+func removeNativeArtistNames(artistName string) string {
+	return localizedArtistNamesRegex.ReplaceAllString(artistName, "${1}${2}")
 }
