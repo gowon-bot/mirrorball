@@ -3,6 +3,7 @@ package controllers
 import (
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
+	"github.com/jivison/gowon-indexer/lib/presenters"
 	"github.com/jivison/gowon-indexer/lib/services/rateyourmusic"
 	"github.com/jivison/gowon-indexer/lib/services/users"
 )
@@ -38,4 +39,16 @@ func ImportRatings(csvString string, userInput model.UserInput) (*string, error)
 	}
 
 	return nil, nil
+}
+
+func Ratings(settings *model.RatingsSettings) ([]*model.Rating, error) {
+	rymsService := rateyourmusic.CreateService()
+
+	ratings, err := rymsService.GetRatings(settings)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return presenters.PresentRatings(ratings), nil
 }

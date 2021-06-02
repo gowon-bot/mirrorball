@@ -2,7 +2,10 @@
 CREATE TABLE rate_your_music_albums (
   id SERIAL PRIMARY KEY,
   rate_your_music_id TEXT,
-  release_year INTEGER
+  release_year INTEGER,
+	title TEXT,
+	artist_name TEXT,
+	artist_native_name TEXT
 );
 
 CREATE TABLE rate_your_music_album_albums (

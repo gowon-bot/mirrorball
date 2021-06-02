@@ -61,12 +61,19 @@ type RateYourMusicAlbum struct {
 	RateYourMusicID string
 	ReleaseYear     *int
 
+	Title            string
+	ArtistName       string
+	ArtistNativeName *string
+
 	Albums []Album `pg:"many2many:rate_your_music_album_albums"`
 }
 
 type RateYourMusicAlbumAlbum struct {
 	RateYourMusicAlbumID int64
-	AlbumID              int64
+	RateYourMusicAlbum   *RateYourMusicAlbum `pg:"rel:has-one"`
+
+	AlbumID int64
+	Album   *Album `pg:"rel:has-one"`
 }
 
 // Rating represents a single user's rating from rateyourmusic

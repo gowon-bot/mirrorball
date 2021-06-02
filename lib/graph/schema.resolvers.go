@@ -97,7 +97,7 @@ func (r *queryResolver) TrackPlays(ctx context.Context, user model.UserInput, se
 }
 
 func (r *queryResolver) Ratings(ctx context.Context, settings *model.RatingsSettings) ([]*model.Rating, error) {
-	panic(fmt.Errorf("not implemented"))
+	return controllers.Ratings(settings)
 }
 
 // Mutation returns generated.MutationResolver implementation.

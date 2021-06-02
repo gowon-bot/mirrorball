@@ -93,18 +93,3 @@ func combineNames(firstName string, lastName string) string {
 
 	return name
 }
-
-func displayRating(rating int) string {
-	numberOfStars := rating / 2
-	hasHalfStar := rating%2 == 1
-
-	ratingDisplay := ""
-
-	ratingDisplay += strings.Repeat("★", numberOfStars)
-
-	if hasHalfStar {
-		ratingDisplay += "½"
-	}
-
-	return ratingDisplay
-}

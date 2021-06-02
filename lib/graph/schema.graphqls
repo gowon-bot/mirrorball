@@ -139,8 +139,16 @@ type Play {
 }
 
 type Rating {
-  album: [Album!]!
+  rateYourMusicAlbum: RateYourMusicAlbum!
   rating: Int!
+}
+
+type RateYourMusicAlbum {
+	rateYourMusicID: String!
+	title: String!
+	releaseYear: Int
+	artistName: String!
+	artistNativeName: String
 }
 
 ##################
