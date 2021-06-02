@@ -112,7 +112,7 @@ func (rym RateYourMusic) convertAlbumsFromRatings(rawAlbums []RawRateYourMusicRa
 		albumList = append(albumList, album.AllAlbums...)
 	}
 
-	albumsMap, err := rym.indexingService.ConvertAlbums(albumList)
+	albumsMap, err := rym.indexingService.ConvertAlbums(albumList, nil)
 
 	return albumsMap, err
 }

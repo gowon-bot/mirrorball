@@ -36,6 +36,21 @@ func PresentArtistTopTracks(dbArtist *db.Artist, trackCounts []analysis.Ambiguou
 	return topTracksResponse
 }
 
+func PresentAlbumTopTracks(dbAlbum *db.Album, trackCounts []analysis.AmbiguousTrackCount) *model.AlbumTopTracksResponse {
+	album := PresentAlbum(dbAlbum)
+
+	topTracksResponse := &model.AlbumTopTracksResponse{
+		Album:     album,
+		TopTracks: []*model.AmbiguousTrackCount{},
+	}
+
+	for _, trackCount := range trackCounts {
+		topTracksResponse.TopTracks = append(topTracksResponse.TopTracks, PresentAmbiguousTrackCount(&trackCount))
+	}
+
+	return topTracksResponse
+}
+
 func PresentArtistCount(artistCount *db.ArtistCount) *model.ArtistCount {
 	builtPlay := &model.ArtistCount{
 		Playcount: int(artistCount.Playcount),

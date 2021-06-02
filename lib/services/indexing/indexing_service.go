@@ -20,27 +20,42 @@ type Indexing struct {
 
 // FullIndex downloads all of a users data and caches it
 func (i Indexing) FullIndex(user *db.User) error {
-	startTime := time.Now()
-	err := i.fullArtistCountIndex(user)
+	recentTracks, err := i.lastFMService.AllScrobblesSince(user.Username, nil)
+
+	if err != nil {
+		return err
+	} else if len(recentTracks) == 0 {
+		return nil
+	}
+
+	var scrobbles []lastfm.RecentTrack
+
+	if recentTracks[0].Attributes.IsNowPlaying == "true" {
+		scrobbles = append(scrobbles, recentTracks[1:]...)
+	} else {
+		scrobbles = recentTracks
+	}
+
+	if len(scrobbles) < 1 {
+		return nil
+	}
+
+	// artistCounts, albumCounts, trackCounts, plays, err := i.GenerateCountsFromScrobbles(scrobbles, *user)
+	artistCounts, albumCounts, trackCounts, _, err := i.GenerateCountsFromScrobbles(scrobbles, *user)
+
+	i.resetAllCountsAndPlays(user)
+	err = i.createOrUpdateCounts(*user, artistCounts, albumCounts, trackCounts)
 
 	if err != nil {
 		return err
 	}
 
-	err = i.fullAlbumCountIndex(user)
+	// dbhelpers.InsertManyPlays(plays, constants.ChunkSize)
 
-	if err != nil {
-		return err
-	}
+	firstTrack := scrobbles[0]
+	lastTimestamp, _ := apihelpers.ParseUnix(firstTrack.Timestamp.UTS)
 
-	err = i.fullTrackCountIndex(user)
-
-	if err != nil {
-		return err
-	}
-
-	i.resetPlays(user)
-	user.SetLastIndexed(startTime)
+	user.SetLastIndexed(lastTimestamp)
 
 	return nil
 }
@@ -113,7 +128,7 @@ func (i Indexing) fullAlbumCountIndex(user *db.User) error {
 		})
 	}
 
-	albumMap, err := i.ConvertAlbums(topAlbumNames)
+	albumMap, err := i.ConvertAlbums(topAlbumNames, nil)
 
 	if err != nil {
 		return err
@@ -161,7 +176,7 @@ func (i Indexing) fullTrackCountIndex(user *db.User) error {
 		})
 	}
 
-	tracksMap, err := i.ConvertTracks(topTrackNames)
+	tracksMap, err := i.ConvertTracks(topTrackNames, nil, nil)
 
 	if err != nil {
 		return nil
@@ -194,7 +209,7 @@ func (i Indexing) fullTrackCountIndex(user *db.User) error {
 }
 
 func (i Indexing) updateUser(user *db.User) error {
-	recentTracks, err := i.lastFMService.AllScrobblesSince(user.Username, user.LastIndexed)
+	recentTracks, err := i.lastFMService.AllScrobblesSince(user.Username, &user.LastIndexed)
 
 	if err != nil {
 		return err
@@ -313,6 +328,13 @@ func (i Indexing) IncrementTrackCount(track *db.Track, user *db.User, count int3
 	trackCount.Playcount = newPlaycount
 
 	return trackCount, nil
+}
+
+func (i Indexing) resetAllCountsAndPlays(user *db.User) {
+	i.resetArtistCounts(user)
+	i.resetAlbumCounts(user)
+	i.resetTrackCounts(user)
+	i.resetPlays(user)
 }
 
 func (i Indexing) resetArtistCounts(user *db.User) {

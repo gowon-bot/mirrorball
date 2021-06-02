@@ -1,6 +1,7 @@
 package indexing
 
 import (
+	"github.com/davecgh/go-spew/spew"
 	"github.com/jivison/gowon-indexer/lib/constants"
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
@@ -55,7 +56,7 @@ func (i Indexing) CreateTracks(tracks []db.Track) ([]db.Track, error) {
 	return tracks, nil
 }
 
-func (i Indexing) generateAlbumsToCreate(albumNames []AlbumToConvert, albumsMap AlbumsMap) ([]db.Album, error) {
+func (i Indexing) generateAlbumsToCreate(albumNames []AlbumToConvert, albumsMap AlbumsMap, existingArtistsMap *ArtistsMap) ([]db.Album, error) {
 	var albumsToCreate []db.Album
 
 	var artistNames []string
@@ -64,10 +65,17 @@ func (i Indexing) generateAlbumsToCreate(albumNames []AlbumToConvert, albumsMap 
 		artistNames = append(artistNames, album.ArtistName)
 	}
 
-	artistsMap, err := i.ConvertArtists(artistNames)
+	var artistsMap ArtistsMap
 
-	if err != nil {
-		return albumsToCreate, err
+	if existingArtistsMap == nil {
+		newArtistsMap, err := i.ConvertArtists(artistNames)
+		artistsMap = newArtistsMap
+
+		if err != nil {
+			return albumsToCreate, err
+		}
+	} else {
+		artistsMap = *existingArtistsMap
 	}
 
 	for _, album := range albumNames {
@@ -89,7 +97,7 @@ func (i Indexing) generateAlbumsToCreate(albumNames []AlbumToConvert, albumsMap 
 	return albumsToCreate, nil
 }
 
-func (i Indexing) generateTracksToCreate(trackNames []TrackToConvert, tracksMap TracksMap) ([]db.Track, error) {
+func (i Indexing) generateTracksToCreate(trackNames []TrackToConvert, tracksMap TracksMap, existingArtistsMap *ArtistsMap, existingAlbumsMap *AlbumsMap) ([]db.Track, error) {
 	var tracksToCreate []db.Track
 
 	var artistNames []string
@@ -106,19 +114,34 @@ func (i Indexing) generateTracksToCreate(trackNames []TrackToConvert, tracksMap 
 		}
 	}
 
-	artistsMap, err := i.ConvertArtists(artistNames)
+	var artistsMap ArtistsMap
+	var albumsMap AlbumsMap
 
-	if err != nil {
-		return tracksToCreate, err
+	if existingArtistsMap == nil {
+		newArtistsMap, err := i.ConvertArtists(artistNames)
+		artistsMap = newArtistsMap
+
+		if err != nil {
+			return tracksToCreate, err
+		}
+	} else {
+		artistsMap = *existingArtistsMap
 	}
 
-	albumsMap, err := i.ConvertAlbums(albumNames)
+	if existingAlbumsMap == nil {
+		newAlbumsMap, err := i.ConvertAlbums(albumNames, &artistsMap)
+		albumsMap = newAlbumsMap
 
-	if err != nil {
-		return tracksToCreate, err
+		if err != nil {
+			return tracksToCreate, err
+		}
+	} else {
+		albumsMap = *existingAlbumsMap
 	}
 
 	for _, track := range trackNames {
+		spew.Dump(track)
+
 		albumName := ""
 
 		if track.AlbumName != nil {

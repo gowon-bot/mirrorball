@@ -73,7 +73,7 @@ func (r *queryResolver) ArtistTopAlbums(ctx context.Context, user model.UserInpu
 }
 
 func (r *queryResolver) AlbumTopTracks(ctx context.Context, user model.UserInput, album model.AlbumInput) (*model.AlbumTopTracksResponse, error) {
-	panic(fmt.Errorf("not implemented"))
+	return controllers.AlbumTopTracks(user, album)
 }
 
 func (r *queryResolver) SearchArtist(ctx context.Context, criteria model.ArtistSearchCriteria, settings *model.SearchSettings) (*model.ArtistSearchResults, error) {

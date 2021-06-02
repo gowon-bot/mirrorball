@@ -246,7 +246,7 @@ func SelectTrackCountsWhereInMany(trackIDs []interface{}, userID int64, itemsPer
 			Relation("Track.Artist").
 			Relation("Track.Album").
 			Where(
-				"album_id IN (?)",
+				"track_id IN (?)",
 				pg.In(chunk),
 			).
 			Where("user_id = ?", userID).

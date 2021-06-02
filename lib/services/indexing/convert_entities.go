@@ -39,7 +39,7 @@ func (i Indexing) ConvertArtists(artistNames []string) (map[string]db.Artist, er
 	return artistsMap, nil
 }
 
-func (i Indexing) ConvertAlbums(albumNames []AlbumToConvert) (AlbumsMap, error) {
+func (i Indexing) ConvertAlbums(albumNames []AlbumToConvert, existingArtistsMap *ArtistsMap) (AlbumsMap, error) {
 	var albums []db.Album
 	albumsMap := AlbumsMap{}
 
@@ -59,7 +59,7 @@ func (i Indexing) ConvertAlbums(albumNames []AlbumToConvert) (AlbumsMap, error) 
 		albumsMap[album.Artist.Name][album.Name] = album
 	}
 
-	albumsToCreate, err := i.generateAlbumsToCreate(albumNames, albumsMap)
+	albumsToCreate, err := i.generateAlbumsToCreate(albumNames, albumsMap, existingArtistsMap)
 
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (i Indexing) ConvertAlbums(albumNames []AlbumToConvert) (AlbumsMap, error) 
 	return albumsMap, nil
 }
 
-func (i Indexing) ConvertTracks(trackNames []TrackToConvert) (TracksMap, error) {
+func (i Indexing) ConvertTracks(trackNames []TrackToConvert, existingArtistsMap *ArtistsMap, existingAlbumsMap *AlbumsMap) (TracksMap, error) {
 	var tracks []db.Track
 	tracksMap := TracksMap{}
 
@@ -112,7 +112,7 @@ func (i Indexing) ConvertTracks(trackNames []TrackToConvert) (TracksMap, error) 
 		tracksMap[track.Artist.Name][albumName][track.Name] = track
 	}
 
-	tracksToCreate, err := i.generateTracksToCreate(trackNames, tracksMap)
+	tracksToCreate, err := i.generateTracksToCreate(trackNames, tracksMap, existingArtistsMap, existingAlbumsMap)
 
 	if err != nil {
 		return nil, err

@@ -114,14 +114,17 @@ func (lfm API) AllTopTracks(username string) ([]TopTrack, error) {
 }
 
 // AllScrobblesSince returns all of a users scrobbles since a certain date
-func (lfm API) AllScrobblesSince(username string, since time.Time) ([]RecentTrack, error) {
+func (lfm API) AllScrobblesSince(username string, since *time.Time) ([]RecentTrack, error) {
 	var tracks []RecentTrack
 
 	params := RecentTracksParams{
 		Username: username,
 		Period:   "overall",
 		Limit:    1000,
-		From:     strconv.FormatInt(since.UTC().Unix()-1, 10),
+	}
+
+	if since != nil {
+		params.From = strconv.FormatInt(since.UTC().Unix()-1, 10)
 	}
 
 	err, recentTracks := lfm.RecentTracks(params)
@@ -150,7 +153,7 @@ func (lfm API) AllScrobblesSince(username string, since time.Time) ([]RecentTrac
 			},
 		}
 
-		paginator.GetAll()
+		paginator.GetAllInParallel(3)
 	}
 
 	return tracks, nil

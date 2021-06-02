@@ -1,5 +1,7 @@
 package apihelpers
 
+import "sync"
+
 // PagedParams is the struct type for the parameters passed into the pagination function
 type PagedParams struct {
 	Page, Limit int
@@ -27,18 +29,21 @@ func (p Paginator) convertCurrentPage(page int) int {
 	return page
 }
 
-// GetNext gets the current page and increments the current page
-func (p Paginator) GetNext() {
-	p.CurrentPage = p.convertCurrentPage(p.CurrentPage)
+func (p Paginator) GetAtPage(page int) {
+	currentPage := p.convertCurrentPage(page)
 
 	pagedParams := PagedParams{
-		Page:  p.CurrentPage,
+		Page:  currentPage,
 		Limit: p.PageSize,
 	}
 
-	p.CurrentPage++
-
 	p.Function(pagedParams)
+}
+
+// GetNext gets the current page and increments the current page
+func (p Paginator) GetNext() {
+	p.GetAtPage(p.CurrentPage)
+	p.CurrentPage++
 }
 
 // GetAll gets all remaining pages
@@ -52,4 +57,36 @@ func (p Paginator) GetAll() {
 
 		p.GetNext()
 	}
+}
+
+// GetAllInParallel gets all remaining pages in parallel batches
+func (p Paginator) GetAllInParallel(parallelization int) {
+	if p.CurrentPage >= p.TotalPages {
+		return
+	}
+
+	pageChannel := make(chan int)
+	var wg sync.WaitGroup
+	wg.Add(parallelization)
+
+	for ii := 0; ii < parallelization; ii++ {
+		go func(c chan int) {
+			for {
+				page, more := <-c
+				if more == false {
+					wg.Done()
+					return
+				}
+
+				p.GetAtPage(page)
+			}
+		}(pageChannel)
+	}
+
+	for page := p.convertCurrentPage(p.CurrentPage); page <= p.TotalPages; page++ {
+		pageChannel <- page
+	}
+
+	close(pageChannel)
+	wg.Wait()
 }
