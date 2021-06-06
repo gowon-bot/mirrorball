@@ -7,10 +7,10 @@ import (
 )
 
 // Login logs a user in
-func Login(username, discordID, userType string) (*model.User, error) {
+func Login(username string, session *string, discordID, userType string) (*model.User, error) {
 	usersService := users.CreateService()
 
-	user, err := usersService.CreateUser(username, discordID, userType)
+	user, err := usersService.CreateUser(username, discordID, userType, session)
 
 	if err != nil {
 		if user != nil {
@@ -18,7 +18,7 @@ func Login(username, discordID, userType string) (*model.User, error) {
 				return presenters.PresentUser(user), nil
 			}
 
-			user, _ = usersService.ChangeUsername(user, username, userType)
+			user, _ = usersService.ChangeUsername(user, username, userType, session)
 
 			return presenters.PresentUser(user), nil
 		}

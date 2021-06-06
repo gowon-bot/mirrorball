@@ -112,7 +112,7 @@ type ComplexityRoot struct {
 		AddUserToGuild      func(childComplexity int, discordID string, guildID string) int
 		FullIndex           func(childComplexity int, user model.UserInput, forceUserCreate *bool) int
 		ImportRatings       func(childComplexity int, csv string, user model.UserInput) int
-		Login               func(childComplexity int, username string, discordID string, userType model.UserType) int
+		Login               func(childComplexity int, username string, session *string, discordID string, userType model.UserType) int
 		Logout              func(childComplexity int, discordID string) int
 		RemoveUserFromGuild func(childComplexity int, discordID string, guildID string) int
 		SyncGuild           func(childComplexity int, guildID string, discordIDs []string) int
@@ -204,7 +204,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	Login(ctx context.Context, username string, discordID string, userType model.UserType) (*model.User, error)
+	Login(ctx context.Context, username string, session *string, discordID string, userType model.UserType) (*model.User, error)
 	Logout(ctx context.Context, discordID string) (*string, error)
 	AddUserToGuild(ctx context.Context, discordID string, guildID string) (*model.GuildMember, error)
 	RemoveUserFromGuild(ctx context.Context, discordID string, guildID string) (*string, error)
@@ -495,7 +495,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Login(childComplexity, args["username"].(string), args["discordID"].(string), args["userType"].(model.UserType)), true
+		return e.complexity.Mutation.Login(childComplexity, args["username"].(string), args["session"].(*string), args["discordID"].(string), args["userType"].(model.UserType)), true
 
 	case "Mutation.logout":
 		if e.complexity.Mutation.Logout == nil {
@@ -1060,7 +1060,7 @@ type Query {
 }
 
 type Mutation {
-  login(username: String!, discordID: String!, userType: UserType!): User
+  login(username: String!, session: String, discordID: String!, userType: UserType!): User
   logout(discordID: String!): Void
 
   # Guild member syncing
@@ -1383,24 +1383,33 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 		}
 	}
 	args["username"] = arg0
-	var arg1 string
+	var arg1 *string
+	if tmp, ok := rawArgs["session"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("session"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["session"] = arg1
+	var arg2 string
 	if tmp, ok := rawArgs["discordID"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("discordID"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["discordID"] = arg1
-	var arg2 model.UserType
+	args["discordID"] = arg2
+	var arg3 model.UserType
 	if tmp, ok := rawArgs["userType"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userType"))
-		arg2, err = ec.unmarshalNUserType2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserType(ctx, tmp)
+		arg3, err = ec.unmarshalNUserType2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserType(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["userType"] = arg2
+	args["userType"] = arg3
 	return args, nil
 }
 
@@ -2884,7 +2893,7 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Login(rctx, args["username"].(string), args["discordID"].(string), args["userType"].(model.UserType))
+		return ec.resolvers.Mutation().Login(rctx, args["username"].(string), args["session"].(*string), args["discordID"].(string), args["userType"].(model.UserType))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

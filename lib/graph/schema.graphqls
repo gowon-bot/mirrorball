@@ -50,7 +50,7 @@ type Query {
 }
 
 type Mutation {
-  login(username: String!, discordID: String!, userType: UserType!): User
+  login(username: String!, session: String, discordID: String!, userType: UserType!): User
   logout(discordID: String!): Void
 
   # Guild member syncing

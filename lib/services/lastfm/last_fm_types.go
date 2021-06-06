@@ -1,5 +1,27 @@
 package lastfm
 
+import (
+	"net/url"
+)
+
+const ApiSigReplace = "ApiSigReplace"
+
+type Requestable struct {
+	Username string
+	Session  *string
+}
+
+func (r Requestable) EncodeValues(key string, v *url.Values) error {
+	v.Set("username", r.Username)
+
+	if r.Session != nil {
+		v.Set("sk", *r.Session)
+		v.Set("api_sig", ApiSigReplace)
+	}
+
+	return nil
+}
+
 // Image is the struct type for a Last.fm image
 type Image struct {
 	Size string `json:"size"`
@@ -41,7 +63,7 @@ type UserInfoResponse struct {
 
 // UserInfoParams is the parameters for a user.getInfo call
 type UserInfoParams struct {
-	Username string `url:"username"`
+	Username Requestable `url:"username"`
 }
 
 // RecentTrack is a struct containing a recent track from last.fm
@@ -85,11 +107,11 @@ type RecentTracksResponse struct {
 
 // RecentTracksParams is the parameters for a user.recentTracks call
 type RecentTracksParams struct {
-	Username string `url:"username"`
-	Limit    int    `url:"limit"`
-	Page     int    `url:"page"`
-	Period   string `url:"period"`
-	From     string `url:"from"`
+	Username Requestable `url:"username"`
+	Limit    int         `url:"limit"`
+	Page     int         `url:"page"`
+	Period   string      `url:"period"`
+	From     string      `url:"from"`
 }
 
 // TopArtist is the struct type for a last.fm top artist
@@ -119,10 +141,10 @@ type TopArtistsResponse struct {
 
 // TopEntityParams is the parameters for a user.getInfo response
 type TopEntityParams struct {
-	Username string `url:"username"`
-	Limit    int    `url:"limit"`
-	Page     int    `url:"page"`
-	Period   string `url:"period"`
+	Username Requestable `url:"username"`
+	Limit    int         `url:"limit"`
+	Page     int         `url:"page"`
+	Period   string      `url:"period"`
 }
 
 // TopAlbum is the struct type for a last.fm top album
@@ -192,9 +214,4 @@ type TopTracksResponse struct {
 
 		Tracks []TopTrack `json:"track"`
 	} `json:"toptracks"`
-}
-
-// TopTracksParams is the parameters for a user.getInfo response
-type TopTracksParams struct {
-	Username string `url:"username"`
 }

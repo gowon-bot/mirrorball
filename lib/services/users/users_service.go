@@ -51,7 +51,7 @@ func (u Users) FindUserByInput(userInput model.UserInput) *db.User {
 }
 
 // CreateUser creates a user if one doesn't already exist
-func (u Users) CreateUser(username, discordID, userType string) (*db.User, error) {
+func (u Users) CreateUser(username, discordID, userType string, session *string) (*db.User, error) {
 	existingUser := u.FindUserByDiscordID(discordID)
 
 	if existingUser != nil {
@@ -59,9 +59,10 @@ func (u Users) CreateUser(username, discordID, userType string) (*db.User, error
 	}
 
 	user := &db.User{
-		Username:  username,
-		DiscordID: discordID,
-		UserType:  userType,
+		Username:      username,
+		DiscordID:     discordID,
+		UserType:      userType,
+		LastFMSession: session,
 	}
 
 	_, err := db.Db.Model(user).Insert()
@@ -105,7 +106,7 @@ func (u Users) CreateUserFromInput(input model.UserInput) (*db.User, error) {
 		return nil, customerrors.InsufficientArgumentsSupplied(strings.Join(missingArguments, ", "))
 	}
 
-	return u.CreateUser(*username, *input.DiscordID, *userType)
+	return u.CreateUser(*username, *input.DiscordID, *userType, nil)
 }
 
 // DeleteUser deletes a user if one exists
@@ -139,11 +140,12 @@ func (u Users) GetUsersByDiscordIDs(discordIDs []string) ([]*db.User, error) {
 }
 
 // ChangeUsername changes a user's username
-func (u Users) ChangeUsername(user *db.User, username, userType string) (*db.User, error) {
+func (u Users) ChangeUsername(user *db.User, username, userType string, session *string) (*db.User, error) {
 	// TODO: delete data
 
 	user.Username = username
 	user.UserType = userType
+	user.LastFMSession = session
 
 	_, err := db.Db.Model(user).WherePK().Update()
 

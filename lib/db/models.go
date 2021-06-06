@@ -4,11 +4,12 @@ import "time"
 
 // User is the database model for a last.fm user
 type User struct {
-	ID          int64 `pg:",pk"`
-	DiscordID   string
-	Username    string
-	UserType    string
-	LastIndexed time.Time
+	ID            int64 `pg:",pk"`
+	DiscordID     string
+	Username      string
+	UserType      string
+	LastIndexed   time.Time
+	LastFMSession *string
 
 	GuildMembers *[]GuildMember `pg:"rel:has-many"`
 }

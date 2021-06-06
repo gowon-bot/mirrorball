@@ -1,12 +1,16 @@
 package lastfm
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/google/go-querystring/query"
@@ -16,8 +20,9 @@ import (
 
 // API holds methods for interacting with the Last.fm API
 type API struct {
-	baseURL string
-	apiKey  string
+	baseURL   string
+	apiKey    string
+	apiSecret string
 }
 
 func (lfm API) buildParams(method string, params interface{}) string {
@@ -31,10 +36,12 @@ func (lfm API) buildParams(method string, params interface{}) string {
 		Method: method,
 	}
 
-	fmt.Println(defaultParams)
-
 	defaultValues, _ := query.Values(defaultParams)
 	paramValues, _ := query.Values(params)
+
+	if paramValues.Get("api_sig") == ApiSigReplace {
+		return lfm.authenticatedParams(defaultValues, paramValues).Encode()
+	}
 
 	if len(paramValues) > 0 {
 		return fmt.Sprintf("%s&%s", defaultValues.Encode(), paramValues.Encode())
@@ -46,6 +53,8 @@ func (lfm API) buildParams(method string, params interface{}) string {
 // MakeRequest calls the lastfm api with the given parameters
 func (lfm API) MakeRequest(method string, params interface{}) *http.Response {
 	queryparams := lfm.buildParams(method, params)
+
+	log.Printf("Making call to last.fm with parameters: %s", queryparams)
 
 	resp, err := http.Get(lfm.baseURL + "?" + queryparams)
 
@@ -74,9 +83,9 @@ func (lfm API) ParseResponse(response *http.Response, output interface{}) *Error
 }
 
 // UserInfo fetches a user's info from the last.fm API
-func (lfm API) UserInfo(username string) (*ErrorResponse, *UserInfoResponse) {
+func (lfm API) UserInfo(requestable Requestable) (*ErrorResponse, *UserInfoResponse) {
 	params := UserInfoParams{
-		Username: username,
+		Username: requestable,
 	}
 
 	userInfo := &UserInfoResponse{}
@@ -174,16 +183,16 @@ func (lfm API) TopTracks(params TopEntityParams) (*ErrorResponse, *TopTracksResp
 
 // ValidateUser validates that a given username exists in last.fm
 func (lfm API) ValidateUser(username string) bool {
-	err, _ := lfm.UserInfo(username)
+	err, _ := lfm.UserInfo(Requestable{Username: username})
 
 	return err == nil
 }
 
 // LastScrobbledTimestamp returns the timestamp of the last scrobbled track
-func (lfm API) LastScrobbledTimestamp(username string) time.Time {
+func (lfm API) LastScrobbledTimestamp(requestable Requestable) time.Time {
 	err, recentTracks := lfm.RecentTracks(RecentTracksParams{
 		Limit:    1,
-		Username: username,
+		Username: requestable,
 	})
 
 	if err != nil || len(recentTracks.RecentTracks.Tracks) == 0 {
@@ -207,15 +216,66 @@ func (lfm API) LastScrobbledTimestamp(username string) time.Time {
 	return timestamp
 }
 
+func (api API) authenticatedParams(defaultParams, params url.Values) url.Values {
+	valuesMap := make(url.Values)
+	var values [][]string
+
+	params.Del("api_sig")
+
+	for key, value := range defaultParams {
+		values = append(values, []string{key, value[0]})
+		valuesMap.Add(key, value[0])
+	}
+
+	for key, value := range params {
+		values = append(values, []string{key, value[0]})
+		valuesMap.Add(key, value[0])
+	}
+
+	signature := ""
+
+	sort.Sort(byAlphabeticalKey(values))
+
+	for _, value := range values {
+		if value[0] == "format" {
+			continue
+		}
+
+		signature += value[0] + value[1]
+	}
+
+	signature += api.apiSecret
+
+	hashedSignature := md5.Sum([]byte(signature))
+
+	valuesMap.Add("api_sig", hex.EncodeToString(hashedSignature[:]))
+
+	return valuesMap
+}
+
+type byAlphabeticalKey [][]string
+
+func (s byAlphabeticalKey) Len() int {
+	return len(s)
+}
+func (s byAlphabeticalKey) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s byAlphabeticalKey) Less(i, j int) bool {
+	return s[i][0] < s[j][0]
+}
+
 // CreateAPIService creates an instance of the lastfm api service object
 func CreateAPIService() *API {
 	godotenv.Load()
 
 	apiKey := os.Getenv("LAST_FM_API_KEY")
+	apiSecret := os.Getenv("LAST_FM_API_SECRET")
 
 	service := &API{
-		baseURL: "http://ws.audioscrobbler.com/2.0/",
-		apiKey:  apiKey,
+		baseURL:   "http://ws.audioscrobbler.com/2.0/",
+		apiKey:    apiKey,
+		apiSecret: apiSecret,
 	}
 
 	return service
