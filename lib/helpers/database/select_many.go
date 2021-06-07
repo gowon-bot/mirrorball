@@ -246,7 +246,7 @@ func SelectTrackCountsWhereInMany(trackIDs []interface{}, userID int64, itemsPer
 			Relation("Track.Artist").
 			Relation("Track.Album").
 			Where(
-				"album_id IN (?)",
+				"track_id IN (?)",
 				pg.In(chunk),
 			).
 			Where("user_id = ?", userID).
@@ -260,4 +260,88 @@ func SelectTrackCountsWhereInMany(trackIDs []interface{}, userID int64, itemsPer
 	}
 
 	return allTrackCounts, nil
+}
+
+func SelectRateYourMusicAlbumsWhereInMany(rymsAlbumIDs []interface{}, itemsPerChunk float64) ([]db.RateYourMusicAlbum, error) {
+	var chunks [][]interface{}
+	var allAlbums []db.RateYourMusicAlbum
+
+	if len(rymsAlbumIDs) == 0 {
+		return allAlbums, nil
+	}
+
+	chunks = make([][]interface{}, int(math.Floor(float64(len(rymsAlbumIDs))/itemsPerChunk))+1)
+
+	for index, rymsID := range rymsAlbumIDs {
+		chunkIndex := int(math.Floor(float64(index+1) / itemsPerChunk))
+
+		if chunks[chunkIndex] == nil {
+			chunks[chunkIndex] = make([]interface{}, 0)
+		}
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], rymsID)
+	}
+
+	for _, chunk := range chunks {
+		var selectedAlbums []db.RateYourMusicAlbum
+
+		err := db.Db.Model((*db.RateYourMusicAlbum)(nil)).
+			// Relation("Albums").
+			Where(
+				"rate_your_music_id IN (?)",
+				pg.In(chunk),
+			).
+			Select(&selectedAlbums)
+
+		if err != nil {
+			return allAlbums, customerrors.DatabaseUnknownError()
+		}
+
+		allAlbums = append(allAlbums, selectedAlbums...)
+	}
+
+	return allAlbums, nil
+}
+
+func SelectRatingsWhereInMany(rymsAlbumIDs []interface{}, userID int64, itemsPerChunk float64) ([]db.Rating, error) {
+	var chunks [][]interface{}
+	var allRatings []db.Rating
+
+	if len(rymsAlbumIDs) == 0 {
+		return allRatings, nil
+	}
+
+	chunks = make([][]interface{}, int(math.Floor(float64(len(rymsAlbumIDs))/itemsPerChunk))+1)
+
+	for index, albumID := range rymsAlbumIDs {
+		chunkIndex := int(math.Floor(float64(index+1) / itemsPerChunk))
+
+		if chunks[chunkIndex] == nil {
+			chunks[chunkIndex] = make([]interface{}, 0)
+		}
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], albumID)
+	}
+
+	for _, chunk := range chunks {
+		var selectedRatings []db.Rating
+
+		err := db.Db.Model((*db.Rating)(nil)).
+			Relation("RateYourMusicAlbum").
+			// Relation("RateYourMusicAlbum.Albums")
+			Where(
+				"rate_your_music_album_id IN (?)",
+				pg.In(chunk),
+			).
+			Where("user_id = ?", userID).
+			Select(&selectedRatings)
+
+		if err != nil {
+			return allRatings, customerrors.DatabaseUnknownError()
+		}
+
+		allRatings = append(allRatings, selectedRatings...)
+	}
+
+	return allRatings, nil
 }

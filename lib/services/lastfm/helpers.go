@@ -9,8 +9,8 @@ import (
 )
 
 // AllTopArtists returns all of a user's top artists through each page
-func (lfm API) AllTopArtists(username string) ([]TopArtist, error) {
-	params := TopEntityParams{Username: username, Limit: 1000, Page: 1}
+func (lfm API) AllTopArtists(requestable Requestable) ([]TopArtist, error) {
+	params := TopEntityParams{Username: requestable, Limit: 1000, Page: 1}
 
 	var topArtists []TopArtist
 
@@ -44,8 +44,8 @@ func (lfm API) AllTopArtists(username string) ([]TopArtist, error) {
 }
 
 // AllTopAlbums returns all of a user's top albums through each page
-func (lfm API) AllTopAlbums(username string) ([]TopAlbum, error) {
-	params := TopEntityParams{Username: username, Limit: 1000, Page: 1}
+func (lfm API) AllTopAlbums(requestable Requestable) ([]TopAlbum, error) {
+	params := TopEntityParams{Username: requestable, Limit: 1000, Page: 1}
 
 	var topAlbums []TopAlbum
 
@@ -79,8 +79,8 @@ func (lfm API) AllTopAlbums(username string) ([]TopAlbum, error) {
 }
 
 // AllTopTracks returns all of a user's top tracks through each page
-func (lfm API) AllTopTracks(username string) ([]TopTrack, error) {
-	params := TopEntityParams{Username: username, Limit: 1000, Page: 1}
+func (lfm API) AllTopTracks(requestable Requestable) ([]TopTrack, error) {
+	params := TopEntityParams{Username: requestable, Limit: 1000, Page: 1}
 
 	var topTracks []TopTrack
 
@@ -114,14 +114,17 @@ func (lfm API) AllTopTracks(username string) ([]TopTrack, error) {
 }
 
 // AllScrobblesSince returns all of a users scrobbles since a certain date
-func (lfm API) AllScrobblesSince(username string, since time.Time) ([]RecentTrack, error) {
+func (lfm API) AllScrobblesSince(requestable Requestable, since *time.Time) ([]RecentTrack, error) {
 	var tracks []RecentTrack
 
 	params := RecentTracksParams{
-		Username: username,
+		Username: requestable,
 		Period:   "overall",
 		Limit:    1000,
-		From:     strconv.FormatInt(since.UTC().Unix()+1, 10),
+	}
+
+	if since != nil {
+		params.From = strconv.FormatInt(since.UTC().Unix()-1, 10)
 	}
 
 	err, recentTracks := lfm.RecentTracks(params)
@@ -150,7 +153,7 @@ func (lfm API) AllScrobblesSince(username string, since time.Time) ([]RecentTrac
 			},
 		}
 
-		paginator.GetAll()
+		paginator.GetAllInParallel(3)
 	}
 
 	return tracks, nil

@@ -1,6 +1,6 @@
 package indexing
 
-func (i Indexing) generateAlbumsToSearch(albumNames []AlbumToConvert) []interface{} {
+func (i Indexing) GenerateAlbumsToSearch(albumNames []AlbumToConvert) []interface{} {
 	var albumsToSearch []interface{}
 
 	for _, album := range albumNames {
@@ -10,7 +10,7 @@ func (i Indexing) generateAlbumsToSearch(albumNames []AlbumToConvert) []interfac
 	return albumsToSearch
 }
 
-func (i Indexing) generateTracksToSearch(trackNames []TrackToConvert) []interface{} {
+func (i Indexing) GenerateTracksToSearch(trackNames []TrackToConvert) []interface{} {
 	var tracksToSearch []interface{}
 
 	for _, track := range trackNames {

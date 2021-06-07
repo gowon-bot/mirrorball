@@ -111,7 +111,8 @@ type ComplexityRoot struct {
 	Mutation struct {
 		AddUserToGuild      func(childComplexity int, discordID string, guildID string) int
 		FullIndex           func(childComplexity int, user model.UserInput, forceUserCreate *bool) int
-		Login               func(childComplexity int, username string, discordID string, userType model.UserType) int
+		ImportRatings       func(childComplexity int, csv string, user model.UserInput) int
+		Login               func(childComplexity int, username string, session *string, discordID string, userType model.UserType) int
 		Logout              func(childComplexity int, discordID string) int
 		RemoveUserFromGuild func(childComplexity int, discordID string, guildID string) int
 		SyncGuild           func(childComplexity int, guildID string, discordIDs []string) int
@@ -126,19 +127,39 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AlbumPlays      func(childComplexity int, user model.UserInput, settings *model.AlbumPlaysSettings) int
-		AlbumTopTracks  func(childComplexity int, user model.UserInput, album model.AlbumInput) int
-		ArtistPlays     func(childComplexity int, user model.UserInput, settings *model.ArtistPlaysSettings) int
-		ArtistTopAlbums func(childComplexity int, user model.UserInput, artist model.ArtistInput) int
-		ArtistTopTracks func(childComplexity int, user model.UserInput, artist model.ArtistInput) int
-		GuildMembers    func(childComplexity int, guildID string) int
-		Ping            func(childComplexity int) int
-		Plays           func(childComplexity int, user model.UserInput, pageInput *model.PageInput) int
-		SearchArtist    func(childComplexity int, criteria model.ArtistSearchCriteria, settings *model.SearchSettings) int
-		TrackPlays      func(childComplexity int, user model.UserInput, settings *model.TrackPlaysSettings) int
-		WhoKnowsAlbum   func(childComplexity int, album model.AlbumInput, settings *model.WhoKnowsSettings) int
-		WhoKnowsArtist  func(childComplexity int, artist model.ArtistInput, settings *model.WhoKnowsSettings) int
-		WhoKnowsTrack   func(childComplexity int, track model.TrackInput, settings *model.WhoKnowsSettings) int
+		AlbumPlays          func(childComplexity int, user model.UserInput, settings *model.AlbumPlaysSettings) int
+		AlbumTopTracks      func(childComplexity int, user model.UserInput, album model.AlbumInput) int
+		ArtistPlays         func(childComplexity int, user model.UserInput, settings *model.ArtistPlaysSettings) int
+		ArtistTopAlbums     func(childComplexity int, user model.UserInput, artist model.ArtistInput) int
+		ArtistTopTracks     func(childComplexity int, user model.UserInput, artist model.ArtistInput) int
+		GuildMembers        func(childComplexity int, guildID string) int
+		Ping                func(childComplexity int) int
+		Plays               func(childComplexity int, user model.UserInput, pageInput *model.PageInput) int
+		RateYourMusicArtist func(childComplexity int, keywords string) int
+		Ratings             func(childComplexity int, settings *model.RatingsSettings) int
+		SearchArtist        func(childComplexity int, criteria model.ArtistSearchCriteria, settings *model.SearchSettings) int
+		TrackPlays          func(childComplexity int, user model.UserInput, settings *model.TrackPlaysSettings) int
+		WhoKnowsAlbum       func(childComplexity int, album model.AlbumInput, settings *model.WhoKnowsSettings) int
+		WhoKnowsArtist      func(childComplexity int, artist model.ArtistInput, settings *model.WhoKnowsSettings) int
+		WhoKnowsTrack       func(childComplexity int, track model.TrackInput, settings *model.WhoKnowsSettings) int
+	}
+
+	RateYourMusicAlbum struct {
+		ArtistName       func(childComplexity int) int
+		ArtistNativeName func(childComplexity int) int
+		RateYourMusicID  func(childComplexity int) int
+		ReleaseYear      func(childComplexity int) int
+		Title            func(childComplexity int) int
+	}
+
+	RateYourMusicArtist struct {
+		ArtistName       func(childComplexity int) int
+		ArtistNativeName func(childComplexity int) int
+	}
+
+	Rating struct {
+		RateYourMusicAlbum func(childComplexity int) int
+		Rating             func(childComplexity int) int
 	}
 
 	TaskStartResponse struct {
@@ -183,13 +204,14 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	Login(ctx context.Context, username string, discordID string, userType model.UserType) (*model.User, error)
+	Login(ctx context.Context, username string, session *string, discordID string, userType model.UserType) (*model.User, error)
 	Logout(ctx context.Context, discordID string) (*string, error)
 	AddUserToGuild(ctx context.Context, discordID string, guildID string) (*model.GuildMember, error)
 	RemoveUserFromGuild(ctx context.Context, discordID string, guildID string) (*string, error)
 	SyncGuild(ctx context.Context, guildID string, discordIDs []string) (*string, error)
 	FullIndex(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error)
 	Update(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error)
+	ImportRatings(ctx context.Context, csv string, user model.UserInput) (*string, error)
 }
 type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
@@ -205,6 +227,8 @@ type QueryResolver interface {
 	ArtistPlays(ctx context.Context, user model.UserInput, settings *model.ArtistPlaysSettings) ([]*model.ArtistCount, error)
 	AlbumPlays(ctx context.Context, user model.UserInput, settings *model.AlbumPlaysSettings) ([]*model.AlbumCount, error)
 	TrackPlays(ctx context.Context, user model.UserInput, settings *model.TrackPlaysSettings) ([]*model.AmbiguousTrackCount, error)
+	Ratings(ctx context.Context, settings *model.RatingsSettings) ([]*model.Rating, error)
+	RateYourMusicArtist(ctx context.Context, keywords string) (*model.RateYourMusicArtist, error)
 }
 
 type executableSchema struct {
@@ -449,6 +473,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.FullIndex(childComplexity, args["user"].(model.UserInput), args["forceUserCreate"].(*bool)), true
 
+	case "Mutation.importRatings":
+		if e.complexity.Mutation.ImportRatings == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_importRatings_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ImportRatings(childComplexity, args["csv"].(string), args["user"].(model.UserInput)), true
+
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
 			break
@@ -459,7 +495,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Login(childComplexity, args["username"].(string), args["discordID"].(string), args["userType"].(model.UserType)), true
+		return e.complexity.Mutation.Login(childComplexity, args["username"].(string), args["session"].(*string), args["discordID"].(string), args["userType"].(model.UserType)), true
 
 	case "Mutation.logout":
 		if e.complexity.Mutation.Logout == nil {
@@ -628,6 +664,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Plays(childComplexity, args["user"].(model.UserInput), args["pageInput"].(*model.PageInput)), true
 
+	case "Query.rateYourMusicArtist":
+		if e.complexity.Query.RateYourMusicArtist == nil {
+			break
+		}
+
+		args, err := ec.field_Query_rateYourMusicArtist_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.RateYourMusicArtist(childComplexity, args["keywords"].(string)), true
+
+	case "Query.ratings":
+		if e.complexity.Query.Ratings == nil {
+			break
+		}
+
+		args, err := ec.field_Query_ratings_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Ratings(childComplexity, args["settings"].(*model.RatingsSettings)), true
+
 	case "Query.searchArtist":
 		if e.complexity.Query.SearchArtist == nil {
 			break
@@ -687,6 +747,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.WhoKnowsTrack(childComplexity, args["track"].(model.TrackInput), args["settings"].(*model.WhoKnowsSettings)), true
+
+	case "RateYourMusicAlbum.artistName":
+		if e.complexity.RateYourMusicAlbum.ArtistName == nil {
+			break
+		}
+
+		return e.complexity.RateYourMusicAlbum.ArtistName(childComplexity), true
+
+	case "RateYourMusicAlbum.artistNativeName":
+		if e.complexity.RateYourMusicAlbum.ArtistNativeName == nil {
+			break
+		}
+
+		return e.complexity.RateYourMusicAlbum.ArtistNativeName(childComplexity), true
+
+	case "RateYourMusicAlbum.rateYourMusicID":
+		if e.complexity.RateYourMusicAlbum.RateYourMusicID == nil {
+			break
+		}
+
+		return e.complexity.RateYourMusicAlbum.RateYourMusicID(childComplexity), true
+
+	case "RateYourMusicAlbum.releaseYear":
+		if e.complexity.RateYourMusicAlbum.ReleaseYear == nil {
+			break
+		}
+
+		return e.complexity.RateYourMusicAlbum.ReleaseYear(childComplexity), true
+
+	case "RateYourMusicAlbum.title":
+		if e.complexity.RateYourMusicAlbum.Title == nil {
+			break
+		}
+
+		return e.complexity.RateYourMusicAlbum.Title(childComplexity), true
+
+	case "RateYourMusicArtist.artistName":
+		if e.complexity.RateYourMusicArtist.ArtistName == nil {
+			break
+		}
+
+		return e.complexity.RateYourMusicArtist.ArtistName(childComplexity), true
+
+	case "RateYourMusicArtist.artistNativeName":
+		if e.complexity.RateYourMusicArtist.ArtistNativeName == nil {
+			break
+		}
+
+		return e.complexity.RateYourMusicArtist.ArtistNativeName(childComplexity), true
+
+	case "Rating.rateYourMusicAlbum":
+		if e.complexity.Rating.RateYourMusicAlbum == nil {
+			break
+		}
+
+		return e.complexity.Rating.RateYourMusicAlbum(childComplexity), true
+
+	case "Rating.rating":
+		if e.complexity.Rating.Rating == nil {
+			break
+		}
+
+		return e.complexity.Rating.Rating(childComplexity), true
 
 	case "TaskStartResponse.success":
 		if e.complexity.TaskStartResponse.Success == nil {
@@ -930,10 +1053,14 @@ type Query {
   artistPlays(user: UserInput!, settings: ArtistPlaysSettings): [ArtistCount!]!
   albumPlays(user: UserInput!, settings: AlbumPlaysSettings): [AlbumCount!]!
   trackPlays(user: UserInput!, settings: TrackPlaysSettings): [AmbiguousTrackCount!]!
+
+  # Ratings
+  ratings(settings: RatingsSettings): [Rating!]!
+  rateYourMusicArtist(keywords: String!): RateYourMusicArtist
 }
 
 type Mutation {
-  login(username: String!, discordID: String!, userType: UserType!): User
+  login(username: String!, session: String, discordID: String!, userType: UserType!): User
   logout(discordID: String!): Void
 
   # Guild member syncing
@@ -944,6 +1071,9 @@ type Mutation {
   # .fm indexing
   fullIndex(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
   update(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
+
+  # Ratings
+  importRatings(csv: String!, user: UserInput!): Void
 }
 
 ##############
@@ -1017,6 +1147,24 @@ type Play {
   scrobbledAt: Int!
   user: User!
   track: Track!
+}
+
+type Rating {
+  rateYourMusicAlbum: RateYourMusicAlbum!
+  rating: Int!
+}
+
+type RateYourMusicAlbum {
+	rateYourMusicID: String!
+	title: String!
+	releaseYear: Int
+	artistName: String!
+	artistNativeName: String
+}
+
+type RateYourMusicArtist {
+	artistName: String!
+	artistNativeName: String
 }
 
 ##################
@@ -1137,6 +1285,12 @@ input TrackPlaysSettings {
   pageInput: PageInput
   track: TrackInput
   sort: String
+}
+
+input RatingsSettings {
+  user: UserInput
+  album: AlbumInput
+  pageInput: PageInput
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -1193,6 +1347,30 @@ func (ec *executionContext) field_Mutation_fullIndex_args(ctx context.Context, r
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_importRatings_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["csv"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("csv"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["csv"] = arg0
+	var arg1 model.UserInput
+	if tmp, ok := rawArgs["user"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user"))
+		arg1, err = ec.unmarshalNUserInput2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["user"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1205,24 +1383,33 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 		}
 	}
 	args["username"] = arg0
-	var arg1 string
+	var arg1 *string
+	if tmp, ok := rawArgs["session"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("session"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["session"] = arg1
+	var arg2 string
 	if tmp, ok := rawArgs["discordID"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("discordID"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["discordID"] = arg1
-	var arg2 model.UserType
+	args["discordID"] = arg2
+	var arg3 model.UserType
 	if tmp, ok := rawArgs["userType"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userType"))
-		arg2, err = ec.unmarshalNUserType2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserType(ctx, tmp)
+		arg3, err = ec.unmarshalNUserType2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserType(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["userType"] = arg2
+	args["userType"] = arg3
 	return args, nil
 }
 
@@ -1484,6 +1671,36 @@ func (ec *executionContext) field_Query_plays_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["pageInput"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_rateYourMusicArtist_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["keywords"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keywords"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["keywords"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_ratings_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.RatingsSettings
+	if tmp, ok := rawArgs["settings"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("settings"))
+		arg0, err = ec.unmarshalORatingsSettings2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRatingsSettings(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["settings"] = arg0
 	return args, nil
 }
 
@@ -2676,7 +2893,7 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Login(rctx, args["username"].(string), args["discordID"].(string), args["userType"].(model.UserType))
+		return ec.resolvers.Mutation().Login(rctx, args["username"].(string), args["session"].(*string), args["discordID"].(string), args["userType"].(model.UserType))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2922,6 +3139,45 @@ func (ec *executionContext) _Mutation_update(ctx context.Context, field graphql.
 	res := resTmp.(*model.TaskStartResponse)
 	fc.Result = res
 	return ec.marshalOTaskStartResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTaskStartResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_importRatings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_importRatings_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ImportRatings(rctx, args["csv"].(string), args["user"].(model.UserInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Play_id(ctx context.Context, field graphql.CollectedField, obj *model.Play) (ret graphql.Marshaler) {
@@ -3582,6 +3838,87 @@ func (ec *executionContext) _Query_trackPlays(ctx context.Context, field graphql
 	return ec.marshalNAmbiguousTrackCount2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐAmbiguousTrackCountᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_ratings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_ratings_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Ratings(rctx, args["settings"].(*model.RatingsSettings))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Rating)
+	fc.Result = res
+	return ec.marshalNRating2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRatingᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_rateYourMusicArtist(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_rateYourMusicArtist_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().RateYourMusicArtist(rctx, args["keywords"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.RateYourMusicArtist)
+	fc.Result = res
+	return ec.marshalORateYourMusicArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRateYourMusicArtist(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3651,6 +3988,312 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RateYourMusicAlbum_rateYourMusicID(ctx context.Context, field graphql.CollectedField, obj *model.RateYourMusicAlbum) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RateYourMusicAlbum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RateYourMusicID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RateYourMusicAlbum_title(ctx context.Context, field graphql.CollectedField, obj *model.RateYourMusicAlbum) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RateYourMusicAlbum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RateYourMusicAlbum_releaseYear(ctx context.Context, field graphql.CollectedField, obj *model.RateYourMusicAlbum) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RateYourMusicAlbum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReleaseYear, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RateYourMusicAlbum_artistName(ctx context.Context, field graphql.CollectedField, obj *model.RateYourMusicAlbum) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RateYourMusicAlbum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ArtistName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RateYourMusicAlbum_artistNativeName(ctx context.Context, field graphql.CollectedField, obj *model.RateYourMusicAlbum) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RateYourMusicAlbum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ArtistNativeName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RateYourMusicArtist_artistName(ctx context.Context, field graphql.CollectedField, obj *model.RateYourMusicArtist) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RateYourMusicArtist",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ArtistName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RateYourMusicArtist_artistNativeName(ctx context.Context, field graphql.CollectedField, obj *model.RateYourMusicArtist) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RateYourMusicArtist",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ArtistNativeName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Rating_rateYourMusicAlbum(ctx context.Context, field graphql.CollectedField, obj *model.Rating) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Rating",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RateYourMusicAlbum, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.RateYourMusicAlbum)
+	fc.Result = res
+	return ec.marshalNRateYourMusicAlbum2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRateYourMusicAlbum(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Rating_rating(ctx context.Context, field graphql.CollectedField, obj *model.Rating) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Rating",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Rating, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TaskStartResponse_taskName(ctx context.Context, field graphql.CollectedField, obj *model.TaskStartResponse) (ret graphql.Marshaler) {
@@ -5559,6 +6202,42 @@ func (ec *executionContext) unmarshalInputPageInput(ctx context.Context, obj int
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputRatingsSettings(ctx context.Context, obj interface{}) (model.RatingsSettings, error) {
+	var it model.RatingsSettings
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "user":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user"))
+			it.User, err = ec.unmarshalOUserInput2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "album":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("album"))
+			it.Album, err = ec.unmarshalOAlbumInput2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐAlbumInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "pageInput":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageInput"))
+			it.PageInput, err = ec.unmarshalOPageInput2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐPageInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSearchSettings(ctx context.Context, obj interface{}) (model.SearchSettings, error) {
 	var it model.SearchSettings
 	var asMap = obj.(map[string]interface{})
@@ -6160,6 +6839,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_fullIndex(ctx, field)
 		case "update":
 			out.Values[i] = ec._Mutation_update(ctx, field)
+		case "importRatings":
+			out.Values[i] = ec._Mutation_importRatings(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6389,10 +7070,137 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "ratings":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_ratings(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "rateYourMusicArtist":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_rateYourMusicArtist(ctx, field)
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var rateYourMusicAlbumImplementors = []string{"RateYourMusicAlbum"}
+
+func (ec *executionContext) _RateYourMusicAlbum(ctx context.Context, sel ast.SelectionSet, obj *model.RateYourMusicAlbum) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rateYourMusicAlbumImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RateYourMusicAlbum")
+		case "rateYourMusicID":
+			out.Values[i] = ec._RateYourMusicAlbum_rateYourMusicID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "title":
+			out.Values[i] = ec._RateYourMusicAlbum_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "releaseYear":
+			out.Values[i] = ec._RateYourMusicAlbum_releaseYear(ctx, field, obj)
+		case "artistName":
+			out.Values[i] = ec._RateYourMusicAlbum_artistName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "artistNativeName":
+			out.Values[i] = ec._RateYourMusicAlbum_artistNativeName(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var rateYourMusicArtistImplementors = []string{"RateYourMusicArtist"}
+
+func (ec *executionContext) _RateYourMusicArtist(ctx context.Context, sel ast.SelectionSet, obj *model.RateYourMusicArtist) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rateYourMusicArtistImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RateYourMusicArtist")
+		case "artistName":
+			out.Values[i] = ec._RateYourMusicArtist_artistName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "artistNativeName":
+			out.Values[i] = ec._RateYourMusicArtist_artistNativeName(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var ratingImplementors = []string{"Rating"}
+
+func (ec *executionContext) _Rating(ctx context.Context, sel ast.SelectionSet, obj *model.Rating) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ratingImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Rating")
+		case "rateYourMusicAlbum":
+			out.Values[i] = ec._Rating_rateYourMusicAlbum(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "rating":
+			out.Values[i] = ec._Rating_rating(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7249,6 +8057,63 @@ func (ec *executionContext) marshalNPlay2ᚖgithubᚗcomᚋjivisonᚋgowonᚑind
 	return ec._Play(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNRateYourMusicAlbum2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRateYourMusicAlbum(ctx context.Context, sel ast.SelectionSet, v *model.RateYourMusicAlbum) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._RateYourMusicAlbum(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNRating2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRatingᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Rating) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRating2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRating(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNRating2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRating(ctx context.Context, sel ast.SelectionSet, v *model.Rating) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Rating(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -7768,6 +8633,21 @@ func (ec *executionContext) unmarshalOPageInput2ᚖgithubᚗcomᚋjivisonᚋgowo
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputPageInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalORateYourMusicArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRateYourMusicArtist(ctx context.Context, sel ast.SelectionSet, v *model.RateYourMusicArtist) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RateYourMusicArtist(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalORatingsSettings2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRatingsSettings(ctx context.Context, v interface{}) (*model.RatingsSettings, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputRatingsSettings(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

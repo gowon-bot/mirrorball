@@ -41,3 +41,23 @@ func (a Analysis) ArtistTopTracks(userID int64, artistID int64) ([]AmbiguousTrac
 
 	return topTracks, nil
 }
+
+func (a Analysis) AlbumTopTracks(userID int64, albumID int64) ([]AmbiguousTrackCount, error) {
+	var topTracks []AmbiguousTrackCount
+
+	err := db.Db.Model((*db.TrackCount)(nil)).
+		Relation("Track._").
+		ColumnExpr("sum(playcount) as playcount").
+		Column("name").
+		Where("user_id = ?", userID).
+		Where("album_id = ?", albumID).
+		Order("playcount desc").
+		Group("name").
+		Select(&topTracks)
+
+	if err != nil {
+		return nil, customerrors.DatabaseUnknownError()
+	}
+
+	return topTracks, nil
+}

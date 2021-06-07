@@ -109,6 +109,30 @@ type Play struct {
 	Track       *Track `json:"track"`
 }
 
+type RateYourMusicAlbum struct {
+	RateYourMusicID  string  `json:"rateYourMusicID"`
+	Title            string  `json:"title"`
+	ReleaseYear      *int    `json:"releaseYear"`
+	ArtistName       string  `json:"artistName"`
+	ArtistNativeName *string `json:"artistNativeName"`
+}
+
+type RateYourMusicArtist struct {
+	ArtistName       string  `json:"artistName"`
+	ArtistNativeName *string `json:"artistNativeName"`
+}
+
+type Rating struct {
+	RateYourMusicAlbum *RateYourMusicAlbum `json:"rateYourMusicAlbum"`
+	Rating             int                 `json:"rating"`
+}
+
+type RatingsSettings struct {
+	User      *UserInput  `json:"user"`
+	Album     *AlbumInput `json:"album"`
+	PageInput *PageInput  `json:"pageInput"`
+}
+
 type SearchSettings struct {
 	Exact *bool      `json:"exact"`
 	User  *UserInput `json:"user"`

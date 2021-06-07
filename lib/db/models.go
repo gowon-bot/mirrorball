@@ -4,11 +4,12 @@ import "time"
 
 // User is the database model for a last.fm user
 type User struct {
-	ID          int64 `pg:",pk"`
-	DiscordID   string
-	Username    string
-	UserType    string
-	LastIndexed time.Time
+	ID            int64 `pg:",pk"`
+	DiscordID     string
+	Username      string
+	UserType      string
+	LastIndexed   time.Time
+	LastFMSession *string
 
 	GuildMembers *[]GuildMember `pg:"rel:has-many"`
 }
@@ -54,6 +55,38 @@ type Play struct {
 
 	TrackID int64
 	Track   *Track `pg:"rel:has-one"`
+}
+
+type RateYourMusicAlbum struct {
+	ID              int64 `pg:",pk"`
+	RateYourMusicID string
+	ReleaseYear     *int
+
+	Title            string
+	ArtistName       string
+	ArtistNativeName *string
+
+	Albums []Album `pg:"many2many:rate_your_music_album_albums"`
+}
+
+type RateYourMusicAlbumAlbum struct {
+	RateYourMusicAlbumID int64
+	RateYourMusicAlbum   *RateYourMusicAlbum `pg:"rel:has-one"`
+
+	AlbumID int64
+	Album   *Album `pg:"rel:has-one"`
+}
+
+// Rating represents a single user's rating from rateyourmusic
+type Rating struct {
+	ID     int `pg:",pk"`
+	Rating int
+
+	UserID int64
+	User   *User `pg:"rel:has-one"`
+
+	RateYourMusicAlbumID int64
+	RateYourMusicAlbum   *RateYourMusicAlbum `pg:"rel:has-one"`
 }
 
 /*

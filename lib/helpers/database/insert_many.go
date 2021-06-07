@@ -225,3 +225,102 @@ func InsertManyTrackCounts(trackCounts []db.TrackCount, itemsPerChunk float64) (
 
 	return allTrackCounts, nil
 }
+
+func InsertManyRateYourMusicAlbums(rateYourMusicAlbums []db.RateYourMusicAlbum, itemsPerChunk float64) ([]db.RateYourMusicAlbum, error) {
+	if len(rateYourMusicAlbums) < 1 {
+		return nil, nil
+	}
+
+	var chunks [][]db.RateYourMusicAlbum
+	var allAlbums []db.RateYourMusicAlbum
+
+	chunks = make([][]db.RateYourMusicAlbum, int(math.Floor(float64(len(rateYourMusicAlbums))/(itemsPerChunk)))+1)
+
+	for index, rateYourMusicAlbum := range rateYourMusicAlbums {
+		chunkIndex := int(math.Floor(float64(index+1) / (itemsPerChunk)))
+
+		if chunks[chunkIndex] == nil {
+			chunks[chunkIndex] = make([]db.RateYourMusicAlbum, 0)
+		}
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], rateYourMusicAlbum)
+	}
+
+	for _, chunk := range chunks {
+		_, err := db.Db.Model(&chunk).Insert()
+
+		if err != nil {
+			return allAlbums, err
+		}
+
+		allAlbums = append(allAlbums, chunk...)
+	}
+
+	return allAlbums, nil
+}
+
+func InsertManyRateYourMusicAlbumAlbums(albumAlbums []db.RateYourMusicAlbumAlbum, itemsPerChunk float64) ([]db.RateYourMusicAlbumAlbum, error) {
+	if len(albumAlbums) < 1 {
+		return nil, nil
+	}
+
+	var chunks [][]db.RateYourMusicAlbumAlbum
+	var allAlbumAlbums []db.RateYourMusicAlbumAlbum
+
+	chunks = make([][]db.RateYourMusicAlbumAlbum, int(math.Floor(float64(len(albumAlbums))/(itemsPerChunk)))+1)
+
+	for index, albumAlbum := range albumAlbums {
+		chunkIndex := int(math.Floor(float64(index+1) / (itemsPerChunk)))
+
+		if chunks[chunkIndex] == nil {
+			chunks[chunkIndex] = make([]db.RateYourMusicAlbumAlbum, 0)
+		}
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], albumAlbum)
+	}
+
+	for _, chunk := range chunks {
+		_, err := db.Db.Model(&chunk).Insert()
+
+		if err != nil {
+			return allAlbumAlbums, err
+		}
+
+		allAlbumAlbums = append(allAlbumAlbums, chunk...)
+	}
+
+	return allAlbumAlbums, nil
+}
+
+func InsertManyRatings(ratings []db.Rating, itemsPerChunk float64) ([]db.Rating, error) {
+	if len(ratings) < 1 {
+		return nil, nil
+	}
+
+	var chunks [][]db.Rating
+	var allRatings []db.Rating
+
+	chunks = make([][]db.Rating, int(math.Floor(float64(len(ratings))/(itemsPerChunk)))+1)
+
+	for index, rating := range ratings {
+		chunkIndex := int(math.Floor(float64(index+1) / (itemsPerChunk)))
+
+		if chunks[chunkIndex] == nil {
+			chunks[chunkIndex] = make([]db.Rating, 0)
+		}
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], rating)
+	}
+
+	for _, chunk := range chunks {
+		_, err := db.Db.Model(&chunk).Insert()
+
+		if err != nil {
+			return allRatings, err
+		}
+
+		allRatings = append(allRatings, chunk...)
+	}
+
+	return allRatings, nil
+}

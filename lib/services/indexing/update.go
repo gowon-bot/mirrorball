@@ -2,7 +2,8 @@ package indexing
 
 import (
 	"github.com/jivison/gowon-indexer/lib/db"
-	helpers "github.com/jivison/gowon-indexer/lib/helpers/api"
+	apihelpers "github.com/jivison/gowon-indexer/lib/helpers/api"
+	helpers "github.com/jivison/gowon-indexer/lib/helpers/generic"
 	"github.com/jivison/gowon-indexer/lib/services/lastfm"
 )
 
@@ -34,7 +35,7 @@ func (i Indexing) GenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack, us
 		trackCounts[artist.Name][scrobble.Album.Text][scrobble.Name] += 1
 
 		if scrobble.Album.Text != "" {
-			if _, ok := albumCounts[""]; !ok {
+			if _, ok := albumCounts[artist.Name]; !ok {
 				albumCounts[artist.Name] = make(map[string]int)
 			}
 
@@ -42,7 +43,7 @@ func (i Indexing) GenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack, us
 			albumCounts[artist.Name][album.Name] += 1
 		}
 
-		timestamp, _ := helpers.ParseUnix(scrobble.Timestamp.UTS)
+		timestamp, _ := apihelpers.ParseUnix(scrobble.Timestamp.UTS)
 		dbScrobbles = append(dbScrobbles, db.Play{
 			UserID: user.ID,
 			User:   &user,
@@ -91,13 +92,13 @@ func (i Indexing) ConvertScrobbles(scrobbles []lastfm.RecentTrack) (ArtistsMap, 
 		return nil, nil, nil, err
 	}
 
-	albumsMap, err := i.ConvertAlbums(albumsList)
+	albumsMap, err := i.ConvertAlbums(albumsList, &artistsMap)
 
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	tracksMap, err := i.ConvertTracks(tracksList)
+	tracksMap, err := i.ConvertTracks(tracksList, &artistsMap, &albumsMap)
 
 	if err != nil {
 		return nil, nil, nil, err
@@ -150,7 +151,8 @@ func (I Indexing) GenerateUniqueLists(scrobbles []lastfm.RecentTrack) ([]ArtistT
 				var albumName *string
 
 				if album != "" {
-					albumName = &album
+					copiedAlbumName := helpers.DeepCopy(album)
+					albumName = &copiedAlbumName
 				}
 
 				tracksList = append(tracksList, TrackToConvert{

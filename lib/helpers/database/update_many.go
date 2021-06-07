@@ -106,3 +106,36 @@ func UpdateManyTrackCounts(trackCounts []db.TrackCount, itemsPerChunk float64) (
 
 	return allTrackCounts, nil
 }
+
+func UpdateManyRatings(ratings []db.Rating, itemsPerChunk float64) ([]db.Rating, error) {
+	if len(ratings) == 0 {
+		return nil, nil
+	}
+
+	var chunks [][]interface{}
+	var allRatings []db.Rating
+
+	chunks = make([][]interface{}, int(math.Floor(float64(len(ratings))/(itemsPerChunk)))+1)
+
+	for index, rating := range ratings {
+		chunkIndex := int(math.Floor(float64(index+1) / (itemsPerChunk)))
+
+		if chunks[chunkIndex] == nil {
+			chunks[chunkIndex] = make([]interface{}, 0)
+		}
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], rating)
+	}
+
+	for _, chunk := range chunks {
+		_, err := db.Db.Model(chunk...).WherePK().Update()
+
+		if err != nil {
+			return allRatings, err
+		}
+
+		allRatings = append(allRatings)
+	}
+
+	return allRatings, nil
+}

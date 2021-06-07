@@ -12,8 +12,8 @@ import (
 	"github.com/jivison/gowon-indexer/lib/graph/model"
 )
 
-func (r *mutationResolver) Login(ctx context.Context, username string, discordID string, userType model.UserType) (*model.User, error) {
-	return controllers.Login(username, discordID, userType.String())
+func (r *mutationResolver) Login(ctx context.Context, username string, session *string, discordID string, userType model.UserType) (*model.User, error) {
+	return controllers.Login(username, session, discordID, userType.String())
 }
 
 func (r *mutationResolver) Logout(ctx context.Context, discordID string) (*string, error) {
@@ -38,6 +38,10 @@ func (r *mutationResolver) FullIndex(ctx context.Context, user model.UserInput, 
 
 func (r *mutationResolver) Update(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error) {
 	return controllers.Update(user, forceUserCreate)
+}
+
+func (r *mutationResolver) ImportRatings(ctx context.Context, csv string, user model.UserInput) (*string, error) {
+	return controllers.ImportRatings(csv, user)
 }
 
 func (r *queryResolver) Ping(ctx context.Context) (string, error) {
@@ -69,7 +73,7 @@ func (r *queryResolver) ArtistTopAlbums(ctx context.Context, user model.UserInpu
 }
 
 func (r *queryResolver) AlbumTopTracks(ctx context.Context, user model.UserInput, album model.AlbumInput) (*model.AlbumTopTracksResponse, error) {
-	panic(fmt.Errorf("not implemented"))
+	return controllers.AlbumTopTracks(user, album)
 }
 
 func (r *queryResolver) SearchArtist(ctx context.Context, criteria model.ArtistSearchCriteria, settings *model.SearchSettings) (*model.ArtistSearchResults, error) {
@@ -90,6 +94,14 @@ func (r *queryResolver) AlbumPlays(ctx context.Context, user model.UserInput, se
 
 func (r *queryResolver) TrackPlays(ctx context.Context, user model.UserInput, settings *model.TrackPlaysSettings) ([]*model.AmbiguousTrackCount, error) {
 	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) Ratings(ctx context.Context, settings *model.RatingsSettings) ([]*model.Rating, error) {
+	return controllers.Ratings(settings)
+}
+
+func (r *queryResolver) RateYourMusicArtist(ctx context.Context, keywords string) (*model.RateYourMusicArtist, error) {
+	return controllers.RateYourMusicArtist(keywords)
 }
 
 // Mutation returns generated.MutationResolver implementation.

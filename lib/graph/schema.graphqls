@@ -43,10 +43,14 @@ type Query {
   artistPlays(user: UserInput!, settings: ArtistPlaysSettings): [ArtistCount!]!
   albumPlays(user: UserInput!, settings: AlbumPlaysSettings): [AlbumCount!]!
   trackPlays(user: UserInput!, settings: TrackPlaysSettings): [AmbiguousTrackCount!]!
+
+  # Ratings
+  ratings(settings: RatingsSettings): [Rating!]!
+  rateYourMusicArtist(keywords: String!): RateYourMusicArtist
 }
 
 type Mutation {
-  login(username: String!, discordID: String!, userType: UserType!): User
+  login(username: String!, session: String, discordID: String!, userType: UserType!): User
   logout(discordID: String!): Void
 
   # Guild member syncing
@@ -57,6 +61,9 @@ type Mutation {
   # .fm indexing
   fullIndex(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
   update(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
+
+  # Ratings
+  importRatings(csv: String!, user: UserInput!): Void
 }
 
 ##############
@@ -130,6 +137,24 @@ type Play {
   scrobbledAt: Int!
   user: User!
   track: Track!
+}
+
+type Rating {
+  rateYourMusicAlbum: RateYourMusicAlbum!
+  rating: Int!
+}
+
+type RateYourMusicAlbum {
+	rateYourMusicID: String!
+	title: String!
+	releaseYear: Int
+	artistName: String!
+	artistNativeName: String
+}
+
+type RateYourMusicArtist {
+	artistName: String!
+	artistNativeName: String
 }
 
 ##################
@@ -250,4 +275,10 @@ input TrackPlaysSettings {
   pageInput: PageInput
   track: TrackInput
   sort: String
+}
+
+input RatingsSettings {
+  user: UserInput
+  album: AlbumInput
+  pageInput: PageInput
 }
