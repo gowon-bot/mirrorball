@@ -1,7 +1,6 @@
 package indexing
 
 import (
-	"github.com/davecgh/go-spew/spew"
 	"github.com/jivison/gowon-indexer/lib/constants"
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
@@ -140,8 +139,6 @@ func (i Indexing) generateTracksToCreate(trackNames []TrackToConvert, tracksMap 
 	}
 
 	for _, track := range trackNames {
-		spew.Dump(track)
-
 		albumName := ""
 
 		if track.AlbumName != nil {
