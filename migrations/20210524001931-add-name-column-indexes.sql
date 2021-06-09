@@ -1,5 +1,5 @@
 -- +migrate Up
-CREATE INDEX tc_name_idx ON tracks ((name));
+CREATE INDEX tc_name_idx ON tracks ((name)); -- This fuckup will be immortalized in my migrations forever :suffering2:
 CREATE INDEX al_name_idx ON albums ((name));
 CREATE INDEX tr_name_idx ON tracks ((name));
 

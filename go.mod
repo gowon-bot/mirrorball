@@ -9,7 +9,6 @@ require (
 	github.com/RichardKnop/machinery v1.10.0
 	github.com/agnivade/levenshtein v1.1.0 // indirect
 	github.com/aws/aws-sdk-go v1.36.28 // indirect
-	github.com/davecgh/go-spew v1.1.1
 	github.com/dgryski/trifles v0.0.0-20200830180326-aaf60a07f6a3 // indirect
 	github.com/go-pg/pg/v10 v10.7.3
 	github.com/go-redis/redis/v8 v8.4.8 // indirect

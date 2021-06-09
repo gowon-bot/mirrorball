@@ -153,7 +153,7 @@ func (lfm API) AllScrobblesSince(requestable Requestable, since *time.Time) ([]R
 			},
 		}
 
-		paginator.GetAllInParallel(3)
+		paginator.GetAllInParallel(7)
 	}
 
 	return tracks, nil
