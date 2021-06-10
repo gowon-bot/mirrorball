@@ -151,6 +151,11 @@ type Track struct {
 	Album  *Album  `json:"album"`
 }
 
+type TrackCount struct {
+	Track     *Track `json:"track"`
+	Playcount int    `json:"playcount"`
+}
+
 type TrackInput struct {
 	Artist *ArtistInput `json:"artist"`
 	Album  *AlbumInput  `json:"album"`
@@ -161,6 +166,11 @@ type TrackPlaysSettings struct {
 	PageInput *PageInput  `json:"pageInput"`
 	Track     *TrackInput `json:"track"`
 	Sort      *string     `json:"sort"`
+}
+
+type TrackTopAlbumsResponse struct {
+	Track     *AmbiguousTrack `json:"track"`
+	TopAlbums []*TrackCount   `json:"topAlbums"`
 }
 
 type User struct {

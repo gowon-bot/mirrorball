@@ -76,6 +76,10 @@ func (r *queryResolver) AlbumTopTracks(ctx context.Context, user model.UserInput
 	return controllers.AlbumTopTracks(user, album)
 }
 
+func (r *queryResolver) TrackTopAlbums(ctx context.Context, user model.UserInput, track model.TrackInput) (*model.TrackTopAlbumsResponse, error) {
+	return controllers.TrackTopAlbums(user, track)
+}
+
 func (r *queryResolver) SearchArtist(ctx context.Context, criteria model.ArtistSearchCriteria, settings *model.SearchSettings) (*model.ArtistSearchResults, error) {
 	return controllers.SearchArtist(criteria, settings)
 }

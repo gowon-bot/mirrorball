@@ -16,7 +16,7 @@ func FullIndex(userInput model.UserInput, forceUserCreate *bool) (*model.TaskSta
 	user := usersService.FindUserByInput(userInput)
 	token := responseService.GenerateToken()
 
-	if user == nil && forceUserCreate != nil && *forceUserCreate == true {
+	if user == nil && forceUserCreate != nil && *forceUserCreate {
 		newUser, err := usersService.CreateUserFromInput(userInput)
 
 		if err != nil {
@@ -45,7 +45,7 @@ func Update(userInput model.UserInput, forceUserCreate *bool) (*model.TaskStartR
 	user := usersService.FindUserByInput(userInput)
 	token := responseService.GenerateToken()
 
-	if user == nil && forceUserCreate != nil && *forceUserCreate == true {
+	if user == nil && forceUserCreate != nil && *forceUserCreate {
 		newUser, err := usersService.CreateUserFromInput(userInput)
 
 		if err != nil {

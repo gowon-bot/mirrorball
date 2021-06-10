@@ -31,6 +31,7 @@ type Query {
     artist: ArtistInput!
   ): ArtistTopAlbumsResponse
   albumTopTracks(user: UserInput!, album: AlbumInput!): AlbumTopTracksResponse
+  trackTopAlbums(user: UserInput!, track: TrackInput!): TrackTopAlbumsResponse
 
   # Search
   searchArtist(
@@ -120,6 +121,11 @@ type Track {
   album: Album
 }
 
+type TrackCount {
+  track: Track!
+  playcount: Int!
+}
+
 type AmbiguousTrack {
   name: String!
   artist: String!
@@ -202,6 +208,11 @@ type ArtistTopAlbumsResponse {
 type AlbumTopTracksResponse {
   album: Album!
   topTracks: [AmbiguousTrackCount!]!
+}
+
+type TrackTopAlbumsResponse {
+  track: AmbiguousTrack!
+  topAlbums: [TrackCount!]!
 }
 
 # Search

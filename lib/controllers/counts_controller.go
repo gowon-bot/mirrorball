@@ -29,6 +29,10 @@ func ArtistTopAlbums(userInput model.UserInput, artistInput model.ArtistInput) (
 
 	topAlbums, err := analysisService.ArtistTopAlbums(user.ID, artist.ID)
 
+	if err != nil {
+		return nil, err
+	}
+
 	return presenters.PresentArtistTopAlbums(artist, topAlbums), nil
 }
 
@@ -50,6 +54,10 @@ func ArtistTopTracks(userInput model.UserInput, artistInput model.ArtistInput) (
 	}
 
 	topTracks, err := analysisService.ArtistTopTracks(user.ID, artist.ID)
+
+	if err != nil {
+		return nil, err
+	}
 
 	return presenters.PresentArtistTopTracks(artist, topTracks), nil
 }
@@ -73,5 +81,41 @@ func AlbumTopTracks(userInput model.UserInput, albumInput model.AlbumInput) (*mo
 
 	topTracks, err := analysisService.AlbumTopTracks(user.ID, album.ID)
 
+	if err != nil {
+		return nil, err
+	}
+
 	return presenters.PresentAlbumTopTracks(album, topTracks), nil
+}
+
+func TrackTopAlbums(userInput model.UserInput, trackInput model.TrackInput) (*model.TrackTopAlbumsResponse, error) {
+	usersService := users.CreateService()
+	indexingService := indexing.CreateService()
+	analysisService := analysis.CreateService()
+
+	user := usersService.FindUserByInput(userInput)
+
+	if user == nil {
+		return nil, customerrors.EntityDoesntExistError("user")
+	}
+
+	tracks, err := indexingService.GetTracks(trackInput, false)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var trackIDs []int64
+
+	for _, track := range tracks {
+		trackIDs = append(trackIDs, track.ID)
+	}
+
+	topAlbums, err := analysisService.TrackTopAlbums(user.ID, trackIDs)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return presenters.PresentTrackTopAlbums(tracks, topAlbums), nil
 }

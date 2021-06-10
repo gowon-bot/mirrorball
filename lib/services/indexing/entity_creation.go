@@ -83,7 +83,7 @@ func (i Indexing) generateAlbumsToCreate(albumNames []AlbumToConvert, albumsMap 
 		}
 
 		if _, ok := albumsMap[album.ArtistName][album.AlbumName]; !ok {
-			artist, _ := artistsMap[album.ArtistName]
+			artist := artistsMap[album.ArtistName]
 
 			albumsToCreate = append(albumsToCreate, db.Album{
 				ArtistID: artist.ID,
@@ -154,7 +154,7 @@ func (i Indexing) generateTracksToCreate(trackNames []TrackToConvert, tracksMap 
 		}
 
 		if _, ok := tracksMap[track.ArtistName][albumName][track.TrackName]; !ok {
-			artist, _ := artistsMap[track.ArtistName]
+			artist := artistsMap[track.ArtistName]
 
 			trackToCreate := db.Track{
 				Name:     track.TrackName,

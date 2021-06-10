@@ -14,7 +14,7 @@ func (i Indexing) GetArtist(artistInput model.ArtistInput, create bool) (*db.Art
 
 	err := ParseArtistInput(query, artistInput).Limit(1).Select()
 
-	if err != nil && create == true && artistInput.Name != nil {
+	if err != nil && create && artistInput.Name != nil {
 		artist = &db.Artist{
 			Name: *artistInput.Name,
 		}
@@ -36,7 +36,7 @@ func (i Indexing) GetAlbum(albumInput model.AlbumInput, create bool) (*db.Album,
 
 	err := ParseAlbumInput(query, albumInput).Limit(1).Select()
 
-	if err != nil && create == true && albumInput.Name != nil && albumInput.SafeGetArtistName() != nil {
+	if err != nil && create && albumInput.Name != nil && albumInput.SafeGetArtistName() != nil {
 		artist, _ := i.GetArtist(*albumInput.Artist, true)
 
 		album = &db.Album{
@@ -64,7 +64,7 @@ func (i Indexing) GetTrack(trackInput model.TrackInput, create bool) (*db.Track,
 
 	err := ParseTrackInput(query, trackInput).Limit(1).Select()
 
-	if err != nil && create == true && trackInput.Name != nil && trackInput.SafeGetArtistName() != nil {
+	if err != nil && create && trackInput.Name != nil && trackInput.SafeGetArtistName() != nil {
 		track = i.SaveTrack(*trackInput.Name, *trackInput.SafeGetArtistName(), trackInput.SafeGetAlbumName())
 	} else if err != nil {
 		return nil, customerrors.EntityDoesntExistError("track")
@@ -96,7 +96,7 @@ func (i Indexing) GetArtistCount(artist *db.Artist, user *db.User, create bool) 
 
 	err := db.Db.Model(artistCount).Where("user_id=?", user.ID).Where("artist_id=?", artist.ID).Limit(1).Select()
 
-	if err != nil && create == true {
+	if err != nil && create {
 		artistCount = &db.ArtistCount{
 			UserID: user.ID,
 			User:   user,
@@ -119,7 +119,7 @@ func (i Indexing) GetAlbumCount(album *db.Album, user *db.User, create bool) (*d
 
 	err := db.Db.Model(albumCount).Where("user_id=?", user.ID).Where("album_id=?", album.ID).Limit(1).Select()
 
-	if err != nil && create == true {
+	if err != nil && create {
 		albumCount = &db.AlbumCount{
 			UserID: user.ID,
 			User:   user,
@@ -142,7 +142,7 @@ func (i Indexing) GetTrackCount(track *db.Track, user *db.User, create bool) (*d
 
 	err := db.Db.Model(trackCount).Where("user_id=?", user.ID).Where("track_id=?", track.ID).Limit(1).Select()
 
-	if err != nil && create == true {
+	if err != nil && create {
 		trackCount = &db.TrackCount{
 			UserID: user.ID,
 			User:   user,

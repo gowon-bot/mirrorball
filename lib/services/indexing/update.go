@@ -21,7 +21,7 @@ func (i Indexing) GenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack, us
 	trackCounts := make(map[string]map[string]map[string]int)
 
 	for _, scrobble := range scrobbles {
-		artist, _ := artistsMap[scrobble.Artist.Text]
+		artist := artistsMap[scrobble.Artist.Text]
 		artistCounts[artist.Name] += 1
 
 		if _, ok := trackCounts[artist.Name]; !ok {
@@ -31,7 +31,7 @@ func (i Indexing) GenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack, us
 			trackCounts[artist.Name][scrobble.Album.Text] = make(map[string]int)
 		}
 
-		track, _ := tracksMap[scrobble.Artist.Text][scrobble.Album.Text][scrobble.Name]
+		track := tracksMap[scrobble.Artist.Text][scrobble.Album.Text][scrobble.Name]
 		trackCounts[artist.Name][scrobble.Album.Text][scrobble.Name] += 1
 
 		if scrobble.Album.Text != "" {
@@ -39,7 +39,7 @@ func (i Indexing) GenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack, us
 				albumCounts[artist.Name] = make(map[string]int)
 			}
 
-			album, _ := albumsMap[scrobble.Artist.Text][scrobble.Album.Text]
+			album := albumsMap[scrobble.Artist.Text][scrobble.Album.Text]
 			albumCounts[artist.Name][album.Name] += 1
 		}
 
@@ -60,13 +60,13 @@ func (i Indexing) GenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack, us
 	var dbTrackCounts []db.TrackCount
 
 	for artist, count := range artistCounts {
-		dbArtist, _ := artistsMap[artist]
+		dbArtist := artistsMap[artist]
 		dbArtistCounts = append(dbArtistCounts, db.ArtistCount{Artist: &dbArtist, ArtistID: dbArtist.ID, User: &user, UserID: user.ID, Playcount: int32(count)})
 	}
 
 	for artist, artistAlbums := range albumCounts {
 		for album, count := range artistAlbums {
-			dbAlbum, _ := albumsMap[artist][album]
+			dbAlbum := albumsMap[artist][album]
 			dbAlbumCounts = append(dbAlbumCounts, db.AlbumCount{Album: &dbAlbum, AlbumID: dbAlbum.ID, User: &user, UserID: user.ID, Playcount: int32(count)})
 		}
 	}
@@ -74,7 +74,7 @@ func (i Indexing) GenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack, us
 	for artist, artistAlbums := range trackCounts {
 		for album, albumTracks := range artistAlbums {
 			for track, count := range albumTracks {
-				dbTrack, _ := tracksMap[artist][album][track]
+				dbTrack := tracksMap[artist][album][track]
 				dbTrackCounts = append(dbTrackCounts, db.TrackCount{Track: &dbTrack, TrackID: dbTrack.ID, User: &user, UserID: user.ID, Playcount: int32(count)})
 			}
 		}

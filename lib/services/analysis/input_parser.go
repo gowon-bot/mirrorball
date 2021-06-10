@@ -50,7 +50,7 @@ func ParseArtistSearchCriteria(query *orm.Query, criteria model.ArtistSearchCrit
 }
 
 func parseKeywords(query *orm.Query, keywords string, exact *bool) *orm.Query {
-	if exact != nil && *exact == true {
+	if exact != nil && *exact {
 		return query.Where("name ~ ?", fmt.Sprintf("(^|\\s)%s($|\\s)", keywords))
 	} else {
 		return query.Where("name ilike ?", fmt.Sprintf("%%%s%%", keywords))
