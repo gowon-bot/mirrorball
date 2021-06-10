@@ -28,7 +28,9 @@ func (rym RateYourMusic) ConvertRateYourMusicAlbums(rawAlbums []RawRateYourMusic
 		albumsMap[album.RateYourMusicID] = album
 	}
 
-	albumsToCreate := rym.generateRateYourMusicAlbumsToCreate(albumsMap, rawAlbums)
+	albumsToCreate, albumsToUpdate := rym.generateRateYourMusicAlbumsToCreate(albumsMap, rawAlbums)
+
+	go rym.updateRateYourMusicAlbums(albumsToUpdate, albumsMap)
 
 	createdAlbums, err := rym.createRateYourMusicAlbums(albumsToCreate)
 
@@ -41,6 +43,10 @@ func (rym RateYourMusic) ConvertRateYourMusicAlbums(rawAlbums []RawRateYourMusic
 	}
 
 	err = rym.createRateYourMusicAlbumAlbums(albumsToCreate, albumsMap)
+
+	if err != nil {
+		return nil, err
+	}
 
 	return albumsMap, nil
 }
@@ -93,16 +99,47 @@ func (rym RateYourMusic) createRateYourMusicAlbums(albumsToCreate []RawRateYourM
 	return albums, nil
 }
 
-func (rym RateYourMusic) generateRateYourMusicAlbumsToCreate(albumsMap RateYourMusicAlbumMap, rawAlbums []RawRateYourMusicRating) []RawRateYourMusicRating {
+func (rym RateYourMusic) updateRateYourMusicAlbums(albumsToUpdate []RateYourMusicAlbumToUpdate, albumsMap RateYourMusicAlbumMap) ([]db.RateYourMusicAlbum, error) {
+	var dbAlbums []db.RateYourMusicAlbum
+	var rawAlbums []RawRateYourMusicRating
+
+	for _, album := range albumsToUpdate {
+		dbAlbums = append(dbAlbums, album.dbAlbum)
+		rawAlbums = append(rawAlbums, album.rawAlbum)
+	}
+
+	albums, err := dbhelpers.UpdateManyRateYourMusicAlbums(dbAlbums, constants.ChunkSize)
+
+	if err != nil {
+		return nil, err
+	}
+
+	rym.updateRateYourMusicAlbumAlbums(rawAlbums, albumsMap)
+
+	return albums, nil
+}
+
+type RateYourMusicAlbumToUpdate struct {
+	dbAlbum  db.RateYourMusicAlbum
+	rawAlbum RawRateYourMusicRating
+}
+
+func (rym RateYourMusic) generateRateYourMusicAlbumsToCreate(albumsMap RateYourMusicAlbumMap, rawAlbums []RawRateYourMusicRating) ([]RawRateYourMusicRating, []RateYourMusicAlbumToUpdate) {
 	var albumsToCreate []RawRateYourMusicRating
+	var albumsToUpdate []RateYourMusicAlbumToUpdate
 
 	for _, album := range rawAlbums {
-		if _, ok := albumsMap[album.RYMID]; !ok {
+		if dbAlbum, ok := albumsMap[album.RYMID]; !ok {
 			albumsToCreate = append(albumsToCreate, album)
+		} else {
+			albumsToUpdate = append(albumsToUpdate, RateYourMusicAlbumToUpdate{
+				dbAlbum:  dbAlbum,
+				rawAlbum: album,
+			})
 		}
 	}
 
-	return albumsToCreate
+	return albumsToCreate, albumsToUpdate
 }
 
 func (rym RateYourMusic) convertAlbumsFromRatings(rawAlbums []RawRateYourMusicRating) (indexing.AlbumsMap, error) {
@@ -116,24 +153,6 @@ func (rym RateYourMusic) convertAlbumsFromRatings(rawAlbums []RawRateYourMusicRa
 
 	return albumsMap, err
 }
-
-// func (rym RateYourMusic) generateAlbumCombinations(rawAlbum RawRateYourMusicRating) []indexing.AlbumToConvert {
-// 	var combinations []indexing.AlbumToConvert
-
-// 	combinations = append(combinations, indexing.AlbumToConvert{
-// 		ArtistName: rawAlbum.ArtistName,
-// 		AlbumName:  rawAlbum.Title,
-// 	})
-
-// 	if rawAlbum.ArtistNativeName != nil {
-// 		combinations = append(combinations, indexing.AlbumToConvert{
-// 			ArtistName: *rawAlbum.ArtistNativeName,
-// 			AlbumName:  rawAlbum.Title,
-// 		})
-// 	}
-
-// 	return combinations
-// }
 
 func (rym RateYourMusic) createRateYourMusicAlbumAlbums(albums []RawRateYourMusicRating, rymsAlbumsMap RateYourMusicAlbumMap) error {
 	albumsMap, err := rym.convertAlbumsFromRatings(albums)
@@ -165,6 +184,65 @@ func (rym RateYourMusic) createRateYourMusicAlbumAlbums(albums []RawRateYourMusi
 	return nil
 }
 
+func (rym RateYourMusic) updateRateYourMusicAlbumAlbums(albums []RawRateYourMusicRating, rymsAlbumsMap RateYourMusicAlbumMap) error {
+	albumsMap, err := rym.convertAlbumsFromRatings(albums)
+
+	if err != nil {
+		return err
+	}
+
+	var albumAlbumsToCreate []db.RateYourMusicAlbumAlbum
+
+	for _, album := range albums {
+		for _, combination := range album.AllAlbums {
+
+			dbAlbum := albumsMap[combination.ArtistName][combination.AlbumName]
+
+			albumAlbumsToCreate = append(albumAlbumsToCreate, db.RateYourMusicAlbumAlbum{
+				RateYourMusicAlbumID: rymsAlbumsMap[album.RYMID].ID,
+				AlbumID:              dbAlbum.ID,
+			})
+		}
+	}
+
+	_, err = dbhelpers.InsertManyRateYourMusicAlbumAlbums(albumAlbumsToCreate, constants.ChunkSize)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (rym RateYourMusic) ResetRatings(user db.User) {
 	db.Db.Model((*db.Rating)(nil)).Where("user_id=?", user.ID).Delete()
+}
+
+func (rym RateYourMusic) FilterDuplicateAlbumAlbums(rateYourMusicAlbumID int64, albumAlbums []db.RateYourMusicAlbumAlbum) []db.RateYourMusicAlbumAlbum {
+	var dbAlbumAlbums []db.RateYourMusicAlbumAlbum
+	var filtered []db.RateYourMusicAlbumAlbum
+
+	err := db.Db.Model(&dbAlbumAlbums).Where("rate_your_music_album_id = ?", rateYourMusicAlbumID).Select()
+
+	if err != nil {
+		return albumAlbums
+	}
+
+	for _, album := range albumAlbums {
+		if ok := checkForDuplicateAlbumAlbum(dbAlbumAlbums, album); ok {
+			filtered = append(filtered, album)
+		}
+	}
+
+	return filtered
+}
+
+func checkForDuplicateAlbumAlbum(in []db.RateYourMusicAlbumAlbum, check db.RateYourMusicAlbumAlbum) bool {
+	for _, albumAlbum := range in {
+		if albumAlbum.AlbumID == check.AlbumID {
+			return false
+		}
+	}
+
+	return true
 }

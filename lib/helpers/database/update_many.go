@@ -68,7 +68,6 @@ func UpdateManyAlbumCounts(albumCounts []db.AlbumCount, itemsPerChunk float64) (
 			return allAlbumCounts, err
 		}
 
-		allAlbumCounts = append(allAlbumCounts)
 	}
 
 	return allAlbumCounts, nil
@@ -101,7 +100,6 @@ func UpdateManyTrackCounts(trackCounts []db.TrackCount, itemsPerChunk float64) (
 			return allTrackCounts, err
 		}
 
-		allTrackCounts = append(allTrackCounts)
 	}
 
 	return allTrackCounts, nil
@@ -134,7 +132,38 @@ func UpdateManyRatings(ratings []db.Rating, itemsPerChunk float64) ([]db.Rating,
 			return allRatings, err
 		}
 
-		allRatings = append(allRatings)
+	}
+
+	return allRatings, nil
+}
+
+func UpdateManyRateYourMusicAlbums(albums []db.RateYourMusicAlbum, itemsPerChunk float64) ([]db.RateYourMusicAlbum, error) {
+	if len(albums) == 0 {
+		return nil, nil
+	}
+
+	var chunks [][]interface{}
+	var allRatings []db.RateYourMusicAlbum
+
+	chunks = make([][]interface{}, int(math.Floor(float64(len(albums))/(itemsPerChunk)))+1)
+
+	for index, album := range albums {
+		chunkIndex := int(math.Floor(float64(index+1) / (itemsPerChunk)))
+
+		if chunks[chunkIndex] == nil {
+			chunks[chunkIndex] = make([]interface{}, 0)
+		}
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], album)
+	}
+
+	for _, chunk := range chunks {
+		_, err := db.Db.Model(chunk...).WherePK().Update()
+
+		if err != nil {
+			return allRatings, err
+		}
+
 	}
 
 	return allRatings, nil

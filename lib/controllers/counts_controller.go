@@ -24,7 +24,7 @@ func ArtistTopAlbums(userInput model.UserInput, artistInput model.ArtistInput) (
 	artist, err := indexingService.GetArtist(artistInput, false)
 
 	if err != nil {
-		return nil, err
+		return nil, customerrors.EntityDoesntExistError("artist")
 	}
 
 	topAlbums, err := analysisService.ArtistTopAlbums(user.ID, artist.ID)
@@ -50,7 +50,7 @@ func ArtistTopTracks(userInput model.UserInput, artistInput model.ArtistInput) (
 	artist, err := indexingService.GetArtist(artistInput, false)
 
 	if err != nil {
-		return nil, err
+		return nil, customerrors.EntityDoesntExistError("artist")
 	}
 
 	topTracks, err := analysisService.ArtistTopTracks(user.ID, artist.ID)
@@ -76,7 +76,7 @@ func AlbumTopTracks(userInput model.UserInput, albumInput model.AlbumInput) (*mo
 	album, err := indexingService.GetAlbum(albumInput, false)
 
 	if err != nil {
-		return nil, err
+		return nil, customerrors.EntityDoesntExistError("album")
 	}
 
 	topTracks, err := analysisService.AlbumTopTracks(user.ID, album.ID)
@@ -102,7 +102,7 @@ func TrackTopAlbums(userInput model.UserInput, trackInput model.TrackInput) (*mo
 	tracks, err := indexingService.GetTracks(trackInput, false)
 
 	if err != nil {
-		return nil, err
+		return nil, customerrors.EntityDoesntExistError("track")
 	}
 
 	var trackIDs []int64

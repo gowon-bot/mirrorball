@@ -37,8 +37,9 @@ type RawRateYourMusicRating = struct {
 	AllAlbums        []indexing.AlbumToConvert
 }
 
-var asianCharacters = `[\p{Hangul}\p{Han}\p{Katakana}\p{Hiragana}]`
-var containsAsianCharacters = regexp.MustCompile(asianCharacters + "+")
+// var asianCharacters = `[\p{Hangul}\p{Han}\p{Katakana}\p{Hiragana}]`
+
+// var containsAsianCharacters = regexp.MustCompile(asianCharacters + "+")
 var artistLocalization = regexp.MustCompile(`([^\[]+) \[([^\]]+)\]`)
 
 func (rym RateYourMusic) ParseRYMSExport(csvString string) ([]RawRateYourMusicRating, error) {
@@ -70,8 +71,8 @@ func (rym RateYourMusic) ParseRYMSExport(csvString string) ([]RawRateYourMusicRa
 			row.ArtistName = artistNameLocalized
 			row.ArtistNativeName = &artistName
 		} else {
-			nativeArtistNames := removeLocalizedArtistNames(artistName)
-			localizedArtistNames := removeNativeArtistNames(artistName)
+			nativeArtistNames := strings.TrimSpace(removeLocalizedArtistNames(artistName))
+			localizedArtistNames := strings.TrimSpace(removeNativeArtistNames(artistName))
 
 			row.ArtistName = localizedArtistNames
 			row.ArtistNativeName = &nativeArtistNames
@@ -86,12 +87,24 @@ func (rym RateYourMusic) ParseRYMSExport(csvString string) ([]RawRateYourMusicRa
 			return nil, err
 		}
 
-		albums, _ := rym.generateRawAlbumCombinations(record)
+		if row.ArtistNativeName != nil {
+			_, err = rym.indexingService.GetAlbum(model.AlbumInput{
+				Artist: &model.ArtistInput{Name: row.ArtistNativeName},
+				Name:   &title,
+			}, true)
+
+			if err != nil {
+				return nil, err
+			}
+		}
 
 		row.RYMID = record[RYMID]
 		row.Title = title
 		row.Rating, _ = strconv.Atoi(record[Rating])
 		row.ReleaseYear, _ = strconv.Atoi(record[ReleaseYear])
+
+		albums, _ := rym.generateRawAlbumCombinations(record, row)
+
 		row.AllAlbums = albums
 
 		albumRatings = append(albumRatings, row)
@@ -112,11 +125,15 @@ func combineNames(firstName string, lastName string) string {
 	return name
 }
 
-func (rym RateYourMusic) generateRawAlbumCombinations(record []string) ([]indexing.AlbumToConvert, error) {
+func (rym RateYourMusic) generateRawAlbumCombinations(record []string, row RawRateYourMusicRating) ([]indexing.AlbumToConvert, error) {
 	releaseTitle := fixAmpersands(record[Title])
 	artistName := fixAmpersands(record[LastName])
 
-	var artistsToCheck []indexing.AlbumToConvert
+	artistsToCheck := []indexing.AlbumToConvert{{ArtistName: row.ArtistName, AlbumName: row.Title}}
+
+	if row.ArtistNativeName != nil {
+		artistsToCheck = append(artistsToCheck, indexing.AlbumToConvert{ArtistName: *row.ArtistNativeName, AlbumName: row.Title})
+	}
 
 	var individualArtistNames []string
 
