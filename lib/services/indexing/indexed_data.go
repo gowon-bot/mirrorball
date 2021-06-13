@@ -4,15 +4,18 @@ import (
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
+	"github.com/jivison/gowon-indexer/lib/helpers/inputparser"
 )
 
 // GetArtist gets and optionally creates an indexed artist
 func (i Indexing) GetArtist(artistInput model.ArtistInput, create bool) (*db.Artist, error) {
 	artist := new(db.Artist)
 
-	query := db.Db.Model(artist)
+	parser := inputparser.CreateParser(db.Db.Model(artist))
 
-	err := ParseArtistInput(query, artistInput).Limit(1).Select()
+	query := parser.ParseArtistInput(artistInput, inputparser.InputSettings{}).GetQuery()
+
+	err := query.Limit(1).Select()
 
 	if err != nil && create && artistInput.Name != nil {
 		artist = &db.Artist{
@@ -31,10 +34,11 @@ func (i Indexing) GetArtist(artistInput model.ArtistInput, create bool) (*db.Art
 func (i Indexing) GetAlbum(albumInput model.AlbumInput, create bool) (*db.Album, error) {
 	album := new(db.Album)
 
-	query := db.Db.Model(album).
-		Relation("Artist")
+	parser := inputparser.CreateParser(db.Db.Model(album).Relation("Artist"))
 
-	err := ParseAlbumInput(query, albumInput).Limit(1).Select()
+	query := parser.ParseAlbumInput(albumInput, inputparser.InputSettings{}).GetQuery()
+
+	err := query.Limit(1).Select()
 
 	if err != nil && create && albumInput.Name != nil && albumInput.SafeGetArtistName() != nil {
 		artist, _ := i.GetArtist(*albumInput.Artist, true)
@@ -58,11 +62,11 @@ func (i Indexing) GetAlbum(albumInput model.AlbumInput, create bool) (*db.Album,
 func (i Indexing) GetTrack(trackInput model.TrackInput, create bool) (*db.Track, error) {
 	track := new(db.Track)
 
-	query := db.Db.Model(track).
-		Relation("Artist").
-		Relation("Album")
+	parser := inputparser.CreateParser(db.Db.Model(track).Relation("Artist").Relation("Album"))
 
-	err := ParseTrackInput(query, trackInput).Limit(1).Select()
+	query := parser.ParseTrackInput(trackInput, inputparser.InputSettings{}).GetQuery()
+
+	err := query.Limit(1).Select()
 
 	if err != nil && create && trackInput.Name != nil && trackInput.SafeGetArtistName() != nil {
 		track = i.SaveTrack(*trackInput.Name, *trackInput.SafeGetArtistName(), trackInput.SafeGetAlbumName())
@@ -77,11 +81,9 @@ func (i Indexing) GetTrack(trackInput model.TrackInput, create bool) (*db.Track,
 func (i Indexing) GetTracks(trackInput model.TrackInput, create bool) ([]db.Track, error) {
 	var tracks []db.Track
 
-	query := db.Db.Model(&tracks).
-		Relation("Artist").
-		Relation("Album")
+	parser := inputparser.CreateParser(db.Db.Model(&tracks).Relation("Artist").Relation("Album"))
 
-	err := ParseTrackInput(query, trackInput).Select()
+	err := parser.ParseTrackInput(trackInput, &inputparser.InputSettings{}).GetQuery().Select()
 
 	if err != nil {
 		return nil, customerrors.EntityDoesntExistError("track")

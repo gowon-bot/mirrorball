@@ -4,6 +4,7 @@ import (
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
+	"github.com/jivison/gowon-indexer/lib/helpers/inputparser"
 	"github.com/jivison/gowon-indexer/lib/services/indexing"
 )
 
@@ -17,9 +18,9 @@ func (rym RateYourMusic) GetRatings(settings *model.RatingsSettings) ([]db.Ratin
 
 	query := db.Db.Model(&ratings).Relation("RateYourMusicAlbum").Order("rating DESC", "release_year ASC", "title DESC")
 
-	query = ParseRatingsSettings(query, settings)
+	parser := inputparser.CreateParser(query).ParseRatingsSettings(settings)
 
-	err := query.Select()
+	err := parser.GetQuery().Select()
 
 	if err != nil {
 		return nil, customerrors.DatabaseUnknownError()
