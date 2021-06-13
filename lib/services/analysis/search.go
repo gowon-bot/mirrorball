@@ -4,6 +4,7 @@ import (
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
+	"github.com/jivison/gowon-indexer/lib/helpers/inputparser"
 )
 
 type SearchArtistResult struct {
@@ -25,7 +26,7 @@ func (a Analysis) SearchArtist(criteria model.ArtistSearchCriteria, settings *mo
 		Group("name", "artist.id").
 		OrderExpr("COALESCE(count(playcount), 0) desc")
 
-	query = ParseArtistSearchCriteria(query, criteria, settings)
+	query = inputparser.CreateParser(query).ParseArtistSearchCriteria(criteria, settings).GetQuery()
 
 	err := query.Select(&artists)
 

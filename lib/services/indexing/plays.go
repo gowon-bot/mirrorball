@@ -4,13 +4,15 @@ import (
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
+	"github.com/jivison/gowon-indexer/lib/helpers/inputparser"
 )
 
 func (i Indexing) GetPlays(user db.User, pageInput *model.PageInput) ([]db.Play, error) {
 	var plays []db.Play
 
 	query := db.Db.Model(&plays).Relation("User").Relation("Track").Relation("Track.Artist").Relation("Track.Album").Where("user_id = ?", user.ID).Order("scrobbled_at desc")
-	query = ParsePageInput(query, pageInput)
+
+	query = inputparser.CreateParser(query).ParsePageInput(pageInput).GetQuery()
 
 	err := query.Select()
 
@@ -25,8 +27,9 @@ func (i Indexing) GetArtistPlays(user db.User, settings *model.ArtistPlaysSettin
 	var plays []db.ArtistCount
 
 	query := db.Db.Model(&plays).Relation("User").Relation("Artist").Where("user_id = ?", user.ID)
+	parser := inputparser.CreateParser(query)
 
-	query = ParseArtistPlaysSettings(query, settings)
+	parser.ParseArtistPlaysSettings(settings, inputparser.InputSettings{DefaultSort: "playcount desc"})
 
 	err := query.Select()
 
@@ -42,25 +45,12 @@ func (i Indexing) GetAlbumPlays(user db.User, settings *model.AlbumPlaysSettings
 
 	query := db.Db.Model(&plays).Relation("User").Relation("Album").Relation("Album.Artist").Where("user_id = ?", user.ID)
 
-	query = ParseAlbumPlaysSettings(query, settings)
+	parser := inputparser.CreateParser(query).ParseAlbumPlaysSettings(settings, inputparser.InputSettings{
+		DefaultSort: "playcount desc",
+		ArtistPath:  "\"album__artist\"",
+	})
 
-	err := query.Select()
-
-	if err != nil {
-		return plays, customerrors.DatabaseUnknownError()
-	}
-
-	return plays, nil
-}
-
-func (i Indexing) GetTrackPlays(user db.User, settings *model.AlbumPlaysSettings) ([]db.TrackCount, error) {
-	var plays []db.TrackCount
-
-	query := db.Db.Model(&plays).Relation("User").Relation("Album").Relation("Album.Artist").Where("user_id = ?", user.ID)
-
-	query = ParseAlbumPlaysSettings(query, settings)
-
-	err := query.Select()
+	err := parser.GetQuery().Select()
 
 	if err != nil {
 		return plays, customerrors.DatabaseUnknownError()
