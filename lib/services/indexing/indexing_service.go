@@ -71,22 +71,12 @@ func (i Indexing) updateUser(user *db.User) error {
 	if err != nil {
 		return err
 	} else if len(recentTracks) == 0 {
+		// Give the client a moment to start waiting for the webhook
+		time.Sleep(100 * time.Millisecond)
 		return nil
 	}
 
-	var scrobbles []lastfm.RecentTrack
-
-	if recentTracks[0].Attributes.IsNowPlaying == "true" {
-		scrobbles = append(scrobbles, recentTracks[1:]...)
-	} else {
-		scrobbles = recentTracks
-	}
-
-	if len(scrobbles) < 1 {
-		return nil
-	}
-
-	artistCounts, albumCounts, trackCounts, plays, err := i.GenerateCountsFromScrobbles(scrobbles, *user)
+	artistCounts, albumCounts, trackCounts, plays, err := i.GenerateCountsFromScrobbles(recentTracks, *user)
 
 	if err != nil {
 		return err
@@ -100,7 +90,7 @@ func (i Indexing) updateUser(user *db.User) error {
 
 	dbhelpers.InsertManyPlays(plays, constants.ChunkSize)
 
-	firstTrack := scrobbles[0]
+	firstTrack := recentTracks[0]
 	lastTimestamp, _ := apihelpers.ParseUnix(firstTrack.Timestamp.UTS)
 
 	user.SetLastIndexed(lastTimestamp)

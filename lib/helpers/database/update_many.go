@@ -23,7 +23,7 @@ func UpdateManyArtistCounts(artistCounts []db.ArtistCount, itemsPerChunk float64
 			chunks[chunkIndex] = make([]interface{}, 0)
 		}
 
-		chunks[chunkIndex] = append(chunks[chunkIndex], &artistCount)
+		chunks[chunkIndex] = append(chunks[chunkIndex], artistCount)
 	}
 
 	for _, chunk := range chunks {
@@ -58,7 +58,7 @@ func UpdateManyAlbumCounts(albumCounts []db.AlbumCount, itemsPerChunk float64) (
 			chunks[chunkIndex] = make([]interface{}, 0)
 		}
 
-		chunks[chunkIndex] = append(chunks[chunkIndex], &albumCount)
+		chunks[chunkIndex] = append(chunks[chunkIndex], albumCount)
 	}
 
 	for _, chunk := range chunks {
@@ -90,7 +90,7 @@ func UpdateManyTrackCounts(trackCounts []db.TrackCount, itemsPerChunk float64) (
 			chunks[chunkIndex] = make([]interface{}, 0)
 		}
 
-		chunks[chunkIndex] = append(chunks[chunkIndex], &trackCount)
+		chunks[chunkIndex] = append(chunks[chunkIndex], trackCount)
 	}
 
 	for _, chunk := range chunks {

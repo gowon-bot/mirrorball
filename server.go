@@ -11,6 +11,7 @@ import (
 	"github.com/jivison/gowon-indexer/lib/graph"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
 	"github.com/jivison/gowon-indexer/lib/tasks"
+	"github.com/rs/cors"
 )
 
 const defaultPort = "8080"
@@ -26,7 +27,9 @@ func main() {
 	taskServer := tasks.NewTaskServer()
 	taskServer.LaunchWorkers()
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+	gqlHandler := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+
+	srv := cors.AllowAll().Handler(gqlHandler)
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
 	http.Handle("/graphql", srv)

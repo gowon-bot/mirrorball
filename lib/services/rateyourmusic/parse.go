@@ -141,9 +141,8 @@ func (rym RateYourMusic) generateRawAlbumCombinations(record []string, row RawRa
 
 	for _, split := range splitOnAnds {
 		trimmedSplit := strings.TrimSpace(split)
-		localization := parseLocalization(trimmedSplit)
 
-		if localization != nil {
+		if localization, ok := parseLocalization(trimmedSplit); ok {
 			individualArtistNames = append(individualArtistNames, localization.Localized, localization.Native)
 		} else {
 			individualArtistNames = append(individualArtistNames, trimmedSplit)
@@ -205,17 +204,17 @@ type Localization = struct {
 	Native    string
 }
 
-func parseLocalization(name string) *Localization {
+func parseLocalization(name string) (Localization, bool) {
 	localization := artistLocalization.FindAllStringSubmatch(name, 1)
 
 	if len(localization) > 0 && len(localization[0]) == 3 {
-		return &Localization{
+		return Localization{
 			Localized: localization[0][2],
 			Native:    localization[0][1],
-		}
+		}, true
 	}
 
-	return nil
+	return Localization{}, false
 }
 
 func removeLocalizedArtistNames(artistName string) string {

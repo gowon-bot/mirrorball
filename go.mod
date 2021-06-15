@@ -18,6 +18,7 @@ require (
 	github.com/klauspost/compress v1.11.7 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/nxadm/tail v1.4.6 // indirect
+	github.com/rs/cors v1.7.0
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/tidwall/pretty v1.0.2 // indirect
 	github.com/vektah/gqlparser/v2 v2.1.0

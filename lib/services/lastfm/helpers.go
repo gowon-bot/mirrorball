@@ -124,7 +124,7 @@ func (lfm API) AllScrobblesSince(requestable Requestable, since *time.Time) ([]R
 	}
 
 	if since != nil {
-		params.From = strconv.FormatInt(since.UTC().Unix()-1, 10)
+		params.From = strconv.FormatInt(since.UTC().Unix(), 10)
 	}
 
 	err, recentTracks := lfm.RecentTracks(params)
@@ -133,7 +133,7 @@ func (lfm API) AllScrobblesSince(requestable Requestable, since *time.Time) ([]R
 		return tracks, customerrors.LastFMError(err.Message, int(err.Error))
 	}
 
-	tracks = append(tracks, recentTracks.RecentTracks.Tracks...)
+	tracks = append(tracks, excludeNowPlaying(recentTracks.RecentTracks.Tracks)...)
 
 	if recentTracks.RecentTracks.Attributes.Total == "0" {
 		return tracks, nil
@@ -151,11 +151,7 @@ func (lfm API) AllScrobblesSince(requestable Requestable, since *time.Time) ([]R
 
 				var tracksToAppend []RecentTrack
 
-				if response.RecentTracks.Tracks[0].Attributes.IsNowPlaying == "true" {
-					tracksToAppend = response.RecentTracks.Tracks[1:]
-				} else {
-					tracksToAppend = response.RecentTracks.Tracks
-				}
+				tracksToAppend = append(tracksToAppend, excludeNowPlaying(response.RecentTracks.Tracks)...)
 
 				tracks = append(tracks, tracksToAppend...)
 			},
@@ -165,4 +161,12 @@ func (lfm API) AllScrobblesSince(requestable Requestable, since *time.Time) ([]R
 	}
 
 	return tracks, nil
+}
+
+func excludeNowPlaying(tracks []RecentTrack) []RecentTrack {
+	if tracks[0].Attributes.IsNowPlaying == "true" {
+		return tracks[1:]
+	} else {
+		return tracks
+	}
 }
