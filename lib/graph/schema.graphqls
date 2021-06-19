@@ -18,6 +18,9 @@ type Query {
     settings: WhoKnowsSettings
   ): WhoKnowsTrackResponse
 
+  # Who first/who last
+  whoFirstArtist(artist: ArtistInput!, settings: WhoKnowsSettings, whoLast: Boolean): WhoFirstArtistResponse 
+
   # Guild members
   guildMembers(guildID: String!): [GuildMember!]!
 
@@ -193,6 +196,27 @@ type WhoKnowsTrackResponse {
   rows: [WhoKnowsRow!]!
   track: AmbiguousTrack!
 }
+
+# Who First
+type WhoFirstRow {
+  user: User!
+  scrobbledAt: Int!
+}
+
+type WhoFirstArtistResponse {
+  rows: [WhoFirstRow!]!
+  artist: Artist!
+}
+
+# type WhoKnowsAlbumResponse {
+#   rows: [WhoKnowsRow!]!
+#   album: Album!
+# }
+
+# type WhoKnowsTrackResponse {
+#   rows: [WhoKnowsRow!]!
+#   track: AmbiguousTrack!
+# }
 
 # Counts
 type ArtistTopTracksResponse {

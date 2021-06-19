@@ -60,6 +60,10 @@ func (r *queryResolver) WhoKnowsTrack(ctx context.Context, track model.TrackInpu
 	return controllers.WhoKnowsTrack(track, settings)
 }
 
+func (r *queryResolver) WhoFirstArtist(ctx context.Context, artist model.ArtistInput, settings *model.WhoKnowsSettings, whoLast *bool) (*model.WhoFirstArtistResponse, error) {
+	return controllers.WhoFirstArtist(artist, settings, whoLast)
+}
+
 func (r *queryResolver) GuildMembers(ctx context.Context, guildID string) ([]*model.GuildMember, error) {
 	return controllers.GuildMembers(guildID)
 }

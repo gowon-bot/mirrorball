@@ -186,6 +186,16 @@ type UserInput struct {
 	WavyUsername   *string `json:"wavyUsername"`
 }
 
+type WhoFirstArtistResponse struct {
+	Rows   []*WhoFirstRow `json:"rows"`
+	Artist *Artist        `json:"artist"`
+}
+
+type WhoFirstRow struct {
+	User        *User `json:"user"`
+	ScrobbledAt int   `json:"scrobbledAt"`
+}
+
 type WhoKnowsAlbumResponse struct {
 	Rows  []*WhoKnowsRow `json:"rows"`
 	Album *Album         `json:"album"`
