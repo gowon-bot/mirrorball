@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
@@ -19,11 +20,13 @@ func IndexUserTask(userJSON string, token string) (string, error) {
 
 	err := indexingService.FullIndex(user)
 
-	if err != nil {
-		panic(err)
-	}
+	var data *bytes.Buffer
 
-	data := webhookService.BuildTaskCompleteRequest(token)
+	if err != nil {
+		data = webhookService.BuildTaskErrorRequest(token, err.Error())
+	} else {
+		data = webhookService.BuildTaskCompleteRequest(token)
+	}
 
 	webhookService.Post(data)
 

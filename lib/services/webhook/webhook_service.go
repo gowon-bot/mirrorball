@@ -42,6 +42,30 @@ func (w Webhook) BuildTaskCompleteRequest(token string) *bytes.Buffer {
 	return bytes.NewBuffer(jsonStr)
 }
 
+type TaskErrorRequest struct {
+	Data struct {
+		Token string `json:"token"`
+		Error string `json:"error"`
+	} `json:"data"`
+}
+
+// BuildTaskCompleteRequest builds an task errored request
+func (w Webhook) BuildTaskErrorRequest(token string, errorData string) *bytes.Buffer {
+	data := TaskErrorRequest{
+		Data: struct {
+			Token string "json:\"token\""
+			Error string "json:\"error\""
+		}{
+			Token: token,
+			Error: errorData,
+		},
+	}
+
+	jsonStr, _ := json.Marshal(&data)
+
+	return bytes.NewBuffer(jsonStr)
+}
+
 // CreateService creates an instance of the webhook service object
 func CreateService() *Webhook {
 	godotenv.Load()

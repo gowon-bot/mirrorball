@@ -71,8 +71,6 @@ func (i Indexing) updateUser(user *db.User) error {
 	if err != nil {
 		return err
 	} else if len(recentTracks) == 0 {
-		// Give the client a moment to start waiting for the webhook
-		time.Sleep(100 * time.Millisecond)
 		return nil
 	}
 

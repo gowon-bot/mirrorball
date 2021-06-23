@@ -4,20 +4,20 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/RichardKnop/machinery/v1/config"
-	"github.com/RichardKnop/machinery/v1/tasks"
-	"github.com/RichardKnop/machinery/v2"
 	"github.com/jivison/gowon-indexer/lib/db"
 
-	redisbackend "github.com/RichardKnop/machinery/v1/backends/redis"
-	redisbroker "github.com/RichardKnop/machinery/v1/brokers/redis"
-	eagerlock "github.com/RichardKnop/machinery/v1/locks/eager"
+	"github.com/RichardKnop/machinery/v2"
+	"github.com/RichardKnop/machinery/v2/config"
+	"github.com/RichardKnop/machinery/v2/tasks"
+
+	redisbackend "github.com/RichardKnop/machinery/v2/backends/redis"
+	redisbroker "github.com/RichardKnop/machinery/v2/brokers/redis"
+	eagerlock "github.com/RichardKnop/machinery/v2/locks/eager"
 )
 
 // TaskServer is an interface to manage tasks
 var TaskServer *GowonTaskServer
 
-// GowonTaskServer holds
 type GowonTaskServer struct {
 	Server  *machinery.Server
 	Workers []*machinery.Worker
