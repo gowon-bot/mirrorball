@@ -144,6 +144,11 @@ type SearchSettings struct {
 	User  *UserInput `json:"user"`
 }
 
+type TagInput struct {
+	Name   *string `json:"name"`
+	Source *string `json:"source"`
+}
+
 type TaskStartResponse struct {
 	TaskName string `json:"taskName"`
 	Success  bool   `json:"success"`

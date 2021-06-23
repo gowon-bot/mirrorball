@@ -116,6 +116,7 @@ type ComplexityRoot struct {
 		Logout              func(childComplexity int, discordID string) int
 		RemoveUserFromGuild func(childComplexity int, discordID string, guildID string) int
 		SyncGuild           func(childComplexity int, guildID string, discordIDs []string) int
+		TagArtists          func(childComplexity int, artist []*model.ArtistInput, tags []*model.TagInput) int
 		Update              func(childComplexity int, user model.UserInput, forceUserCreate *bool) int
 	}
 
@@ -234,6 +235,7 @@ type MutationResolver interface {
 	FullIndex(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error)
 	Update(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error)
 	ImportRatings(ctx context.Context, csv string, user model.UserInput) (*string, error)
+	TagArtists(ctx context.Context, artist []*model.ArtistInput, tags []*model.TagInput) (*model.Artist, error)
 }
 type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
@@ -556,6 +558,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.SyncGuild(childComplexity, args["guildID"].(string), args["discordIDs"].([]string)), true
+
+	case "Mutation.tagArtists":
+		if e.complexity.Mutation.TagArtists == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_tagArtists_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.TagArtists(childComplexity, args["artist"].([]*model.ArtistInput), args["tags"].([]*model.TagInput)), true
 
 	case "Mutation.update":
 		if e.complexity.Mutation.Update == nil {
@@ -1182,6 +1196,9 @@ type Mutation {
 
   # Ratings
   importRatings(csv: String!, user: UserInput!): Void
+  
+  # Tags
+  tagArtists(artist: [ArtistInput!]!, tags: [TagInput!]!): Artist
 }
 
 ##############
@@ -1437,7 +1454,11 @@ input PlaysInput {
   track: TrackInput
   sort: String
 }
-`, BuiltIn: false},
+
+input TagInput {
+  name: String
+  source: String
+}`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -1619,6 +1640,30 @@ func (ec *executionContext) field_Mutation_syncGuild_args(ctx context.Context, r
 		}
 	}
 	args["discordIDs"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_tagArtists_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []*model.ArtistInput
+	if tmp, ok := rawArgs["artist"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("artist"))
+		arg0, err = ec.unmarshalNArtistInput2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtistInputᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["artist"] = arg0
+	var arg1 []*model.TagInput
+	if tmp, ok := rawArgs["tags"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+		arg1, err = ec.unmarshalNTagInput2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTagInputᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["tags"] = arg1
 	return args, nil
 }
 
@@ -3381,6 +3426,45 @@ func (ec *executionContext) _Mutation_importRatings(ctx context.Context, field g
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_tagArtists(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_tagArtists_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().TagArtists(rctx, args["artist"].([]*model.ArtistInput), args["tags"].([]*model.TagInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Artist)
+	fc.Result = res
+	return ec.marshalOArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtist(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Play_id(ctx context.Context, field graphql.CollectedField, obj *model.Play) (ret graphql.Marshaler) {
@@ -6863,6 +6947,34 @@ func (ec *executionContext) unmarshalInputSearchSettings(ctx context.Context, ob
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputTagInput(ctx context.Context, obj interface{}) (model.TagInput, error) {
+	var it model.TagInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "source":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+			it.Source, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputTrackInput(ctx context.Context, obj interface{}) (model.TrackInput, error) {
 	var it model.TrackInput
 	var asMap = obj.(map[string]interface{})
@@ -7438,6 +7550,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_update(ctx, field)
 		case "importRatings":
 			out.Values[i] = ec._Mutation_importRatings(ctx, field)
+		case "tagArtists":
+			out.Values[i] = ec._Mutation_tagArtists(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8628,6 +8742,32 @@ func (ec *executionContext) unmarshalNArtistInput2githubᚗcomᚋjivisonᚋgowon
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNArtistInput2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtistInputᚄ(ctx context.Context, v interface{}) ([]*model.ArtistInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.ArtistInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNArtistInput2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtistInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNArtistInput2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtistInput(ctx context.Context, v interface{}) (*model.ArtistInput, error) {
+	res, err := ec.unmarshalInputArtistInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNArtistSearchCriteria2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtistSearchCriteria(ctx context.Context, v interface{}) (model.ArtistSearchCriteria, error) {
 	res, err := ec.unmarshalInputArtistSearchCriteria(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -8909,6 +9049,32 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalNTagInput2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTagInputᚄ(ctx context.Context, v interface{}) ([]*model.TagInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.TagInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNTagInput2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTagInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNTagInput2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTagInput(ctx context.Context, v interface{}) (*model.TagInput, error) {
+	res, err := ec.unmarshalInputTagInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNTrack2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTrack(ctx context.Context, sel ast.SelectionSet, v *model.Track) graphql.Marshaler {
@@ -9389,6 +9555,13 @@ func (ec *executionContext) marshalOAlbumTopTracksResponse2ᚖgithubᚗcomᚋjiv
 		return graphql.Null
 	}
 	return ec._AlbumTopTracksResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtist(ctx context.Context, sel ast.SelectionSet, v *model.Artist) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Artist(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOArtistInput2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtistInput(ctx context.Context, v interface{}) (*model.ArtistInput, error) {

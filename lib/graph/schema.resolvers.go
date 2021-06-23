@@ -44,6 +44,10 @@ func (r *mutationResolver) ImportRatings(ctx context.Context, csv string, user m
 	return controllers.ImportRatings(csv, user)
 }
 
+func (r *mutationResolver) TagArtists(ctx context.Context, artist []*model.ArtistInput, tags []*model.TagInput) (*model.Artist, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *queryResolver) Ping(ctx context.Context) (string, error) {
 	return controllers.Ping()
 }

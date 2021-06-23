@@ -68,6 +68,9 @@ type Mutation {
 
   # Ratings
   importRatings(csv: String!, user: UserInput!): Void
+  
+  # Tags
+  tagArtists(artists: [ArtistInput!]!, tags: [TagInput!]!): Void
 }
 
 ##############
@@ -322,4 +325,8 @@ input PlaysInput {
   user: UserInput
   track: TrackInput
   sort: String
+}
+
+input TagInput {
+  name: String
 }
