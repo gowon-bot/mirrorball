@@ -3,6 +3,7 @@ package dbhelpers
 import (
 	"math"
 
+	"github.com/jinzhu/copier"
 	"github.com/jivison/gowon-indexer/lib/db"
 )
 
@@ -23,7 +24,10 @@ func UpdateManyArtistCounts(artistCounts []db.ArtistCount, itemsPerChunk float64
 			chunks[chunkIndex] = make([]interface{}, 0)
 		}
 
-		chunks[chunkIndex] = append(chunks[chunkIndex], artistCount)
+		copiedArtistCount := db.ArtistCount{}
+		copier.Copy(&copiedArtistCount, &artistCount)
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], &copiedArtistCount)
 	}
 
 	for _, chunk := range chunks {
@@ -58,7 +62,10 @@ func UpdateManyAlbumCounts(albumCounts []db.AlbumCount, itemsPerChunk float64) (
 			chunks[chunkIndex] = make([]interface{}, 0)
 		}
 
-		chunks[chunkIndex] = append(chunks[chunkIndex], albumCount)
+		copiedAlbumCount := db.AlbumCount{}
+		copier.Copy(&copiedAlbumCount, &albumCount)
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], &copiedAlbumCount)
 	}
 
 	for _, chunk := range chunks {
@@ -90,7 +97,10 @@ func UpdateManyTrackCounts(trackCounts []db.TrackCount, itemsPerChunk float64) (
 			chunks[chunkIndex] = make([]interface{}, 0)
 		}
 
-		chunks[chunkIndex] = append(chunks[chunkIndex], trackCount)
+		copiedTrackCount := db.TrackCount{}
+		copier.Copy(&copiedTrackCount, &trackCount)
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], &copiedTrackCount)
 	}
 
 	for _, chunk := range chunks {
@@ -122,7 +132,10 @@ func UpdateManyRatings(ratings []db.Rating, itemsPerChunk float64) ([]db.Rating,
 			chunks[chunkIndex] = make([]interface{}, 0)
 		}
 
-		chunks[chunkIndex] = append(chunks[chunkIndex], rating)
+		copiedRating := db.Rating{}
+		copier.Copy(&copiedRating, &rating)
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], &copiedRating)
 	}
 
 	for _, chunk := range chunks {
@@ -154,7 +167,10 @@ func UpdateManyRateYourMusicAlbums(albums []db.RateYourMusicAlbum, itemsPerChunk
 			chunks[chunkIndex] = make([]interface{}, 0)
 		}
 
-		chunks[chunkIndex] = append(chunks[chunkIndex], album)
+		copiedAlbum := db.RateYourMusicAlbum{}
+		copier.Copy(&copiedAlbum, &album)
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], &copiedAlbum)
 	}
 
 	for _, chunk := range chunks {

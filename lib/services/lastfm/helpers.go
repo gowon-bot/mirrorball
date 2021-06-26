@@ -124,7 +124,7 @@ func (lfm API) AllScrobblesSince(requestable Requestable, since *time.Time) ([]R
 	}
 
 	if since != nil {
-		params.From = strconv.FormatInt(since.UTC().Unix(), 10)
+		params.From = strconv.FormatInt(since.UTC().Unix()+1, 10)
 	}
 
 	err, recentTracks := lfm.RecentTracks(params)
@@ -133,11 +133,11 @@ func (lfm API) AllScrobblesSince(requestable Requestable, since *time.Time) ([]R
 		return tracks, customerrors.LastFMError(err.Message, int(err.Error))
 	}
 
-	tracks = append(tracks, excludeNowPlaying(recentTracks.RecentTracks.Tracks)...)
-
 	if recentTracks.RecentTracks.Attributes.Total == "0" {
 		return tracks, nil
 	}
+
+	tracks = append(tracks, excludeNowPlaying(recentTracks.RecentTracks.Tracks)...)
 
 	if totalPages, _ := strconv.Atoi(recentTracks.RecentTracks.Attributes.TotalPages); totalPages > 1 {
 		paginator := helpers.Paginator{
@@ -164,6 +164,10 @@ func (lfm API) AllScrobblesSince(requestable Requestable, since *time.Time) ([]R
 }
 
 func excludeNowPlaying(tracks []RecentTrack) []RecentTrack {
+	if len(tracks) == 0 {
+		return tracks
+	}
+
 	if tracks[0].Attributes.IsNowPlaying == "true" {
 		return tracks[1:]
 	} else {

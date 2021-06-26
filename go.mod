@@ -14,6 +14,7 @@ require (
 	github.com/go-redis/redis/v8 v8.10.0 // indirect
 	github.com/google/go-querystring v1.1.0
 	github.com/hashicorp/errwrap v1.1.0 // indirect
+	github.com/jinzhu/copier v0.3.2
 	github.com/joho/godotenv v1.3.0
 	github.com/klauspost/compress v1.13.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
