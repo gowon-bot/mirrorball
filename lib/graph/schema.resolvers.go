@@ -88,8 +88,8 @@ func (r *queryResolver) SearchArtist(ctx context.Context, criteria model.ArtistS
 	return controllers.SearchArtist(criteria, settings)
 }
 
-func (r *queryResolver) Plays(ctx context.Context, user model.UserInput, pageInput *model.PageInput) ([]*model.Play, error) {
-	return controllers.Plays(user, pageInput)
+func (r *queryResolver) Plays(ctx context.Context, playsInput model.PlaysInput, pageInput *model.PageInput) ([]*model.Play, error) {
+	return controllers.Plays(playsInput, pageInput)
 }
 
 func (r *queryResolver) ArtistPlays(ctx context.Context, user model.UserInput, settings *model.ArtistPlaysSettings) ([]*model.ArtistCount, error) {

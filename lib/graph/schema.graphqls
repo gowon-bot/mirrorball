@@ -43,7 +43,7 @@ type Query {
   ): ArtistSearchResults
 
   # Plays
-  plays(user: UserInput!, pageInput: PageInput): [Play!]!
+  plays(playsInput: PlaysInput!, pageInput: PageInput): [Play!]!
   artistPlays(user: UserInput!, settings: ArtistPlaysSettings): [ArtistCount!]!
   albumPlays(user: UserInput!, settings: AlbumPlaysSettings): [AlbumCount!]!
   trackPlays(user: UserInput!, settings: TrackPlaysSettings): [AmbiguousTrackCount!]!
@@ -316,4 +316,10 @@ input RatingsSettings {
   user: UserInput
   album: AlbumInput
   pageInput: PageInput
+}
+
+input PlaysInput {
+  user: UserInput
+  track: TrackInput
+  sort: String
 }

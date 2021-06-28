@@ -134,7 +134,7 @@ type ComplexityRoot struct {
 		ArtistTopTracks     func(childComplexity int, user model.UserInput, artist model.ArtistInput) int
 		GuildMembers        func(childComplexity int, guildID string) int
 		Ping                func(childComplexity int) int
-		Plays               func(childComplexity int, user model.UserInput, pageInput *model.PageInput) int
+		Plays               func(childComplexity int, playsInput model.PlaysInput, pageInput *model.PageInput) int
 		RateYourMusicArtist func(childComplexity int, keywords string) int
 		Ratings             func(childComplexity int, settings *model.RatingsSettings) int
 		SearchArtist        func(childComplexity int, criteria model.ArtistSearchCriteria, settings *model.SearchSettings) int
@@ -247,7 +247,7 @@ type QueryResolver interface {
 	AlbumTopTracks(ctx context.Context, user model.UserInput, album model.AlbumInput) (*model.AlbumTopTracksResponse, error)
 	TrackTopAlbums(ctx context.Context, user model.UserInput, track model.TrackInput) (*model.TrackTopAlbumsResponse, error)
 	SearchArtist(ctx context.Context, criteria model.ArtistSearchCriteria, settings *model.SearchSettings) (*model.ArtistSearchResults, error)
-	Plays(ctx context.Context, user model.UserInput, pageInput *model.PageInput) ([]*model.Play, error)
+	Plays(ctx context.Context, playsInput model.PlaysInput, pageInput *model.PageInput) ([]*model.Play, error)
 	ArtistPlays(ctx context.Context, user model.UserInput, settings *model.ArtistPlaysSettings) ([]*model.ArtistCount, error)
 	AlbumPlays(ctx context.Context, user model.UserInput, settings *model.AlbumPlaysSettings) ([]*model.AlbumCount, error)
 	TrackPlays(ctx context.Context, user model.UserInput, settings *model.TrackPlaysSettings) ([]*model.AmbiguousTrackCount, error)
@@ -686,7 +686,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Plays(childComplexity, args["user"].(model.UserInput), args["pageInput"].(*model.PageInput)), true
+		return e.complexity.Query.Plays(childComplexity, args["playsInput"].(model.PlaysInput), args["pageInput"].(*model.PageInput)), true
 
 	case "Query.rateYourMusicArtist":
 		if e.complexity.Query.RateYourMusicArtist == nil {
@@ -1132,7 +1132,7 @@ type Query {
     settings: WhoKnowsSettings
   ): WhoKnowsTrackResponse
 
-  # Who first/
+  # Who first/who last
   whoFirstArtist(artist: ArtistInput!, settings: WhoKnowsSettings, whoLast: Boolean): WhoFirstArtistResponse 
 
   # Guild members
@@ -1157,7 +1157,7 @@ type Query {
   ): ArtistSearchResults
 
   # Plays
-  plays(user: UserInput!, pageInput: PageInput): [Play!]!
+  plays(playsInput: PlaysInput!, pageInput: PageInput): [Play!]!
   artistPlays(user: UserInput!, settings: ArtistPlaysSettings): [ArtistCount!]!
   albumPlays(user: UserInput!, settings: AlbumPlaysSettings): [AlbumCount!]!
   trackPlays(user: UserInput!, settings: TrackPlaysSettings): [AmbiguousTrackCount!]!
@@ -1430,7 +1430,14 @@ input RatingsSettings {
   user: UserInput
   album: AlbumInput
   pageInput: PageInput
-}`, BuiltIn: false},
+}
+
+input PlaysInput {
+  user: UserInput
+  track: TrackInput
+  sort: String
+}
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -1792,15 +1799,15 @@ func (ec *executionContext) field_Query_guildMembers_args(ctx context.Context, r
 func (ec *executionContext) field_Query_plays_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.UserInput
-	if tmp, ok := rawArgs["user"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user"))
-		arg0, err = ec.unmarshalNUserInput2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserInput(ctx, tmp)
+	var arg0 model.PlaysInput
+	if tmp, ok := rawArgs["playsInput"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("playsInput"))
+		arg0, err = ec.unmarshalNPlaysInput2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐPlaysInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["user"] = arg0
+	args["playsInput"] = arg0
 	var arg1 *model.PageInput
 	if tmp, ok := rawArgs["pageInput"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageInput"))
@@ -3969,7 +3976,7 @@ func (ec *executionContext) _Query_plays(ctx context.Context, field graphql.Coll
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Plays(rctx, args["user"].(model.UserInput), args["pageInput"].(*model.PageInput))
+		return ec.resolvers.Query().Plays(rctx, args["playsInput"].(model.PlaysInput), args["pageInput"].(*model.PageInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6756,6 +6763,42 @@ func (ec *executionContext) unmarshalInputPageInput(ctx context.Context, obj int
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPlaysInput(ctx context.Context, obj interface{}) (model.PlaysInput, error) {
+	var it model.PlaysInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "user":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user"))
+			it.User, err = ec.unmarshalOUserInput2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "track":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("track"))
+			it.Track, err = ec.unmarshalOTrackInput2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTrackInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "sort":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sort"))
+			it.Sort, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputRatingsSettings(ctx context.Context, obj interface{}) (model.RatingsSettings, error) {
 	var it model.RatingsSettings
 	var asMap = obj.(map[string]interface{})
@@ -8759,6 +8802,11 @@ func (ec *executionContext) marshalNPlay2ᚖgithubᚗcomᚋjivisonᚋgowonᚑind
 		return graphql.Null
 	}
 	return ec._Play(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPlaysInput2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐPlaysInput(ctx context.Context, v interface{}) (model.PlaysInput, error) {
+	res, err := ec.unmarshalInputPlaysInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNRateYourMusicAlbum2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRateYourMusicAlbum(ctx context.Context, sel ast.SelectionSet, v *model.RateYourMusicAlbum) graphql.Marshaler {
