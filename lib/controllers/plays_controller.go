@@ -8,17 +8,10 @@ import (
 	"github.com/jivison/gowon-indexer/lib/services/users"
 )
 
-func Plays(userInput model.UserInput, pageInput *model.PageInput) ([]*model.Play, error) {
-	usersService := users.CreateService()
+func Plays(playsInput model.PlaysInput, pageInput *model.PageInput) ([]*model.Play, error) {
 	indexingService := indexing.CreateService()
 
-	user := usersService.FindUserByInput(userInput)
-
-	if user == nil {
-		return nil, customerrors.EntityDoesntExistError("user")
-	}
-
-	plays, err := indexingService.GetPlays(*user, pageInput)
+	plays, err := indexingService.GetPlays(playsInput, pageInput)
 
 	if err != nil {
 		return nil, err

@@ -7,12 +7,16 @@ import (
 	"github.com/jivison/gowon-indexer/lib/helpers/inputparser"
 )
 
-func (i Indexing) GetPlays(user db.User, pageInput *model.PageInput) ([]db.Play, error) {
+func (i Indexing) GetPlays(playsInput model.PlaysInput, pageInput *model.PageInput) ([]db.Play, error) {
 	var plays []db.Play
 
-	query := db.Db.Model(&plays).Relation("User").Relation("Track").Relation("Track.Artist").Relation("Track.Album").Where("user_id = ?", user.ID).Order("scrobbled_at desc")
+	query := db.Db.Model(&plays).Relation("User").Relation("Track").Relation("Track.Artist").Relation("Track.Album")
 
-	query = inputparser.CreateParser(query).ParsePageInput(pageInput).GetQuery()
+	query = inputparser.CreateParser(query).ParsePlaysInput(&playsInput, &inputparser.InputSettings{
+		AlbumPath:   "track__album",
+		ArtistPath:  "track__artist",
+		DefaultSort: "playcount desc",
+	}).ParsePageInput(pageInput).GetQuery()
 
 	err := query.Select()
 

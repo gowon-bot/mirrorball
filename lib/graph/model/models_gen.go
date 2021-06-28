@@ -109,6 +109,12 @@ type Play struct {
 	Track       *Track `json:"track"`
 }
 
+type PlaysInput struct {
+	User  *UserInput  `json:"user"`
+	Track *TrackInput `json:"track"`
+	Sort  *string     `json:"sort"`
+}
+
 type RateYourMusicAlbum struct {
 	RateYourMusicID  string  `json:"rateYourMusicID"`
 	Title            string  `json:"title"`
