@@ -61,10 +61,10 @@ func (rym RateYourMusic) ParseRYMSExport(csvString string) ([]RawRateYourMusicRa
 			continue
 		}
 
-		artistName := fixAmpersands(combineNames(record[FirstName], record[LastName]))
-		artistNameLocalized := fixAmpersands(combineNames(record[FirstNameLocalized], record[LastNameLocalized]))
+		artistName := unescape(combineNames(record[FirstName], record[LastName]))
+		artistNameLocalized := unescape(combineNames(record[FirstNameLocalized], record[LastNameLocalized]))
 
-		title := fixAmpersands(record[Title])
+		title := unescape(record[Title])
 
 		row := RawRateYourMusicRating{}
 		if len(artistNameLocalized) > 0 {
@@ -126,8 +126,8 @@ func combineNames(firstName string, lastName string) string {
 }
 
 func (rym RateYourMusic) generateRawAlbumCombinations(record []string, row RawRateYourMusicRating) ([]indexing.AlbumToConvert, error) {
-	releaseTitle := fixAmpersands(record[Title])
-	artistName := fixAmpersands(record[LastName])
+	releaseTitle := unescape(record[Title])
+	artistName := unescape(record[LastName])
 
 	artistsToCheck := []indexing.AlbumToConvert{{ArtistName: row.ArtistName, AlbumName: row.Title}}
 
@@ -191,8 +191,8 @@ func joinArtists(artists []string) string {
 	}
 }
 
-func fixAmpersands(str string) string {
-	return strings.ReplaceAll(str, "&amp;", "&")
+func unescape(str string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(str, "&amp;", "&"), "&#34;", `"`)
 }
 
 // regex functions
