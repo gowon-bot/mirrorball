@@ -116,7 +116,7 @@ func InsertManyPlays(plays []db.Play, itemsPerChunk float64) ([]db.Play, error) 
 		_, err := db.Db.Model(&chunk).Insert()
 
 		if err != nil {
-			return allPlays, err
+			continue
 		}
 
 		allPlays = append(allPlays, chunk...)
