@@ -8,10 +8,10 @@ import (
 func PresentWhoFirstArtistResponse(artist *db.Artist, plays []db.Play) *model.WhoFirstArtistResponse {
 	var whoKnowsRows []*model.WhoFirstRow
 
-	for _, artistCount := range plays {
+	for _, play := range plays {
 		whoKnowsRows = append(whoKnowsRows, &model.WhoFirstRow{
-			User:        PresentUser(artistCount.User),
-			ScrobbledAt: int(artistCount.ScrobbledAt.Unix()),
+			User:        PresentUser(play.User),
+			ScrobbledAt: int(play.ScrobbledAt.Unix()),
 		})
 	}
 

@@ -345,3 +345,44 @@ func SelectRatingsWhereInMany(rymsAlbumIDs []interface{}, userID int64, itemsPer
 
 	return allRatings, nil
 }
+
+func SelectUsersWhereInMany(userIDs []int64, itemsPerChunk float64) ([]db.User, error) {
+	var chunks [][]interface{}
+	var allUsers []db.User
+
+	if len(userIDs) == 0 {
+		return allUsers, nil
+	}
+
+	chunks = make([][]interface{}, int(math.Floor(float64(len(userIDs))/itemsPerChunk))+1)
+
+	for index, user := range userIDs {
+		chunkIndex := int(math.Floor(float64(index+1) / itemsPerChunk))
+
+		if chunks[chunkIndex] == nil {
+			chunks[chunkIndex] = make([]interface{}, 0)
+		}
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], user)
+	}
+
+	for _, chunk := range chunks {
+		var selectedUsers []db.User
+
+		err := db.Db.Model((*db.User)(nil)).
+			Where(
+				"id IN (?)",
+				pg.In(
+					chunk,
+				),
+			).Select(&selectedUsers)
+
+		if err != nil {
+			return allUsers, customerrors.DatabaseUnknownError()
+		}
+
+		allUsers = append(allUsers, selectedUsers...)
+	}
+
+	return allUsers, nil
+}
