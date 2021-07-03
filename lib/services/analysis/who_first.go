@@ -27,11 +27,13 @@ func (a Analysis) WhoFirstArtist(artist *db.Artist, settings *model.WhoKnowsSett
 	query := db.Db.Model(&whoFirst).
 		Relation("Track._").
 		ColumnExpr(aggFunc+"(scrobbled_at) as scrobbled_at").
-		Column("user_id").
+		Column("play.user_id").
 		Where("artist_id = ?", artist.ID).
-		Group("user_id").OrderExpr("1 " + sort)
+		Group("play.user_id").OrderExpr("1 " + sort)
 
-	err := inputparser.CreateParser(query).ParseWhoKnowsSettings(settings).GetQuery().Select()
+	err := inputparser.CreateParser(query).ParseWhoKnowsSettings(settings, &inputparser.InputSettings{
+		UserIDPath: `play"."user_id`,
+	}).GetQuery().Select()
 
 	if err != nil {
 		return whoFirst, customerrors.DatabaseUnknownError()

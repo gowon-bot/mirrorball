@@ -17,7 +17,9 @@ func (a Analysis) WhoKnowsArtist(artist *db.Artist, settings *model.WhoKnowsSett
 		Where("artist_id = ?", artist.ID).
 		Order("playcount desc", "username desc")
 
-	err := inputparser.CreateParser(query).ParseWhoKnowsSettings(settings).GetQuery().Select()
+	err := inputparser.CreateParser(query).ParseWhoKnowsSettings(settings, inputparser.InputSettings{
+		UserIDPath: `user"."id`,
+	}).GetQuery().Select()
 
 	if err != nil {
 		return whoKnows, customerrors.DatabaseUnknownError()
@@ -35,7 +37,9 @@ func (a Analysis) WhoKnowsAlbum(album *db.Album, settings *model.WhoKnowsSetting
 		Where("album_id = ?", album.ID).
 		Order("playcount desc", "username desc")
 
-	err := inputparser.CreateParser(query).ParseWhoKnowsSettings(settings).GetQuery().Select()
+	err := inputparser.CreateParser(query).ParseWhoKnowsSettings(settings, inputparser.InputSettings{
+		UserIDPath: `user"."id`,
+	}).GetQuery().Select()
 
 	if err != nil {
 		return whoKnows, customerrors.DatabaseUnknownError()
@@ -73,7 +77,9 @@ func (a Analysis) WhoKnowsTrack(tracks []db.Track, settings *model.WhoKnowsSetti
 		Where("track_id IN (?)", pg.In(trackIDs)).
 		Group("name", "artist_id", "track_count.user_id", "username", "discord_id", "user_type")
 
-	trackCounts = inputparser.CreateParser(trackCounts).ParseWhoKnowsSettings(settings).GetQuery()
+	trackCounts = inputparser.CreateParser(trackCounts).ParseWhoKnowsSettings(settings, inputparser.InputSettings{
+		UserIDPath: `user"."id`,
+	}).GetQuery()
 
 	err := db.Db.Model().
 		TableExpr("(?) as track_counts", trackCounts).

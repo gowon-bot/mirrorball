@@ -1,9 +1,9 @@
 package inputparser
 
 type InputSettings struct {
-	ArtistPath, AlbumPath, TrackPath string
-	UserRelation                     string
-	DefaultSort                      string
+	ArtistPath, AlbumPath, TrackPath, UserIDPath string
+	UserRelation                                 string
+	DefaultSort                                  string
 }
 
 func (s InputSettings) getArtistPath() string {
@@ -39,4 +39,11 @@ func (s InputSettings) getUserRelation() string {
 		return "User"
 	}
 	return s.UserRelation
+}
+
+func (s InputSettings) getUserIDPath() string {
+	if s.UserIDPath == "" {
+		return "user_id"
+	}
+	return s.UserIDPath
 }
