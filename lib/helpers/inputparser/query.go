@@ -13,6 +13,10 @@ func (p InputParser) ParsePageInput(pageInput *model.PageInput) *InputParser {
 		p.query.Limit(*pageInput.Limit)
 	}
 
+	if pageInput.Offset != nil {
+		p.query.Offset(*pageInput.Offset)
+	}
+
 	return &p
 }
 

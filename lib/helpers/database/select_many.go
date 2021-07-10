@@ -8,17 +8,17 @@ import (
 	"github.com/jivison/gowon-indexer/lib/db"
 )
 
-func SelectArtistsWhereInMany(artists []string, itemsPerChunk float64) ([]db.Artist, error) {
+func SelectArtistsWhereInMany(tags []string, itemsPerChunk float64) ([]db.Artist, error) {
 	var chunks [][]interface{}
 	var allArtists []db.Artist
 
-	if len(artists) == 0 {
+	if len(tags) == 0 {
 		return allArtists, nil
 	}
 
-	chunks = make([][]interface{}, int(math.Floor(float64(len(artists))/itemsPerChunk))+1)
+	chunks = make([][]interface{}, int(math.Floor(float64(len(tags))/itemsPerChunk))+1)
 
-	for index, artist := range artists {
+	for index, artist := range tags {
 		chunkIndex := int(math.Floor(float64(index+1) / itemsPerChunk))
 
 		if chunks[chunkIndex] == nil {
@@ -47,6 +47,47 @@ func SelectArtistsWhereInMany(artists []string, itemsPerChunk float64) ([]db.Art
 	}
 
 	return allArtists, nil
+}
+
+func SelectTagsWhereInMany(tags []string, itemsPerChunk float64) ([]db.Tag, error) {
+	var chunks [][]interface{}
+	var allTags []db.Tag
+
+	if len(tags) == 0 {
+		return allTags, nil
+	}
+
+	chunks = make([][]interface{}, int(math.Floor(float64(len(tags))/itemsPerChunk))+1)
+
+	for index, tag := range tags {
+		chunkIndex := int(math.Floor(float64(index+1) / itemsPerChunk))
+
+		if chunks[chunkIndex] == nil {
+			chunks[chunkIndex] = make([]interface{}, 0)
+		}
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], tag)
+	}
+
+	for _, chunk := range chunks {
+		var selectedTags []db.Tag
+
+		err := db.Db.Model((*db.Tag)(nil)).
+			Where(
+				"tag.name IN (?)",
+				pg.In(
+					chunk,
+				),
+			).Select(&selectedTags)
+
+		if err != nil {
+			return allTags, customerrors.DatabaseUnknownError()
+		}
+
+		allTags = append(allTags, selectedTags...)
+	}
+
+	return allTags, nil
 }
 
 func SelectAlbumsWhereInMany(albums []interface{}, itemsPerChunk float64) ([]db.Album, error) {

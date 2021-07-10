@@ -144,3 +144,38 @@ func (i Indexing) ConvertTracks(trackNames []TrackToConvert, existingArtistsMap 
 
 	return tracksMap, nil
 }
+
+type TagsMap = map[string]db.Tag
+
+func (i Indexing) ConvertTags(tagNames []string) (TagsMap, error) {
+	tagsMap := make(TagsMap)
+	tagsToCreate := []db.Tag{}
+
+	tags, err := helpers.SelectTagsWhereInMany(tagNames, constants.ChunkSize)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, tag := range tags {
+		tagsMap[tag.Name] = tag
+	}
+
+	for _, tagName := range tagNames {
+		if _, ok := tagsMap[tagName]; !ok {
+			tagsToCreate = append(tagsToCreate, db.Tag{Name: tagName})
+		}
+	}
+
+	createdTags, err := i.CreateTags(tagsToCreate)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, createdTag := range createdTags {
+		tagsMap[createdTag.Name] = createdTag
+	}
+
+	return tagsMap, nil
+}

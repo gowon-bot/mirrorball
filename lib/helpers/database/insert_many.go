@@ -324,3 +324,28 @@ func InsertManyRatings(ratings []db.Rating, itemsPerChunk float64) ([]db.Rating,
 
 	return allRatings, nil
 }
+
+func InsertManyTags(tags []db.Tag, itemsPerChunk float64) ([]db.Tag, error) {
+	var chunks [][]db.Tag
+	var allTags []db.Tag
+
+	chunks = make([][]db.Tag, int(math.Floor(float64(len(tags))/(itemsPerChunk)))+1)
+
+	for index, tag := range tags {
+		chunkIndex := int(math.Floor(float64(index+1) / (itemsPerChunk)))
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], tag)
+	}
+
+	for _, chunk := range chunks {
+		_, err := db.Db.Model(&chunk).Insert()
+
+		if err != nil {
+			return allTags, customerrors.DatabaseUnknownError()
+		}
+
+		allTags = append(allTags, chunk...)
+	}
+
+	return allTags, nil
+}

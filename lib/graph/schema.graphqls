@@ -49,7 +49,7 @@ type Query {
   trackPlays(user: UserInput!, settings: TrackPlaysSettings): [AmbiguousTrackCount!]!
 
   # Ratings
-  ratings(settings: RatingsSettings): [Rating!]!
+  ratings(settings: RatingsSettings): RatingsResponse!
   rateYourMusicArtist(keywords: String!): RateYourMusicArtist
 }
 
@@ -68,11 +68,18 @@ type Mutation {
 
   # Ratings
   importRatings(csv: String!, user: UserInput!): Void
+  
+  # Tags
+  tagArtists(artists: [ArtistInput!]!, tags: [TagInput!]!): Void
 }
 
 ##############
 # Base Types #
 ##############
+
+type PageInfo {
+  recordCount: Int!
+}
 
 enum UserType {
   Wavy
@@ -208,15 +215,11 @@ type WhoFirstArtistResponse {
   artist: Artist!
 }
 
-# type WhoKnowsAlbumResponse {
-#   rows: [WhoKnowsRow!]!
-#   album: Album!
-# }
-
-# type WhoKnowsTrackResponse {
-#   rows: [WhoKnowsRow!]!
-#   track: AmbiguousTrack!
-# }
+# Ratings
+type RatingsResponse {
+  ratings: [Rating!]!
+  pageInfo: PageInfo!
+}
 
 # Counts
 type ArtistTopTracksResponse {
@@ -292,6 +295,7 @@ input SearchSettings {
 
 input PageInput {
   limit: Int
+  offset: Int
 }
 
 input ArtistPlaysSettings {
@@ -316,10 +320,15 @@ input RatingsSettings {
   user: UserInput
   album: AlbumInput
   pageInput: PageInput
+  rating: Int
 }
 
 input PlaysInput {
   user: UserInput
   track: TrackInput
   sort: String
+}
+
+input TagInput {
+  name: String
 }

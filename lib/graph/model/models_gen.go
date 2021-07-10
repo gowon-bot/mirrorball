@@ -98,8 +98,13 @@ type GuildMember struct {
 	User    *User  `json:"user"`
 }
 
+type PageInfo struct {
+	RecordCount int `json:"recordCount"`
+}
+
 type PageInput struct {
-	Limit *int `json:"limit"`
+	Limit  *int `json:"limit"`
+	Offset *int `json:"offset"`
 }
 
 type Play struct {
@@ -133,15 +138,25 @@ type Rating struct {
 	Rating             int                 `json:"rating"`
 }
 
+type RatingsResponse struct {
+	Ratings  []*Rating `json:"ratings"`
+	PageInfo *PageInfo `json:"pageInfo"`
+}
+
 type RatingsSettings struct {
 	User      *UserInput  `json:"user"`
 	Album     *AlbumInput `json:"album"`
 	PageInput *PageInput  `json:"pageInput"`
+	Rating    *int        `json:"rating"`
 }
 
 type SearchSettings struct {
 	Exact *bool      `json:"exact"`
 	User  *UserInput `json:"user"`
+}
+
+type TagInput struct {
+	Name *string `json:"name"`
 }
 
 type TaskStartResponse struct {

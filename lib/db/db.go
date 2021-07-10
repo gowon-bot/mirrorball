@@ -29,6 +29,7 @@ func InitDB() {
 	}
 
 	orm.RegisterTable((*RateYourMusicAlbumAlbum)(nil))
+	orm.RegisterTable((*ArtistTag)(nil))
 
 	db := pg.Connect(parsedOptions)
 

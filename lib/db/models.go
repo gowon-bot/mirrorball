@@ -22,6 +22,8 @@ type User struct {
 type Artist struct {
 	ID   int64 `pg:",pk"`
 	Name string
+
+	Tags []Tag `pg:"many2many:artist_tags"`
 }
 
 // Album represents a cached artist
@@ -87,6 +89,23 @@ type Rating struct {
 
 	RateYourMusicAlbumID int64
 	RateYourMusicAlbum   *RateYourMusicAlbum `pg:"rel:has-one"`
+}
+
+/*
+* Metadata
+ */
+
+type Tag struct {
+	ID   int64 `pg:",pk"`
+	Name string
+}
+
+type ArtistTag struct {
+	ArtistID int64
+	Artist   *Artist `pg:"rel:has-one"`
+
+	TagID int64
+	Tag   *Tag `pg:"rel:has-one"`
 }
 
 /*
