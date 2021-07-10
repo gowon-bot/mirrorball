@@ -22,6 +22,10 @@ func (p InputParser) ParseRatingsSettings(settingsInput *model.RatingsSettings) 
 		p.ParsePageInput(settingsInput.PageInput)
 	}
 
+	if settingsInput.Rating != nil {
+		p.query.Where("rating = ?", settingsInput.Rating)
+	}
+
 	return &p
 }
 

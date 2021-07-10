@@ -1,9 +1,13 @@
 package controllers
 
 import (
+	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
+	dbhelpers "github.com/jivison/gowon-indexer/lib/helpers/database"
 	"github.com/jivison/gowon-indexer/lib/services/indexing"
 )
+
+type ArtistsTagsMap = map[int][]int
 
 func TagArtists(artists []*model.ArtistInput, tags []*model.TagInput) (*string, error) {
 	indexingService := indexing.CreateService()
@@ -39,4 +43,25 @@ func TagArtists(artists []*model.ArtistInput, tags []*model.TagInput) (*string, 
 		return nil, err
 	}
 
+	artistTags := generateArtistTagsToCreate(artistsMap, tagsMap)
+
+	err = dbhelpers.InsertUniqueArtistTags(artistTags)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func generateArtistTagsToCreate(artistsMap indexing.ArtistsMap, tagsMap indexing.TagsMap) []db.ArtistTag {
+	var artistTags []db.ArtistTag
+
+	for _, artist := range artistsMap {
+		for _, tag := range tagsMap {
+			artistTags = append(artistTags, db.ArtistTag{ArtistID: artist.ID, TagID: tag.ID})
+		}
+	}
+
+	return artistTags
 }

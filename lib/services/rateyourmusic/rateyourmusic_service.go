@@ -29,6 +29,20 @@ func (rym RateYourMusic) GetRatings(settings *model.RatingsSettings) ([]db.Ratin
 	return ratings, nil
 }
 
+func (rym RateYourMusic) CountRatings(settings *model.RatingsSettings) (int, error) {
+	query := db.Db.Model((*db.Rating)(nil))
+
+	parser := inputparser.CreateParser(query).ParseRatingsSettings(settings)
+
+	count, err := parser.GetQuery().Count()
+
+	if err != nil {
+		return 0, customerrors.DatabaseUnknownError()
+	}
+
+	return count, nil
+}
+
 func (rym RateYourMusic) GetArtist(keywords string) (*db.RateYourMusicAlbum, error) {
 	album := new(db.RateYourMusicAlbum)
 

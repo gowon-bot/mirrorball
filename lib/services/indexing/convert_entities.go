@@ -151,14 +151,14 @@ func (i Indexing) ConvertTags(tagNames []string) (TagsMap, error) {
 	tagsMap := make(TagsMap)
 	tagsToCreate := []db.Tag{}
 
-	artists, err := helpers.SelectTagsWhereInMany(tagNames, constants.ChunkSize)
+	tags, err := helpers.SelectTagsWhereInMany(tagNames, constants.ChunkSize)
 
 	if err != nil {
 		return nil, err
 	}
 
-	for _, artist := range artists {
-		tagsMap[artist.Name] = artist
+	for _, tag := range tags {
+		tagsMap[tag.Name] = tag
 	}
 
 	for _, tagName := range tagNames {

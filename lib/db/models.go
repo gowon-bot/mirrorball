@@ -96,9 +96,8 @@ type Rating struct {
  */
 
 type Tag struct {
-	ID     int `pg:",pk"`
-	Name   string
-	Source string
+	ID   int64 `pg:",pk"`
+	Name string
 }
 
 type ArtistTag struct {

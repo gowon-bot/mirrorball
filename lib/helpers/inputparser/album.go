@@ -12,6 +12,8 @@ type AlbumInputSettings interface {
 func (p InputParser) ParseAlbumInput(albumInput model.AlbumInput, settings AlbumInputSettings) *InputParser {
 	if albumInput.Name != nil && len(*albumInput.Name) > 0 {
 		p.query.Where(settings.getAlbumPath()+".name ILIKE ?", albumInput.Name)
+	} else if albumInput.Name != nil && len(*albumInput.Name) == 0 {
+		p.query.Where((settings.getAlbumPath() + ".name IS NULL"))
 	}
 
 	if albumInput.Artist != nil {

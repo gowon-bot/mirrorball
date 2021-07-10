@@ -177,13 +177,11 @@ func (i Indexing) generateTracksToCreate(trackNames []TrackToConvert, tracksMap 
 }
 
 func (i Indexing) CreateTags(tags []db.Tag) ([]db.Tag, error) {
-	var values []db.Tag
-
 	if len(tags) < 1 {
-		return values, nil
+		return tags, nil
 	}
 
-	values, err := helpers.InsertManyTags(values, constants.ChunkSize)
+	values, err := helpers.InsertManyTags(tags, constants.ChunkSize)
 
 	if err != nil {
 		return nil, err

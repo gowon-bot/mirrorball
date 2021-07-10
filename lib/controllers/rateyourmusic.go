@@ -41,7 +41,7 @@ func ImportRatings(csvString string, userInput model.UserInput) (*string, error)
 	return nil, nil
 }
 
-func Ratings(settings *model.RatingsSettings) ([]*model.Rating, error) {
+func Ratings(settings *model.RatingsSettings) (*model.RatingsResponse, error) {
 	rymsService := rateyourmusic.CreateService()
 
 	ratings, err := rymsService.GetRatings(settings)
@@ -50,7 +50,18 @@ func Ratings(settings *model.RatingsSettings) ([]*model.Rating, error) {
 		return nil, err
 	}
 
-	return presenters.PresentRatings(ratings), nil
+	count, err := rymsService.CountRatings(settings)
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := &model.RatingsResponse{
+		Ratings:  presenters.PresentRatings(ratings),
+		PageInfo: presenters.PresentPageInfo(count),
+	}
+
+	return response, nil
 }
 
 func RateYourMusicArtist(keywords string) (*model.RateYourMusicArtist, error) {
