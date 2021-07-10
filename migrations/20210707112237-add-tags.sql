@@ -10,4 +10,4 @@ CREATE TABLE artist_tags (
 
 -- +migrate Down
 DROP TABLE tags;
-DROP TABLE artists;
+DROP TABLE artist_tags;
