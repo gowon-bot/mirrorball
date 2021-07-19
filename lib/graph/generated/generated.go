@@ -117,7 +117,7 @@ type ComplexityRoot struct {
 		Logout              func(childComplexity int, discordID string) int
 		RemoveUserFromGuild func(childComplexity int, discordID string, guildID string) int
 		SyncGuild           func(childComplexity int, guildID string, discordIDs []string) int
-		TagArtists          func(childComplexity int, artists []*model.ArtistInput, tags []*model.TagInput) int
+		TagArtists          func(childComplexity int, artists []*model.ArtistInput, tags []*model.TagInput, markAsChecked *bool) int
 		Update              func(childComplexity int, user model.UserInput, forceUserCreate *bool) int
 	}
 
@@ -257,7 +257,7 @@ type MutationResolver interface {
 	FullIndex(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error)
 	Update(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error)
 	ImportRatings(ctx context.Context, csv string, user model.UserInput) (*string, error)
-	TagArtists(ctx context.Context, artists []*model.ArtistInput, tags []*model.TagInput) (*string, error)
+	TagArtists(ctx context.Context, artists []*model.ArtistInput, tags []*model.TagInput, markAsChecked *bool) (*string, error)
 }
 type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
@@ -600,7 +600,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.TagArtists(childComplexity, args["artists"].([]*model.ArtistInput), args["tags"].([]*model.TagInput)), true
+		return e.complexity.Mutation.TagArtists(childComplexity, args["artists"].([]*model.ArtistInput), args["tags"].([]*model.TagInput), args["markAsChecked"].(*bool)), true
 
 	case "Mutation.update":
 		if e.complexity.Mutation.Update == nil {
@@ -1307,7 +1307,7 @@ type Mutation {
   importRatings(csv: String!, user: UserInput!): Void
   
   # Tags
-  tagArtists(artists: [ArtistInput!]!, tags: [TagInput!]!): Void
+  tagArtists(artists: [ArtistInput!]!, tags: [TagInput!]!, markAsChecked: Boolean): Void
 }
 
 ##############
@@ -1793,6 +1793,15 @@ func (ec *executionContext) field_Mutation_tagArtists_args(ctx context.Context, 
 		}
 	}
 	args["tags"] = arg1
+	var arg2 *bool
+	if tmp, ok := rawArgs["markAsChecked"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("markAsChecked"))
+		arg2, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["markAsChecked"] = arg2
 	return args, nil
 }
 
@@ -3683,7 +3692,7 @@ func (ec *executionContext) _Mutation_tagArtists(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().TagArtists(rctx, args["artists"].([]*model.ArtistInput), args["tags"].([]*model.TagInput))
+		return ec.resolvers.Mutation().TagArtists(rctx, args["artists"].([]*model.ArtistInput), args["tags"].([]*model.TagInput), args["markAsChecked"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

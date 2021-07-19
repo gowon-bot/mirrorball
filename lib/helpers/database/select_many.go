@@ -75,7 +75,7 @@ func SelectTagsWhereInMany(tags []string, itemsPerChunk float64) ([]db.Tag, erro
 
 		err := db.Db.Model((*db.Tag)(nil)).
 			Where(
-				"lowercase(tag.name) IN (?)",
+				"lower(tag.name) IN (?)",
 				pg.In(
 					chunk,
 				),

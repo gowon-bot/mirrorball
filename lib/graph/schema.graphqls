@@ -75,7 +75,7 @@ type Mutation {
   importRatings(csv: String!, user: UserInput!): Void
   
   # Tags
-  tagArtists(artists: [ArtistInput!]!, tags: [TagInput!]!): Void
+  tagArtists(artists: [ArtistInput!]!, tags: [TagInput!]!, markAsChecked: Boolean): Void
 }
 
 ##############
