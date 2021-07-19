@@ -1,10 +1,13 @@
 package indexing
 
 import (
+	"context"
+
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
 	"github.com/jivison/gowon-indexer/lib/helpers/inputparser"
+	"github.com/jivison/gowon-indexer/lib/meta"
 )
 
 // GetArtist gets and optionally creates an indexed artist
@@ -28,6 +31,26 @@ func (i Indexing) GetArtist(artistInput model.ArtistInput, create bool) (*db.Art
 	}
 
 	return artist, nil
+}
+
+func (i Indexing) GetArtists(artistInputs []*model.ArtistInput, ctx context.Context) ([]db.Artist, error) {
+	var artists []db.Artist
+
+	parser := inputparser.CreateParser(db.Db.Model(&artists))
+
+	query := parser.ParseArtistInputs(artistInputs, inputparser.InputSettings{}).GetQuery()
+
+	if meta.HasRequestedField(ctx, "tags") {
+		query.Relation("Tags")
+	}
+
+	err := query.Select()
+
+	if err != nil {
+		return nil, customerrors.DatabaseUnknownError()
+	}
+
+	return artists, nil
 }
 
 // GetAlbum returns (and optionally creates) an album from the database

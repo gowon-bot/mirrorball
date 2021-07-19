@@ -1,4 +1,4 @@
-# Gowon Indexer
+# Mirrorball
 
 This project is part of Gowon bot ([main repo](https://github.com/jivison/gowon))
 
@@ -43,4 +43,5 @@ Some resolvers execute "tasks" (`lib/tasks`). Since these are asynchronous and r
 Somethings broken? Just curious how something works?
 
 Feel free to shoot me a Discord dm at `john!#2527`
+or join the support server! https://discord.gg/9Vr7Df7TZf
 

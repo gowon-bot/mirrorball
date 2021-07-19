@@ -10,6 +10,7 @@ require (
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/aws/aws-sdk-go v1.38.65 // indirect
 	github.com/dgryski/trifles v0.0.0-20210119233746-37d926d5de6c // indirect
+	github.com/fatih/color v1.12.0
 	github.com/go-pg/pg/v10 v10.10.0
 	github.com/go-redis/redis/v8 v8.10.0 // indirect
 	github.com/google/go-querystring v1.1.0

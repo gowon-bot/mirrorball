@@ -2,23 +2,24 @@ package dbhelpers
 
 import (
 	"math"
+	"strings"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
 )
 
-func SelectArtistsWhereInMany(tags []string, itemsPerChunk float64) ([]db.Artist, error) {
+func SelectArtistsWhereInMany(artists []string, itemsPerChunk float64) ([]db.Artist, error) {
 	var chunks [][]interface{}
 	var allArtists []db.Artist
 
-	if len(tags) == 0 {
+	if len(artists) == 0 {
 		return allArtists, nil
 	}
 
-	chunks = make([][]interface{}, int(math.Floor(float64(len(tags))/itemsPerChunk))+1)
+	chunks = make([][]interface{}, int(math.Floor(float64(len(artists))/itemsPerChunk))+1)
 
-	for index, artist := range tags {
+	for index, artist := range artists {
 		chunkIndex := int(math.Floor(float64(index+1) / itemsPerChunk))
 
 		if chunks[chunkIndex] == nil {
@@ -66,7 +67,7 @@ func SelectTagsWhereInMany(tags []string, itemsPerChunk float64) ([]db.Tag, erro
 			chunks[chunkIndex] = make([]interface{}, 0)
 		}
 
-		chunks[chunkIndex] = append(chunks[chunkIndex], tag)
+		chunks[chunkIndex] = append(chunks[chunkIndex], strings.ToLower(tag))
 	}
 
 	for _, chunk := range chunks {
@@ -74,7 +75,7 @@ func SelectTagsWhereInMany(tags []string, itemsPerChunk float64) ([]db.Tag, erro
 
 		err := db.Db.Model((*db.Tag)(nil)).
 			Where(
-				"tag.name IN (?)",
+				"lowercase(tag.name) IN (?)",
 				pg.In(
 					chunk,
 				),

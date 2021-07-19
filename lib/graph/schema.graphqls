@@ -4,6 +4,8 @@ scalar Date
 type Query {
   ping: String!
 
+  artists(inputs: [ArtistInput!], tag: TagInput, pageInput: PageInput, requireTagsForMissing: Boolean): [Artist!]!
+
   # Who knows
   whoKnowsArtist(
     artist: ArtistInput!
@@ -51,6 +53,9 @@ type Query {
   # Ratings
   ratings(settings: RatingsSettings): RatingsResponse!
   rateYourMusicArtist(keywords: String!): RateYourMusicArtist
+
+  # Tags
+  tags(settings: TagsSettings, requireTagsForMissing: Boolean): TagsResponse!
 }
 
 type Mutation {
@@ -104,6 +109,8 @@ type GuildMember {
 type Artist {
   id: Int!
   name: String!
+
+  tags: [String!]!
 }
 
 type ArtistCount {
@@ -221,6 +228,17 @@ type RatingsResponse {
   pageInfo: PageInfo!
 }
 
+# Tags
+type Tag {
+  name: String!
+  occurrences: Int!
+}
+
+type TagsResponse {
+  tags: [Tag!]!
+  pageInfo: PageInfo!
+}
+
 # Counts
 type ArtistTopTracksResponse {
   artist: Artist!
@@ -331,4 +349,10 @@ input PlaysInput {
 
 input TagInput {
   name: String
+}
+
+input TagsSettings {
+  artists: [ArtistInput!]
+  keyword: String
+  pageInput: PageInput
 }

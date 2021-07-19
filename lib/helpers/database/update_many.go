@@ -3,6 +3,7 @@ package dbhelpers
 import (
 	"math"
 
+	"github.com/go-pg/pg/v10"
 	"github.com/jinzhu/copier"
 	"github.com/jivison/gowon-indexer/lib/db"
 )
@@ -183,4 +184,33 @@ func UpdateManyRateYourMusicAlbums(albums []db.RateYourMusicAlbum, itemsPerChunk
 	}
 
 	return allRatings, nil
+}
+
+func UpdateManyArtistsToBeChecked(artistNames []string, itemsPerChunk float64) error {
+	if len(artistNames) == 0 {
+		return nil
+	}
+
+	chunks := make([][]string, int(math.Floor(float64(len(artistNames))/(itemsPerChunk)))+1)
+
+	for index, artist := range artistNames {
+		chunkIndex := int(math.Floor(float64(index+1) / (itemsPerChunk)))
+
+		if chunks[chunkIndex] == nil {
+			chunks[chunkIndex] = make([]string, 0)
+		}
+
+		chunks[chunkIndex] = append(chunks[chunkIndex], artist)
+	}
+
+	for _, chunk := range chunks {
+		_, err := db.Db.Model((*db.Artist)(nil)).Set("checked_for_tags = true").Where("name IN (?)", pg.In(chunk)).Update()
+
+		if err != nil {
+			return err
+		}
+
+	}
+
+	return nil
 }

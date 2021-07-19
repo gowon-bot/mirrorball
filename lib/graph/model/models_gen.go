@@ -48,8 +48,9 @@ type AmbiguousTrackCount struct {
 }
 
 type Artist struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID   int      `json:"id"`
+	Name string   `json:"name"`
+	Tags []string `json:"tags"`
 }
 
 type ArtistCount struct {
@@ -155,8 +156,24 @@ type SearchSettings struct {
 	User  *UserInput `json:"user"`
 }
 
+type Tag struct {
+	Name        string `json:"name"`
+	Occurrences int    `json:"occurrences"`
+}
+
 type TagInput struct {
 	Name *string `json:"name"`
+}
+
+type TagsResponse struct {
+	Tags     []*Tag    `json:"tags"`
+	PageInfo *PageInfo `json:"pageInfo"`
+}
+
+type TagsSettings struct {
+	Artists   []*ArtistInput `json:"artists"`
+	Keyword   *string        `json:"keyword"`
+	PageInput *PageInput     `json:"pageInput"`
 }
 
 type TaskStartResponse struct {

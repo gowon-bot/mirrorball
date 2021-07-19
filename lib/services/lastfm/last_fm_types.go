@@ -61,9 +61,52 @@ type UserInfoResponse struct {
 	} `json:"user"`
 }
 
+type ArtistInfoResponse struct {
+	Artist struct {
+		Name       string `json:"name"`
+		URL        string `json:"url"`
+		Streamable string `json:"streamable"`
+		Ontour     string `json:"ontour"`
+		Stats      struct {
+			Listeners     string `json:"listeners"`
+			Playcount     string `json:"playcount"`
+			UserPlaycount string `json:"userplaycount"`
+		} `json:"stats"`
+		Similar struct {
+			Artists []struct {
+				Name   string  `json:"name"`
+				URL    string  `json:"url"`
+				Images []Image `json:"image"`
+			} `json:"artist"`
+		} `json:"similar"`
+		Tags struct {
+			Tag []struct {
+				Name string `json:"name"`
+				URL  string `json:"url"`
+			}
+		} `json:"tags"`
+		Bio struct {
+			Links struct {
+				Link struct {
+					Text string `json:"#text"`
+					Rel  string `json:"rel"`
+					Href string `json:"href"`
+				} `json:"link"`
+			} `json:"links"`
+			Published string `json:"published"`
+			Summary   string `json:"summary"`
+			Content   string `json:"content"`
+		} `json:"bio"`
+	} `json:"artist"`
+}
+
 // UserInfoParams is the parameters for a user.getInfo call
 type UserInfoParams struct {
 	Username Requestable `url:"username"`
+}
+
+type ArtistInfoParams struct {
+	Artist string `url:"artist"`
 }
 
 // RecentTrack is a struct containing a recent track from last.fm

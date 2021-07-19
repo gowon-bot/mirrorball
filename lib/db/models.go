@@ -20,8 +20,9 @@ type User struct {
 
 // Artist represents a cached artist
 type Artist struct {
-	ID   int64 `pg:",pk"`
-	Name string
+	ID             int64 `pg:",pk"`
+	Name           string
+	CheckedForTags bool
 
 	Tags []Tag `pg:"many2many:artist_tags"`
 }
@@ -98,6 +99,8 @@ type Rating struct {
 type Tag struct {
 	ID   int64 `pg:",pk"`
 	Name string
+
+	Artists []Artist `pg:"many2many:artist_tags"`
 }
 
 type ArtistTag struct {

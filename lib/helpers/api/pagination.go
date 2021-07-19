@@ -19,7 +19,7 @@ type Paginator struct {
 
 func (p Paginator) convertCurrentPage(page int) int {
 	if page == 0 {
-		if p.SkipFirstPage == true {
+		if p.SkipFirstPage {
 			return 2
 		}
 
@@ -43,7 +43,6 @@ func (p Paginator) GetAtPage(page int) {
 // GetNext gets the current page and increments the current page
 func (p Paginator) GetNext() {
 	p.GetAtPage(p.CurrentPage)
-	p.CurrentPage++
 }
 
 // GetAll gets all remaining pages
@@ -73,7 +72,7 @@ func (p Paginator) GetAllInParallel(parallelization int) {
 		go func(c chan int) {
 			for {
 				page, more := <-c
-				if more == false {
+				if !more {
 					wg.Done()
 					return
 				}

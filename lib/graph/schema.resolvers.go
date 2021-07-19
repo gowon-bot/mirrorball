@@ -52,6 +52,10 @@ func (r *queryResolver) Ping(ctx context.Context) (string, error) {
 	return controllers.Ping()
 }
 
+func (r *queryResolver) Artists(ctx context.Context, inputs []*model.ArtistInput, tag *model.TagInput, pageInput *model.PageInput, requireTagsForMissing *bool) ([]*model.Artist, error) {
+	return controllers.Artists(ctx, inputs, tag, requireTagsForMissing)
+}
+
 func (r *queryResolver) WhoKnowsArtist(ctx context.Context, artist model.ArtistInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsArtistResponse, error) {
 	return controllers.WhoKnowsArtist(artist, settings)
 }
@@ -116,6 +120,10 @@ func (r *queryResolver) RateYourMusicArtist(ctx context.Context, keywords string
 	return controllers.RateYourMusicArtist(keywords)
 }
 
+func (r *queryResolver) Tags(ctx context.Context, settings *model.TagsSettings, requireTagsForMissing *bool) (*model.TagsResponse, error) {
+	return controllers.Tags(settings, requireTagsForMissing)
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
@@ -124,3 +132,13 @@ func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *queryResolver) Artist(ctx context.Context, input *model.ArtistInput) (*model.Artist, error) {
+	panic(fmt.Errorf("not implemented"))
+}

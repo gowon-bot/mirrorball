@@ -97,6 +97,20 @@ func (lfm API) UserInfo(requestable Requestable) (*ErrorResponse, *UserInfoRespo
 	return err, userInfo
 }
 
+func (lfm API) ArtistInfo(artist string) (*ErrorResponse, *ArtistInfoResponse) {
+	params := ArtistInfoParams{
+		Artist: artist,
+	}
+
+	artistInfo := &ArtistInfoResponse{}
+
+	response := lfm.MakeRequest("artist.getInfo", params)
+
+	err := lfm.ParseResponse(response, artistInfo)
+
+	return err, artistInfo
+}
+
 // RecentTracks fetches a user's recent tracks from the last.fm API
 func (lfm API) RecentTracks(params RecentTracksParams) (*ErrorResponse, *RecentTracksResponse) {
 	if params.Page < 1 {

@@ -7,10 +7,18 @@ import (
 
 // PresentArtist converts a database artist into a graphql artist
 func PresentArtist(artist *db.Artist) *model.Artist {
-	return &model.Artist{
+	builtArtist := &model.Artist{
 		ID:   int(artist.ID),
 		Name: artist.Name,
 	}
+
+	if artist.Tags != nil {
+		for _, tag := range artist.Tags {
+			builtArtist.Tags = append(builtArtist.Tags, tag.Name)
+		}
+	}
+
+	return builtArtist
 }
 
 // PresentArtists converts a ist of database artists into a list of graphql artists
