@@ -9,17 +9,17 @@ import (
 	"github.com/jivison/gowon-indexer/lib/services/indexing"
 )
 
-func Artists(ctx context.Context, inputs []*model.ArtistInput, tag *model.TagInput, requireTagsForMissing *bool) ([]*model.Artist, error) {
+func Artists(ctx context.Context, inputs []*model.ArtistInput, tagInput *model.TagInput, requireTagsForMissing *bool) ([]*model.Artist, error) {
 	indexingService := indexing.CreateService()
 
-	if inputs != nil {
-		if requireTagsForMissing != nil && *requireTagsForMissing {
+	if inputs != nil || tagInput != nil {
+		if inputs != nil && requireTagsForMissing != nil && *requireTagsForMissing {
 			analysisService := analysis.CreateService()
 
 			analysisService.RequireTagsForMissing(inputs)
 		}
 
-		artists, err := indexingService.GetArtists(inputs, ctx)
+		artists, err := indexingService.GetArtists(inputs, tagInput, ctx)
 
 		if err != nil {
 			return nil, err

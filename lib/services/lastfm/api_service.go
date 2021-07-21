@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -54,12 +53,12 @@ func (lfm API) buildParams(method string, params interface{}) string {
 func (lfm API) MakeRequest(method string, params interface{}) *http.Response {
 	queryparams := lfm.buildParams(method, params)
 
-	log.Printf("Making call to last.fm with parameters: %s", queryparams)
+	fmt.Printf("Making call to last.fm with parameters: %s", queryparams)
 
 	resp, err := http.Get(lfm.baseURL + "?" + queryparams)
 
 	if err != nil {
-		log.Println("Error! ", err)
+		fmt.Println("Error! ", err)
 	}
 
 	return resp

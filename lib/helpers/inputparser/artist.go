@@ -2,6 +2,7 @@ package inputparser
 
 import (
 	"github.com/go-pg/pg/v10"
+	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
 )
 
@@ -31,6 +32,20 @@ func (p InputParser) ParseArtistInputs(artistInputs []*model.ArtistInput, settin
 	}
 
 	p.query.Where(settings.getArtistPath()+".name IN (?)", pg.In(artistNames))
+
+	return &p
+}
+
+func (p InputParser) ParseTagInputForArtist(tagInput *model.TagInput, settings ArtistInputSettings) *InputParser {
+	if tagInput == nil && tagInput.Name == nil {
+		return &p
+	}
+
+	subsubquery := db.Db.Model((*db.Tag)(nil)).Column("id").Where("tag.name = ?", *tagInput.Name)
+
+	subquery := db.Db.Model((*db.ArtistTag)(nil)).Relation("Tag._").Column("artist_id").Where("tag.id IN (?)", subsubquery)
+
+	p.query.Where(settings.getArtistPath()+".id IN (?)", subquery)
 
 	return &p
 }

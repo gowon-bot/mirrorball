@@ -33,12 +33,15 @@ func (i Indexing) GetArtist(artistInput model.ArtistInput, create bool) (*db.Art
 	return artist, nil
 }
 
-func (i Indexing) GetArtists(artistInputs []*model.ArtistInput, ctx context.Context) ([]db.Artist, error) {
+func (i Indexing) GetArtists(artistInputs []*model.ArtistInput, tagInput *model.TagInput, ctx context.Context) ([]db.Artist, error) {
 	var artists []db.Artist
 
 	parser := inputparser.CreateParser(db.Db.Model(&artists))
 
-	query := parser.ParseArtistInputs(artistInputs, inputparser.InputSettings{}).GetQuery()
+	query := parser.
+		ParseArtistInputs(artistInputs, inputparser.InputSettings{}).
+		ParseTagInputForArtist(tagInput, inputparser.InputSettings{}).
+		GetQuery()
 
 	if meta.HasRequestedField(ctx, "tags") {
 		query.Relation("Tags")

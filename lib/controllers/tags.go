@@ -26,7 +26,7 @@ func TagArtists(artists []*model.ArtistInput, tags []*model.TagInput, markAsChec
 			}
 		}
 
-		if len(artistNames) != 0 {
+		if markAsChecked != nil && *markAsChecked {
 			dbhelpers.UpdateManyArtistsToBeChecked(artistNames, constants.ChunkSize)
 		}
 	}
