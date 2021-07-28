@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+
+	"github.com/jivison/gowon-indexer/lib/meta"
 )
 
 type Album struct {
@@ -116,9 +118,15 @@ type Play struct {
 }
 
 type PlaysInput struct {
-	User  *UserInput  `json:"user"`
-	Track *TrackInput `json:"track"`
-	Sort  *string     `json:"sort"`
+	User      *UserInput  `json:"user"`
+	Track     *TrackInput `json:"track"`
+	Sort      *string     `json:"sort"`
+	Timerange *Timerange  `json:"timerange"`
+}
+
+type PlaysResponse struct {
+	Plays    []*Play   `json:"plays"`
+	PageInfo *PageInfo `json:"pageInfo"`
 }
 
 type RateYourMusicAlbum struct {
@@ -180,6 +188,11 @@ type TaskStartResponse struct {
 	TaskName string `json:"taskName"`
 	Success  bool   `json:"success"`
 	Token    string `json:"token"`
+}
+
+type Timerange struct {
+	From *meta.Date `json:"from"`
+	To   *meta.Date `json:"to"`
 }
 
 type Track struct {

@@ -25,5 +25,9 @@ func (p InputParser) ParsePlaysInput(playsInput *model.PlaysInput, settings Play
 		p.ParseSort(playsInput.Sort, settings)
 	}
 
+	if playsInput.Timerange != nil {
+		p.ParseTimerange(*playsInput.Timerange, "scrobbled_at")
+	}
+
 	return &p
 }

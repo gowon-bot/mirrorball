@@ -8,7 +8,7 @@ import (
 	"github.com/jivison/gowon-indexer/lib/services/users"
 )
 
-func Plays(playsInput model.PlaysInput, pageInput *model.PageInput) ([]*model.Play, error) {
+func Plays(playsInput model.PlaysInput, pageInput *model.PageInput) (*model.PlaysResponse, error) {
 	indexingService := indexing.CreateService()
 
 	plays, err := indexingService.GetPlays(playsInput, pageInput)
@@ -17,7 +17,13 @@ func Plays(playsInput model.PlaysInput, pageInput *model.PageInput) ([]*model.Pl
 		return nil, err
 	}
 
-	return presenters.PresentPlays(plays), nil
+	count, err := indexingService.CountPlays(playsInput)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.PlaysResponse{Plays: presenters.PresentPlays(plays), PageInfo: presenters.PresentPageInfo(count)}, nil
 }
 
 func ArtistPlays(userInput model.UserInput, settings *model.ArtistPlaysSettings) ([]*model.ArtistCount, error) {

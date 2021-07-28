@@ -27,6 +27,24 @@ func (i Indexing) GetPlays(playsInput model.PlaysInput, pageInput *model.PageInp
 	return plays, nil
 }
 
+func (i Indexing) CountPlays(playsInput model.PlaysInput) (int, error) {
+	query := db.Db.Model((*db.Play)(nil)).Relation("User").Relation("Track").Relation("Track.Artist").Relation("Track.Album")
+
+	query = inputparser.CreateParser(query).ParsePlaysInput(&playsInput, &inputparser.InputSettings{
+		AlbumPath:   "track__album",
+		ArtistPath:  "track__artist",
+		DefaultSort: "playcount desc",
+	}).GetQuery()
+
+	count, err := query.Count()
+
+	if err != nil {
+		return count, customerrors.DatabaseUnknownError()
+	}
+
+	return count, nil
+}
+
 func (i Indexing) GetArtistPlays(user db.User, settings *model.ArtistPlaysSettings) ([]db.ArtistCount, error) {
 	var plays []db.ArtistCount
 

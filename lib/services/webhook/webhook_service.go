@@ -16,7 +16,6 @@ type Webhook struct {
 
 // Post posts to a given url with response data
 func (w Webhook) Post(data *bytes.Buffer) {
-
 	http.Post(w.webhookURL, "application/json", data)
 }
 

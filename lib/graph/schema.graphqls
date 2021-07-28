@@ -45,7 +45,7 @@ type Query {
   ): ArtistSearchResults
 
   # Plays
-  plays(playsInput: PlaysInput!, pageInput: PageInput): [Play!]!
+  plays(playsInput: PlaysInput!, pageInput: PageInput): PlaysResponse!
   artistPlays(user: UserInput!, settings: ArtistPlaysSettings): [ArtistCount!]!
   albumPlays(user: UserInput!, settings: AlbumPlaysSettings): [AlbumCount!]!
   trackPlays(user: UserInput!, settings: TrackPlaysSettings): [AmbiguousTrackCount!]!
@@ -84,6 +84,11 @@ type Mutation {
 
 type PageInfo {
   recordCount: Int!
+}
+
+input Timerange {
+  from: Date
+  to: Date
 }
 
 enum UserType {
@@ -188,6 +193,11 @@ type TaskStartResponse {
   taskName: String!
   success: Boolean!
   token: String!
+}
+
+type PlaysResponse {
+  plays: [Play!]!
+  pageInfo: PageInfo!
 }
 
 # Who Knows
@@ -345,6 +355,7 @@ input PlaysInput {
   user: UserInput
   track: TrackInput
   sort: String
+  timerange: Timerange
 }
 
 input TagInput {

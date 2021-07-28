@@ -39,3 +39,12 @@ func (p InputParser) ParseSort(sort *string, settings SortSettings) *InputParser
 
 	return &p
 }
+
+func (p InputParser) ParseTimerange(timerange model.Timerange, field string) {
+	if timerange.From != nil {
+		p.query.Where(field+" > to_timestamp(?)", timerange.From)
+	}
+	if timerange.To != nil {
+		p.query.Where(field+" < to_timestamp(?)", timerange.To)
+	}
+}

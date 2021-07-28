@@ -53,7 +53,7 @@ func (lfm API) buildParams(method string, params interface{}) string {
 func (lfm API) MakeRequest(method string, params interface{}) *http.Response {
 	queryparams := lfm.buildParams(method, params)
 
-	fmt.Printf("Making call to last.fm with parameters: %s", queryparams)
+	fmt.Printf("Making call to last.fm with parameters: %s\n", queryparams)
 
 	resp, err := http.Get(lfm.baseURL + "?" + queryparams)
 

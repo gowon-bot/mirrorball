@@ -96,7 +96,7 @@ func (r *queryResolver) SearchArtist(ctx context.Context, criteria model.ArtistS
 	return controllers.SearchArtist(criteria, settings)
 }
 
-func (r *queryResolver) Plays(ctx context.Context, playsInput model.PlaysInput, pageInput *model.PageInput) ([]*model.Play, error) {
+func (r *queryResolver) Plays(ctx context.Context, playsInput model.PlaysInput, pageInput *model.PageInput) (*model.PlaysResponse, error) {
 	return controllers.Plays(playsInput, pageInput)
 }
 
