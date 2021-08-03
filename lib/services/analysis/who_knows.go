@@ -60,6 +60,10 @@ type WhoKnowsTrackRow struct {
 
 // WhoKnowsTrack returns a list of who has listened to an album
 func (a Analysis) WhoKnowsTrack(tracks []db.Track, settings *model.WhoKnowsSettings) ([]*model.WhoKnowsRow, error) {
+	if len(tracks) < 1 {
+		return []*model.WhoKnowsRow{}, nil
+	}
+
 	var whoKnows []WhoKnowsTrackRow
 	var trackIDs []int64
 	var whoKnowsTracks []*model.WhoKnowsRow

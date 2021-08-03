@@ -38,10 +38,15 @@ func (i Indexing) GetArtists(artistInputs []*model.ArtistInput, tagInput *model.
 
 	parser := inputparser.CreateParser(db.Db.Model(&artists))
 
-	query := parser.
-		ParseArtistInputs(artistInputs, inputparser.InputSettings{}).
-		ParseTagInputForArtist(tagInput, inputparser.InputSettings{}).
-		GetQuery()
+	if len(artistInputs) != 0 {
+		parser.ParseArtistInputs(artistInputs, inputparser.InputSettings{})
+	}
+
+	if tagInput != nil {
+		parser.ParseTagInputForArtist(tagInput, inputparser.InputSettings{})
+	}
+
+	query := parser.GetQuery()
 
 	if meta.HasRequestedField(ctx, "tags") {
 		query.Relation("Tags")

@@ -65,6 +65,10 @@ func PresentTrack(track *db.Track) *model.Track {
 
 // PresentAmbiguousTrack converts a database track into a graphql ambiguous track
 func PresentAmbiguousTrack(tracks []db.Track) *model.AmbiguousTrack {
+	if len(tracks) < 1 {
+		return &model.AmbiguousTrack{}
+	}
+
 	track := tracks[0]
 
 	builtTrack := &model.AmbiguousTrack{
