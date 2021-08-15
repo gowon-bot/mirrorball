@@ -20,6 +20,9 @@ type Query {
     settings: WhoKnowsSettings
   ): WhoKnowsTrackResponse
 
+  # Ranks
+  artistRank(artist: ArtistInput!, userInput: UserInput!, serverID: String): ArtistRankResponse!
+
   # Who first/who last
   whoFirstArtist(artist: ArtistInput!, settings: WhoKnowsSettings, whoLast: Boolean): WhoFirstArtistResponse 
 
@@ -76,8 +79,6 @@ type Mutation {
   
   # Tags
   tagArtists(artists: [ArtistInput!]!, tags: [TagInput!]!, markAsChecked: Boolean): Void
-
-  temp: Void
 }
 
 ##############
@@ -123,6 +124,8 @@ type Artist {
 type ArtistCount {
   artist: Artist!
   playcount: Int!
+
+  user: User!
 }
 
 type Album {
@@ -282,6 +285,17 @@ type ArtistSearchResult {
   artistName: String!
   listenerCount: Int!
   globalPlaycount: Int!
+}
+
+# Ranks
+type ArtistRankResponse {
+  artist: Artist!
+  rank: Int!
+  playcount: Int!
+  listeners: Int!
+  
+  above: ArtistCount
+  below: ArtistCount
 }
 
 ###############

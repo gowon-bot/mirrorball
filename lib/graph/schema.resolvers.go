@@ -6,10 +6,8 @@ package graph
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/jivison/gowon-indexer/lib/controllers"
-	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
 )
@@ -50,48 +48,6 @@ func (r *mutationResolver) TagArtists(ctx context.Context, artists []*model.Arti
 	return controllers.TagArtists(artists, tags, markAsChecked)
 }
 
-func (r *mutationResolver) Temp(ctx context.Context) (*string, error) {
-
-	var artists []string
-
-	db.Db.Model((*db.Artist)(nil)).ColumnExpr("lower(name) as name").GroupExpr("lower(name)").Having("count(lower(name)) >= 2").Select(&artists)
-
-	log.Print(artists)
-
-	for _, artist := range artists {
-		var ids []int64
-
-		db.Db.Model((*db.Artist)(nil)).Column("id").Where("lower(name) = lower(?)", artist).Select(&ids)
-
-		var lowestID int64 = -1
-		var otherIDs []int64
-
-		for _, id := range ids {
-			if lowestID == -1 || id < int64(lowestID) {
-				lowestID = id
-			}
-		}
-
-		for _, id := range ids {
-			if id != lowestID {
-				otherIDs = append(otherIDs, id)
-			}
-		}
-
-		for _, id := range otherIDs {
-			db.Db.Exec(`update artist_counts set artist_id = ? where artist_id = ?`, lowestID, id)
-			db.Db.Exec(`update tracks set artist_id = ? where artist_id = ?`, lowestID, id)
-			db.Db.Exec(`update albums set artist_id = ? where artist_id = ?`, lowestID, id)
-			db.Db.Exec(`delete from artist_tags where artist_id = ?`, id)
-			db.Db.Exec(`delete from artists where id = ?`, id)
-		}
-
-		log.Print("Processed ", artist)
-	}
-
-	return nil, nil
-}
-
 func (r *queryResolver) Ping(ctx context.Context) (string, error) {
 	return controllers.Ping()
 }
@@ -110,6 +66,10 @@ func (r *queryResolver) WhoKnowsAlbum(ctx context.Context, album model.AlbumInpu
 
 func (r *queryResolver) WhoKnowsTrack(ctx context.Context, track model.TrackInput, settings *model.WhoKnowsSettings) (*model.WhoKnowsTrackResponse, error) {
 	return controllers.WhoKnowsTrack(track, settings)
+}
+
+func (r *queryResolver) ArtistRank(ctx context.Context, artist model.ArtistInput, userInput model.UserInput, serverID *string) (*model.ArtistRankResponse, error) {
+	return controllers.ArtistRank(artist, userInput, serverID)
 }
 
 func (r *queryResolver) WhoFirstArtist(ctx context.Context, artist model.ArtistInput, settings *model.WhoKnowsSettings, whoLast *bool) (*model.WhoFirstArtistResponse, error) {

@@ -75,6 +75,10 @@ func PresentArtistCount(artistCount *db.ArtistCount) *model.ArtistCount {
 		builtPlay.Artist = PresentArtist(artistCount.Artist)
 	}
 
+	if artistCount.User != nil {
+		builtPlay.User = PresentUser(artistCount.User)
+	}
+
 	return builtPlay
 }
 

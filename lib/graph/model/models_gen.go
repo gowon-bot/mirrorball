@@ -58,6 +58,7 @@ type Artist struct {
 type ArtistCount struct {
 	Artist    *Artist `json:"artist"`
 	Playcount int     `json:"playcount"`
+	User      *User   `json:"user"`
 }
 
 type ArtistInput struct {
@@ -68,6 +69,15 @@ type ArtistPlaysSettings struct {
 	PageInput *PageInput   `json:"pageInput"`
 	Artist    *ArtistInput `json:"artist"`
 	Sort      *string      `json:"sort"`
+}
+
+type ArtistRankResponse struct {
+	Artist    *Artist      `json:"artist"`
+	Rank      int          `json:"rank"`
+	Playcount int          `json:"playcount"`
+	Listeners int          `json:"listeners"`
+	Above     *ArtistCount `json:"above"`
+	Below     *ArtistCount `json:"below"`
 }
 
 type ArtistSearchCriteria struct {
