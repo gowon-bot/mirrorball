@@ -76,6 +76,8 @@ type Mutation {
   
   # Tags
   tagArtists(artists: [ArtistInput!]!, tags: [TagInput!]!, markAsChecked: Boolean): Void
+
+  temp: Void
 }
 
 ##############
