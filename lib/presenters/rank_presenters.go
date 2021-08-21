@@ -19,7 +19,10 @@ func PresentArtistRank(artist *db.Artist, whoKnows []db.ArtistCount, plays *db.A
 	} else {
 		builtResponse.Playcount = 0
 		builtResponse.Rank = -1
-		builtResponse.Above = PresentArtistCount(&whoKnows[len(whoKnows)-1])
+
+		if len(whoKnows) > 0 {
+			builtResponse.Above = PresentArtistCount(&whoKnows[len(whoKnows)-1])
+		}
 	}
 
 	if rank != -1 && rank-1 >= 0 {
