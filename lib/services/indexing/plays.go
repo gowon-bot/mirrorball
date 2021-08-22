@@ -15,7 +15,7 @@ func (i Indexing) GetPlays(playsInput model.PlaysInput, pageInput *model.PageInp
 	query = inputparser.CreateParser(query).ParsePlaysInput(&playsInput, &inputparser.InputSettings{
 		AlbumPath:   "track__album",
 		ArtistPath:  "track__artist",
-		DefaultSort: "playcount desc",
+		DefaultSort: "scrobbled_at desc",
 	}).ParsePageInput(pageInput).GetQuery()
 
 	err := query.Select()
