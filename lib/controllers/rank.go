@@ -15,11 +15,7 @@ func ArtistRank(artistInput model.ArtistInput, userInput model.UserInput, server
 	indexingService := indexing.CreateService()
 	analysisService := analysis.CreateService()
 
-	artist, err := indexingService.GetArtist(artistInput, false)
-
-	if err != nil {
-		return nil, err
-	}
+	artist, _ := indexingService.GetArtist(artistInput, false)
 
 	user := usersService.FindUserByInput(userInput)
 
