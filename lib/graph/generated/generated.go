@@ -123,6 +123,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		AddUserToGuild      func(childComplexity int, discordID string, guildID string) int
 		FullIndex           func(childComplexity int, user model.UserInput, forceUserCreate *bool) int
+		ImportDiscogs       func(childComplexity int, username string) int
 		ImportRatings       func(childComplexity int, csv string, user model.UserInput) int
 		Login               func(childComplexity int, username string, session *string, discordID string, userType model.UserType) int
 		Logout              func(childComplexity int, discordID string) int
@@ -274,6 +275,7 @@ type MutationResolver interface {
 	FullIndex(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error)
 	Update(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error)
 	ImportRatings(ctx context.Context, csv string, user model.UserInput) (*string, error)
+	ImportDiscogs(ctx context.Context, username string) (*string, error)
 	TagArtists(ctx context.Context, artists []*model.ArtistInput, tags []*model.TagInput, markAsChecked *bool) (*string, error)
 }
 type QueryResolver interface {
@@ -596,6 +598,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.FullIndex(childComplexity, args["user"].(model.UserInput), args["forceUserCreate"].(*bool)), true
+
+	case "Mutation.importDiscogs":
+		if e.complexity.Mutation.ImportDiscogs == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_importDiscogs_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ImportDiscogs(childComplexity, args["username"].(string)), true
 
 	case "Mutation.importRatings":
 		if e.complexity.Mutation.ImportRatings == nil {
@@ -1329,7 +1343,12 @@ scalar Date
 type Query {
   ping: String!
 
-  artists(inputs: [ArtistInput!], tag: TagInput, pageInput: PageInput, requireTagsForMissing: Boolean): [Artist!]!
+  artists(
+    inputs: [ArtistInput!]
+    tag: TagInput
+    pageInput: PageInput
+    requireTagsForMissing: Boolean
+  ): [Artist!]!
 
   # Who knows
   whoKnowsArtist(
@@ -1346,10 +1365,18 @@ type Query {
   ): WhoKnowsTrackResponse
 
   # Ranks
-  artistRank(artist: ArtistInput!, userInput: UserInput!, serverID: String): ArtistRankResponse!
+  artistRank(
+    artist: ArtistInput!
+    userInput: UserInput!
+    serverID: String
+  ): ArtistRankResponse!
 
   # Who first/who last
-  whoFirstArtist(artist: ArtistInput!, settings: WhoKnowsSettings, whoLast: Boolean): WhoFirstArtistResponse 
+  whoFirstArtist(
+    artist: ArtistInput!
+    settings: WhoKnowsSettings
+    whoLast: Boolean
+  ): WhoFirstArtistResponse
 
   # Guild members
   guildMembers(guildID: String!): [GuildMember!]!
@@ -1376,7 +1403,10 @@ type Query {
   plays(playsInput: PlaysInput!, pageInput: PageInput): PlaysResponse!
   artistPlays(user: UserInput!, settings: ArtistPlaysSettings): [ArtistCount!]!
   albumPlays(user: UserInput!, settings: AlbumPlaysSettings): [AlbumCount!]!
-  trackPlays(user: UserInput!, settings: TrackPlaysSettings): [AmbiguousTrackCount!]!
+  trackPlays(
+    user: UserInput!
+    settings: TrackPlaysSettings
+  ): [AmbiguousTrackCount!]!
 
   # Ratings
   ratings(settings: RatingsSettings): RatingsResponse!
@@ -1387,7 +1417,12 @@ type Query {
 }
 
 type Mutation {
-  login(username: String!, session: String, discordID: String!, userType: UserType!): User
+  login(
+    username: String!
+    session: String
+    discordID: String!
+    userType: UserType!
+  ): User
   logout(discordID: String!): Void
 
   # Guild member syncing
@@ -1401,9 +1436,16 @@ type Mutation {
 
   # Ratings
   importRatings(csv: String!, user: UserInput!): Void
-  
+
+  # Discogs
+  importDiscogs(username: String!): Void
+
   # Tags
-  tagArtists(artists: [ArtistInput!]!, tags: [TagInput!]!, markAsChecked: Boolean): Void
+  tagArtists(
+    artists: [ArtistInput!]!
+    tags: [TagInput!]!
+    markAsChecked: Boolean
+  ): Void
 }
 
 ##############
@@ -1503,16 +1545,16 @@ type Rating {
 }
 
 type RateYourMusicAlbum {
-	rateYourMusicID: String!
-	title: String!
-	releaseYear: Int
-	artistName: String!
-	artistNativeName: String
+  rateYourMusicID: String!
+  title: String!
+  releaseYear: Int
+  artistName: String!
+  artistNativeName: String
 }
 
 type RateYourMusicArtist {
-	artistName: String!
-	artistNativeName: String
+  artistName: String!
+  artistNativeName: String
 }
 
 ##################
@@ -1618,7 +1660,7 @@ type ArtistRankResponse {
   rank: Int!
   playcount: Int!
   listeners: Int!
-  
+
   above: ArtistCount
   below: ArtistCount
 }
@@ -1707,7 +1749,8 @@ input TagsSettings {
   artists: [ArtistInput!]
   keyword: String
   pageInput: PageInput
-}`, BuiltIn: false},
+}
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -1760,6 +1803,21 @@ func (ec *executionContext) field_Mutation_fullIndex_args(ctx context.Context, r
 		}
 	}
 	args["forceUserCreate"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_importDiscogs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["username"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["username"] = arg0
 	return args, nil
 }
 
@@ -4046,6 +4104,45 @@ func (ec *executionContext) _Mutation_importRatings(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().ImportRatings(rctx, args["csv"].(string), args["user"].(model.UserInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_importDiscogs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_importDiscogs_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ImportDiscogs(rctx, args["username"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8758,6 +8855,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_update(ctx, field)
 		case "importRatings":
 			out.Values[i] = ec._Mutation_importRatings(ctx, field)
+		case "importDiscogs":
+			out.Values[i] = ec._Mutation_importDiscogs(ctx, field)
 		case "tagArtists":
 			out.Values[i] = ec._Mutation_tagArtists(ctx, field)
 		default:

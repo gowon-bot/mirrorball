@@ -44,6 +44,10 @@ func (r *mutationResolver) ImportRatings(ctx context.Context, csv string, user m
 	return controllers.ImportRatings(csv, user)
 }
 
+func (r *mutationResolver) ImportDiscogs(ctx context.Context, username string) (*string, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *mutationResolver) TagArtists(ctx context.Context, artists []*model.ArtistInput, tags []*model.TagInput, markAsChecked *bool) (*string, error) {
 	return controllers.TagArtists(artists, tags, markAsChecked)
 }
