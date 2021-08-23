@@ -12,5 +12,6 @@ func PresentUser(user *db.User) *model.User {
 		Username:  user.Username,
 		DiscordID: user.DiscordID,
 		UserType:  (*model.UserType)(&user.UserType),
+		Privacy:   (*model.Privacy)(&user.Privacy),
 	}
 }

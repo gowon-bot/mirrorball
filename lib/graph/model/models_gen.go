@@ -239,6 +239,7 @@ type User struct {
 	Username  string    `json:"username"`
 	DiscordID string    `json:"discordID"`
 	UserType  *UserType `json:"userType"`
+	Privacy   *Privacy  `json:"privacy"`
 }
 
 type UserInput struct {
@@ -280,6 +281,51 @@ type WhoKnowsSettings struct {
 type WhoKnowsTrackResponse struct {
 	Rows  []*WhoKnowsRow  `json:"rows"`
 	Track *AmbiguousTrack `json:"track"`
+}
+
+type Privacy string
+
+const (
+	PrivacyPrivate    Privacy = "Private"
+	PrivacyDiscord    Privacy = "Discord"
+	PrivacyFMUsername Privacy = "FMUsername"
+	PrivacyUnset      Privacy = "Unset"
+)
+
+var AllPrivacy = []Privacy{
+	PrivacyPrivate,
+	PrivacyDiscord,
+	PrivacyFMUsername,
+	PrivacyUnset,
+}
+
+func (e Privacy) IsValid() bool {
+	switch e {
+	case PrivacyPrivate, PrivacyDiscord, PrivacyFMUsername, PrivacyUnset:
+		return true
+	}
+	return false
+}
+
+func (e Privacy) String() string {
+	return string(e)
+}
+
+func (e *Privacy) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Privacy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Privacy", str)
+	}
+	return nil
+}
+
+func (e Privacy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type UserType string

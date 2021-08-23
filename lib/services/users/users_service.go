@@ -63,6 +63,7 @@ func (u Users) CreateUser(username, discordID, userType string, session *string)
 		DiscordID:     discordID,
 		UserType:      userType,
 		LastFMSession: session,
+		Privacy:       db.DefaultPrivacy,
 	}
 
 	_, err := db.Db.Model(user).Insert()

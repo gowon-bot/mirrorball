@@ -10,6 +10,7 @@ type User struct {
 	UserType      string
 	LastIndexed   time.Time
 	LastFMSession *string
+	Privacy       string
 
 	GuildMembers *[]GuildMember `pg:"rel:has-many"`
 }

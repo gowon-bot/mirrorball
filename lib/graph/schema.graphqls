@@ -4,7 +4,12 @@ scalar Date
 type Query {
   ping: String!
 
-  artists(inputs: [ArtistInput!], tag: TagInput, pageInput: PageInput, requireTagsForMissing: Boolean): [Artist!]!
+  artists(
+    inputs: [ArtistInput!]
+    tag: TagInput
+    pageInput: PageInput
+    requireTagsForMissing: Boolean
+  ): [Artist!]!
 
   # Who knows
   whoKnowsArtist(
@@ -21,10 +26,18 @@ type Query {
   ): WhoKnowsTrackResponse
 
   # Ranks
-  artistRank(artist: ArtistInput!, userInput: UserInput!, serverID: String): ArtistRankResponse!
+  artistRank(
+    artist: ArtistInput!
+    userInput: UserInput!
+    serverID: String
+  ): ArtistRankResponse!
 
   # Who first/who last
-  whoFirstArtist(artist: ArtistInput!, settings: WhoKnowsSettings, whoLast: Boolean): WhoFirstArtistResponse 
+  whoFirstArtist(
+    artist: ArtistInput!
+    settings: WhoKnowsSettings
+    whoLast: Boolean
+  ): WhoFirstArtistResponse
 
   # Guild members
   guildMembers(guildID: String!): [GuildMember!]!
@@ -51,7 +64,10 @@ type Query {
   plays(playsInput: PlaysInput!, pageInput: PageInput): PlaysResponse!
   artistPlays(user: UserInput!, settings: ArtistPlaysSettings): [ArtistCount!]!
   albumPlays(user: UserInput!, settings: AlbumPlaysSettings): [AlbumCount!]!
-  trackPlays(user: UserInput!, settings: TrackPlaysSettings): [AmbiguousTrackCount!]!
+  trackPlays(
+    user: UserInput!
+    settings: TrackPlaysSettings
+  ): [AmbiguousTrackCount!]!
 
   # Ratings
   ratings(settings: RatingsSettings): RatingsResponse!
@@ -62,7 +78,12 @@ type Query {
 }
 
 type Mutation {
-  login(username: String!, session: String, discordID: String!, userType: UserType!): User
+  login(
+    username: String!
+    session: String
+    discordID: String!
+    userType: UserType!
+  ): User
   logout(discordID: String!): Void
 
   # Guild member syncing
@@ -76,9 +97,13 @@ type Mutation {
 
   # Ratings
   importRatings(csv: String!, user: UserInput!): Void
-  
+
   # Tags
-  tagArtists(artists: [ArtistInput!]!, tags: [TagInput!]!, markAsChecked: Boolean): Void
+  tagArtists(
+    artists: [ArtistInput!]!
+    tags: [TagInput!]!
+    markAsChecked: Boolean
+  ): Void
 }
 
 ##############
@@ -99,12 +124,20 @@ enum UserType {
   Lastfm
 }
 
+enum Privacy {
+  Private
+  Discord
+  FMUsername
+  Unset
+}
+
 type User {
   id: Int!
   username: String!
   discordID: String!
 
   userType: UserType
+  privacy: Privacy
 }
 
 type GuildMember {
@@ -178,16 +211,16 @@ type Rating {
 }
 
 type RateYourMusicAlbum {
-	rateYourMusicID: String!
-	title: String!
-	releaseYear: Int
-	artistName: String!
-	artistNativeName: String
+  rateYourMusicID: String!
+  title: String!
+  releaseYear: Int
+  artistName: String!
+  artistNativeName: String
 }
 
 type RateYourMusicArtist {
-	artistName: String!
-	artistNativeName: String
+  artistName: String!
+  artistNativeName: String
 }
 
 ##################
@@ -293,7 +326,7 @@ type ArtistRankResponse {
   rank: Int!
   playcount: Int!
   listeners: Int!
-  
+
   above: ArtistCount
   below: ArtistCount
 }

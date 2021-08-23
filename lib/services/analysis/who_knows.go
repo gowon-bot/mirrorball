@@ -55,6 +55,7 @@ type WhoKnowsTrackRow struct {
 	UserID    int64
 	Username  string
 	UserType  string
+	Privacy   string
 	DiscordID string
 }
 
@@ -75,11 +76,11 @@ func (a Analysis) WhoKnowsTrack(tracks []db.Track, settings *model.WhoKnowsSetti
 	trackCounts := db.Db.Model((*db.TrackCount)(nil)).
 		Relation("User._").
 		Join("JOIN tracks ON tracks.id = track_id").
-		Column("name", "artist_id", "tracks.name", "username", "discord_id", "user_type").
+		Column("name", "artist_id", "tracks.name", "username", "discord_id", "user_type", "privacy").
 		ColumnExpr("sum(playcount) as total_playcount").
 		ColumnExpr("track_count.user_id as user_id").
 		Where("track_id IN (?)", pg.In(trackIDs)).
-		Group("name", "artist_id", "track_count.user_id", "username", "discord_id", "user_type")
+		Group("name", "artist_id", "track_count.user_id", "username", "discord_id", "user_type", "privacy")
 
 	trackCounts = inputparser.CreateParser(trackCounts).ParseWhoKnowsSettings(settings, inputparser.InputSettings{
 		UserIDPath: `user"."id`,
@@ -90,6 +91,7 @@ func (a Analysis) WhoKnowsTrack(tracks []db.Track, settings *model.WhoKnowsSetti
 		ColumnExpr("total_playcount as playcount").
 		ColumnExpr(`username as username`).
 		ColumnExpr(`user_type as user_type`).
+		ColumnExpr(`privacy as privacy`).
 		ColumnExpr(`discord_id as discord_id`).
 		Order("total_playcount desc", "username desc").
 		Select(&whoKnows)
@@ -102,9 +104,11 @@ func (a Analysis) WhoKnowsTrack(tracks []db.Track, settings *model.WhoKnowsSetti
 		whoKnowsTracks = append(whoKnowsTracks, &model.WhoKnowsRow{
 			Playcount: int(row.Playcount),
 			User: &model.User{
-				ID:        int(row.UserID),
-				Username:  row.Username,
-				UserType:  (*model.UserType)(&row.UserType),
+				ID:       int(row.UserID),
+				Username: row.Username,
+				UserType: (*model.UserType)(&row.UserType),
+				Privacy:  (*model.Privacy)(&row.Privacy),
+
 				DiscordID: row.DiscordID,
 			},
 		})

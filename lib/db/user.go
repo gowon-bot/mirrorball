@@ -6,6 +6,13 @@ import (
 	"github.com/jivison/gowon-indexer/lib/services/lastfm"
 )
 
+// Possible values
+// - PRIVATE
+// - DISCORD
+// - FMUSERNAME
+// - UNSET - used for displaying help messages for people who haven't set it
+const DefaultPrivacy = "UNSET"
+
 // SetLastIndexed sets a user's last indexed time
 func (u User) SetLastIndexed(to time.Time) {
 	_, err := Db.Model(&u).Set("last_indexed = ?", to).WherePK().Update()

@@ -230,6 +230,7 @@ type ComplexityRoot struct {
 	User struct {
 		DiscordID func(childComplexity int) int
 		ID        func(childComplexity int) int
+		Privacy   func(childComplexity int) int
 		UserType  func(childComplexity int) int
 		Username  func(childComplexity int) int
 	}
@@ -1161,6 +1162,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.ID(childComplexity), true
 
+	case "User.privacy":
+		if e.complexity.User.Privacy == nil {
+			break
+		}
+
+		return e.complexity.User.Privacy(childComplexity), true
+
 	case "User.userType":
 		if e.complexity.User.UserType == nil {
 			break
@@ -1329,7 +1337,12 @@ scalar Date
 type Query {
   ping: String!
 
-  artists(inputs: [ArtistInput!], tag: TagInput, pageInput: PageInput, requireTagsForMissing: Boolean): [Artist!]!
+  artists(
+    inputs: [ArtistInput!]
+    tag: TagInput
+    pageInput: PageInput
+    requireTagsForMissing: Boolean
+  ): [Artist!]!
 
   # Who knows
   whoKnowsArtist(
@@ -1346,10 +1359,18 @@ type Query {
   ): WhoKnowsTrackResponse
 
   # Ranks
-  artistRank(artist: ArtistInput!, userInput: UserInput!, serverID: String): ArtistRankResponse!
+  artistRank(
+    artist: ArtistInput!
+    userInput: UserInput!
+    serverID: String
+  ): ArtistRankResponse!
 
   # Who first/who last
-  whoFirstArtist(artist: ArtistInput!, settings: WhoKnowsSettings, whoLast: Boolean): WhoFirstArtistResponse 
+  whoFirstArtist(
+    artist: ArtistInput!
+    settings: WhoKnowsSettings
+    whoLast: Boolean
+  ): WhoFirstArtistResponse
 
   # Guild members
   guildMembers(guildID: String!): [GuildMember!]!
@@ -1376,7 +1397,10 @@ type Query {
   plays(playsInput: PlaysInput!, pageInput: PageInput): PlaysResponse!
   artistPlays(user: UserInput!, settings: ArtistPlaysSettings): [ArtistCount!]!
   albumPlays(user: UserInput!, settings: AlbumPlaysSettings): [AlbumCount!]!
-  trackPlays(user: UserInput!, settings: TrackPlaysSettings): [AmbiguousTrackCount!]!
+  trackPlays(
+    user: UserInput!
+    settings: TrackPlaysSettings
+  ): [AmbiguousTrackCount!]!
 
   # Ratings
   ratings(settings: RatingsSettings): RatingsResponse!
@@ -1387,7 +1411,12 @@ type Query {
 }
 
 type Mutation {
-  login(username: String!, session: String, discordID: String!, userType: UserType!): User
+  login(
+    username: String!
+    session: String
+    discordID: String!
+    userType: UserType!
+  ): User
   logout(discordID: String!): Void
 
   # Guild member syncing
@@ -1401,9 +1430,13 @@ type Mutation {
 
   # Ratings
   importRatings(csv: String!, user: UserInput!): Void
-  
+
   # Tags
-  tagArtists(artists: [ArtistInput!]!, tags: [TagInput!]!, markAsChecked: Boolean): Void
+  tagArtists(
+    artists: [ArtistInput!]!
+    tags: [TagInput!]!
+    markAsChecked: Boolean
+  ): Void
 }
 
 ##############
@@ -1424,12 +1457,20 @@ enum UserType {
   Lastfm
 }
 
+enum Privacy {
+  Private
+  Discord
+  FMUsername
+  Unset
+}
+
 type User {
   id: Int!
   username: String!
   discordID: String!
 
   userType: UserType
+  privacy: Privacy
 }
 
 type GuildMember {
@@ -1503,16 +1544,16 @@ type Rating {
 }
 
 type RateYourMusicAlbum {
-	rateYourMusicID: String!
-	title: String!
-	releaseYear: Int
-	artistName: String!
-	artistNativeName: String
+  rateYourMusicID: String!
+  title: String!
+  releaseYear: Int
+  artistName: String!
+  artistNativeName: String
 }
 
 type RateYourMusicArtist {
-	artistName: String!
-	artistNativeName: String
+  artistName: String!
+  artistNativeName: String
 }
 
 ##################
@@ -1618,7 +1659,7 @@ type ArtistRankResponse {
   rank: Int!
   playcount: Int!
   listeners: Int!
-  
+
   above: ArtistCount
   below: ArtistCount
 }
@@ -1707,7 +1748,8 @@ input TagsSettings {
   artists: [ArtistInput!]
   keyword: String
   pageInput: PageInput
-}`, BuiltIn: false},
+}
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -6252,6 +6294,38 @@ func (ec *executionContext) _User_userType(ctx context.Context, field graphql.Co
 	return ec.marshalOUserType2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserType(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _User_privacy(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Privacy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Privacy)
+	fc.Result = res
+	return ec.marshalOPrivacy2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐPrivacy(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _WhoFirstArtistResponse_rows(ctx context.Context, field graphql.CollectedField, obj *model.WhoFirstArtistResponse) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -9518,6 +9592,8 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "userType":
 			out.Values[i] = ec._User_userType(ctx, field, obj)
+		case "privacy":
+			out.Values[i] = ec._User_privacy(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11248,6 +11324,22 @@ func (ec *executionContext) unmarshalOPageInput2ᚖgithubᚗcomᚋjivisonᚋgowo
 	}
 	res, err := ec.unmarshalInputPageInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOPrivacy2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐPrivacy(ctx context.Context, v interface{}) (*model.Privacy, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.Privacy)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOPrivacy2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐPrivacy(ctx context.Context, sel ast.SelectionSet, v *model.Privacy) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalORateYourMusicArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐRateYourMusicArtist(ctx context.Context, sel ast.SelectionSet, v *model.RateYourMusicArtist) graphql.Marshaler {
