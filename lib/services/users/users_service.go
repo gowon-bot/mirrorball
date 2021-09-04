@@ -7,6 +7,7 @@ import (
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
+	"github.com/jivison/gowon-indexer/lib/helpers/inputparser"
 )
 
 // Users holds methods for interacting with users
@@ -155,6 +156,33 @@ func (u Users) ChangeUsername(user *db.User, username, userType string, session 
 	}
 
 	return user, nil
+}
+
+func (u Users) UpdatePrivacy(user *db.User, privacy string) (*db.User, error) {
+	user.Privacy = privacy
+
+	_, err := db.Db.Model(user).WherePK().Update()
+
+	if err != nil {
+		return nil, customerrors.DatabaseUnknownError()
+	}
+
+	return user, nil
+}
+
+func (u Users) GetUsers(inputs []*model.UserInput) ([]*db.User, error) {
+	var users []*db.User
+
+	parser := inputparser.CreateParser(
+		db.Db.Model(&users)).ParseUserInputs(inputs, inputparser.InputSettings{UserRelation: "-"})
+
+	err := parser.GetQuery().Select()
+
+	if err != nil {
+		return users, customerrors.DatabaseUnknownError()
+	}
+
+	return users, nil
 }
 
 // CreateService creates an instance of the users service object

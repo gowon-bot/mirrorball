@@ -39,8 +39,9 @@ type Query {
     whoLast: Boolean
   ): WhoFirstArtistResponse
 
-  # Guild members
+  # Users
   guildMembers(guildID: String!): [GuildMember!]!
+  users(inputs: [UserInput!]!): [User!]!
 
   # Counts
   artistTopTracks(
@@ -78,6 +79,7 @@ type Query {
 }
 
 type Mutation {
+  # Users
   login(
     username: String!
     session: String
@@ -85,6 +87,7 @@ type Mutation {
     userType: UserType!
   ): User
   logout(discordID: String!): Void
+  updatePrivacy(user: UserInput!, privacy: Privacy): Void
 
   # Guild member syncing
   addUserToGuild(discordID: String!, guildID: String!): GuildMember
@@ -125,10 +128,10 @@ enum UserType {
 }
 
 enum Privacy {
-  Private
-  Discord
-  FMUsername
-  Unset
+  PRIVATE
+  DISCORD
+  FMUSERNAME
+  UNSET
 }
 
 type User {

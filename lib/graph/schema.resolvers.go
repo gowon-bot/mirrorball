@@ -20,6 +20,10 @@ func (r *mutationResolver) Logout(ctx context.Context, discordID string) (*strin
 	return controllers.Logout(discordID)
 }
 
+func (r *mutationResolver) UpdatePrivacy(ctx context.Context, user model.UserInput, privacy *model.Privacy) (*string, error) {
+	return controllers.UpdatePrivacy(user, privacy)
+}
+
 func (r *mutationResolver) AddUserToGuild(ctx context.Context, discordID string, guildID string) (*model.GuildMember, error) {
 	return controllers.AddUserToGuild(discordID, guildID)
 }
@@ -78,6 +82,10 @@ func (r *queryResolver) WhoFirstArtist(ctx context.Context, artist model.ArtistI
 
 func (r *queryResolver) GuildMembers(ctx context.Context, guildID string) ([]*model.GuildMember, error) {
 	return controllers.GuildMembers(guildID)
+}
+
+func (r *queryResolver) Users(ctx context.Context, inputs []*model.UserInput) ([]*model.User, error) {
+	return controllers.Users(inputs)
 }
 
 func (r *queryResolver) ArtistTopTracks(ctx context.Context, user model.UserInput, artist model.ArtistInput) (*model.ArtistTopTracksResponse, error) {

@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-pg/pg/v10"
 )
@@ -16,8 +17,8 @@ func (d Logger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Contex
 
 // AfterQuery runs after a query is executed
 func (d Logger) AfterQuery(c context.Context, q *pg.QueryEvent) error {
-	// query, _ := q.FormattedQuery()
+	query, _ := q.FormattedQuery()
 
-	// fmt.Println(string(query))
+	fmt.Println(string(query))
 	return nil
 }

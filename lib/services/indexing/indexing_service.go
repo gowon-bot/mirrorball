@@ -58,11 +58,7 @@ func (i Indexing) FullIndex(user *db.User) error {
 func (i Indexing) Update(user *db.User) error {
 	err := i.updateUser(user)
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (i Indexing) updateUser(user *db.User) error {

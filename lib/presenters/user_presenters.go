@@ -15,3 +15,13 @@ func PresentUser(user *db.User) *model.User {
 		Privacy:   (*model.Privacy)(&user.Privacy),
 	}
 }
+
+func PresentUsers(users []*db.User) []*model.User {
+	var builtUsers []*model.User
+
+	for _, user := range users {
+		builtUsers = append(builtUsers, PresentUser(user))
+	}
+
+	return builtUsers
+}

@@ -130,6 +130,7 @@ type ComplexityRoot struct {
 		SyncGuild           func(childComplexity int, guildID string, discordIDs []string) int
 		TagArtists          func(childComplexity int, artists []*model.ArtistInput, tags []*model.TagInput, markAsChecked *bool) int
 		Update              func(childComplexity int, user model.UserInput, forceUserCreate *bool) int
+		UpdatePrivacy       func(childComplexity int, user model.UserInput, privacy *model.Privacy) int
 	}
 
 	PageInfo struct {
@@ -165,6 +166,7 @@ type ComplexityRoot struct {
 		Tags                func(childComplexity int, settings *model.TagsSettings, requireTagsForMissing *bool) int
 		TrackPlays          func(childComplexity int, user model.UserInput, settings *model.TrackPlaysSettings) int
 		TrackTopAlbums      func(childComplexity int, user model.UserInput, track model.TrackInput) int
+		Users               func(childComplexity int, inputs []*model.UserInput) int
 		WhoFirstArtist      func(childComplexity int, artist model.ArtistInput, settings *model.WhoKnowsSettings, whoLast *bool) int
 		WhoKnowsAlbum       func(childComplexity int, album model.AlbumInput, settings *model.WhoKnowsSettings) int
 		WhoKnowsArtist      func(childComplexity int, artist model.ArtistInput, settings *model.WhoKnowsSettings) int
@@ -269,6 +271,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	Login(ctx context.Context, username string, session *string, discordID string, userType model.UserType) (*model.User, error)
 	Logout(ctx context.Context, discordID string) (*string, error)
+	UpdatePrivacy(ctx context.Context, user model.UserInput, privacy *model.Privacy) (*string, error)
 	AddUserToGuild(ctx context.Context, discordID string, guildID string) (*model.GuildMember, error)
 	RemoveUserFromGuild(ctx context.Context, discordID string, guildID string) (*string, error)
 	SyncGuild(ctx context.Context, guildID string, discordIDs []string) (*string, error)
@@ -286,6 +289,7 @@ type QueryResolver interface {
 	ArtistRank(ctx context.Context, artist model.ArtistInput, userInput model.UserInput, serverID *string) (*model.ArtistRankResponse, error)
 	WhoFirstArtist(ctx context.Context, artist model.ArtistInput, settings *model.WhoKnowsSettings, whoLast *bool) (*model.WhoFirstArtistResponse, error)
 	GuildMembers(ctx context.Context, guildID string) ([]*model.GuildMember, error)
+	Users(ctx context.Context, inputs []*model.UserInput) ([]*model.User, error)
 	ArtistTopTracks(ctx context.Context, user model.UserInput, artist model.ArtistInput) (*model.ArtistTopTracksResponse, error)
 	ArtistTopAlbums(ctx context.Context, user model.UserInput, artist model.ArtistInput) (*model.ArtistTopAlbumsResponse, error)
 	AlbumTopTracks(ctx context.Context, user model.UserInput, album model.AlbumInput) (*model.AlbumTopTracksResponse, error)
@@ -682,6 +686,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Update(childComplexity, args["user"].(model.UserInput), args["forceUserCreate"].(*bool)), true
 
+	case "Mutation.updatePrivacy":
+		if e.complexity.Mutation.UpdatePrivacy == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updatePrivacy_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdatePrivacy(childComplexity, args["user"].(model.UserInput), args["privacy"].(*model.Privacy)), true
+
 	case "PageInfo.recordCount":
 		if e.complexity.PageInfo.RecordCount == nil {
 			break
@@ -917,6 +933,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.TrackTopAlbums(childComplexity, args["user"].(model.UserInput), args["track"].(model.TrackInput)), true
+
+	case "Query.users":
+		if e.complexity.Query.Users == nil {
+			break
+		}
+
+		args, err := ec.field_Query_users_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Users(childComplexity, args["inputs"].([]*model.UserInput)), true
 
 	case "Query.whoFirstArtist":
 		if e.complexity.Query.WhoFirstArtist == nil {
@@ -1372,8 +1400,9 @@ type Query {
     whoLast: Boolean
   ): WhoFirstArtistResponse
 
-  # Guild members
+  # Users
   guildMembers(guildID: String!): [GuildMember!]!
+  users(inputs: [UserInput!]!): [User!]!
 
   # Counts
   artistTopTracks(
@@ -1411,6 +1440,7 @@ type Query {
 }
 
 type Mutation {
+  # Users
   login(
     username: String!
     session: String
@@ -1418,6 +1448,7 @@ type Mutation {
     userType: UserType!
   ): User
   logout(discordID: String!): Void
+  updatePrivacy(user: UserInput!, privacy: Privacy): Void
 
   # Guild member syncing
   addUserToGuild(discordID: String!, guildID: String!): GuildMember
@@ -1458,10 +1489,10 @@ enum UserType {
 }
 
 enum Privacy {
-  Private
-  Discord
-  FMUsername
-  Unset
+  PRIVATE
+  DISCORD
+  FMUSERNAME
+  UNSET
 }
 
 type User {
@@ -1967,6 +1998,30 @@ func (ec *executionContext) field_Mutation_tagArtists_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_updatePrivacy_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.UserInput
+	if tmp, ok := rawArgs["user"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user"))
+		arg0, err = ec.unmarshalNUserInput2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["user"] = arg0
+	var arg1 *model.Privacy
+	if tmp, ok := rawArgs["privacy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("privacy"))
+		arg1, err = ec.unmarshalOPrivacy2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐPrivacy(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["privacy"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_update_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2363,6 +2418,21 @@ func (ec *executionContext) field_Query_trackTopAlbums_args(ctx context.Context,
 		}
 	}
 	args["track"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []*model.UserInput
+	if tmp, ok := rawArgs["inputs"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inputs"))
+		arg0, err = ec.unmarshalNUserInput2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserInputᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["inputs"] = arg0
 	return args, nil
 }
 
@@ -3867,6 +3937,45 @@ func (ec *executionContext) _Mutation_logout(ctx context.Context, field graphql.
 	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_updatePrivacy(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updatePrivacy_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdatePrivacy(rctx, args["user"].(model.UserInput), args["privacy"].(*model.Privacy))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_addUserToGuild(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4700,6 +4809,48 @@ func (ec *executionContext) _Query_guildMembers(ctx context.Context, field graph
 	res := resTmp.([]*model.GuildMember)
 	fc.Result = res
 	return ec.marshalNGuildMember2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐGuildMemberᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_users_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Users(rctx, args["inputs"].([]*model.UserInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_artistTopTracks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -8820,6 +8971,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_login(ctx, field)
 		case "logout":
 			out.Values[i] = ec._Mutation_logout(ctx, field)
+		case "updatePrivacy":
+			out.Values[i] = ec._Mutation_updatePrivacy(ctx, field)
 		case "addUserToGuild":
 			out.Values[i] = ec._Mutation_addUserToGuild(ctx, field)
 		case "removeUserFromGuild":
@@ -9056,6 +9209,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_guildMembers(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "users":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_users(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -10770,6 +10937,43 @@ func (ec *executionContext) unmarshalNTrackInput2githubᚗcomᚋjivisonᚋgowon�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNUser2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -10783,6 +10987,32 @@ func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋjivisonᚋgowonᚑind
 func (ec *executionContext) unmarshalNUserInput2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserInput(ctx context.Context, v interface{}) (model.UserInput, error) {
 	res, err := ec.unmarshalInputUserInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUserInput2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserInputᚄ(ctx context.Context, v interface{}) ([]*model.UserInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.UserInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNUserInput2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNUserInput2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserInput(ctx context.Context, v interface{}) (*model.UserInput, error) {
+	res, err := ec.unmarshalInputUserInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNUserType2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserType(ctx context.Context, v interface{}) (model.UserType, error) {

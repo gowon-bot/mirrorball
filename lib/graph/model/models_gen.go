@@ -286,22 +286,22 @@ type WhoKnowsTrackResponse struct {
 type Privacy string
 
 const (
-	PrivacyPrivate    Privacy = "Private"
-	PrivacyDiscord    Privacy = "Discord"
-	PrivacyFMUsername Privacy = "FMUsername"
-	PrivacyUnset      Privacy = "Unset"
+	PrivacyPrivate    Privacy = "PRIVATE"
+	PrivacyDiscord    Privacy = "DISCORD"
+	PrivacyFmusername Privacy = "FMUSERNAME"
+	PrivacyUnset      Privacy = "UNSET"
 )
 
 var AllPrivacy = []Privacy{
 	PrivacyPrivate,
 	PrivacyDiscord,
-	PrivacyFMUsername,
+	PrivacyFmusername,
 	PrivacyUnset,
 }
 
 func (e Privacy) IsValid() bool {
 	switch e {
-	case PrivacyPrivate, PrivacyDiscord, PrivacyFMUsername, PrivacyUnset:
+	case PrivacyPrivate, PrivacyDiscord, PrivacyFmusername, PrivacyUnset:
 		return true
 	}
 	return false
