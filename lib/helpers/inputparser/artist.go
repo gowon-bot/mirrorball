@@ -4,6 +4,8 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
+
+	dbhelpers "github.com/jivison/gowon-indexer/lib/helpers/database"
 )
 
 type ArtistInputSettings interface {
@@ -12,7 +14,7 @@ type ArtistInputSettings interface {
 
 func (p InputParser) ParseArtistInput(artistInput model.ArtistInput, settings ArtistInputSettings) *InputParser {
 	if artistInput.Name != nil {
-		p.query.Where(settings.getArtistPath()+".name ILIKE ?", artistInput.Name)
+		p.query.Where(settings.getArtistPath()+".name ILIKE ?", dbhelpers.EscapeForILike(*artistInput.Name))
 	}
 
 	return &p

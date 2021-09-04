@@ -131,7 +131,6 @@ func (a Analysis) RequireTagsForMissing(artistInputs []*model.ArtistInput) error
 
 	parallelization := 5
 
-	log.Print("Caching...", len(artistsThatNeedTags))
 	if len(artistsThatNeedTags) == 0 {
 		return nil
 	} else if len(artistsThatNeedTags) < parallelization {
@@ -147,13 +146,12 @@ func (a Analysis) RequireTagsForMissing(artistInputs []*model.ArtistInput) error
 			go func(c chan string) {
 				for {
 					artist, more := <-c
-					log.Print("Processing " + artist)
+
 					if !more {
 						wg.Done()
 						return
 					}
 
-					log.Print("Caching for " + artist)
 					a.CacheTagsForArtist(artist)
 				}
 			}(artistChannel)
