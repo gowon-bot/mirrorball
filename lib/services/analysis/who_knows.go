@@ -2,6 +2,7 @@ package analysis
 
 import (
 	"github.com/go-pg/pg/v10"
+	"github.com/jinzhu/copier"
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
@@ -101,13 +102,17 @@ func (a Analysis) WhoKnowsTrack(tracks []db.Track, settings *model.WhoKnowsSetti
 	}
 
 	for _, row := range whoKnows {
+		copiedRow := WhoKnowsTrackRow{}
+
+		copier.Copy(&copiedRow, row)
+
 		whoKnowsTracks = append(whoKnowsTracks, &model.WhoKnowsRow{
-			Playcount: int(row.Playcount),
+			Playcount: int(copiedRow.Playcount),
 			User: &model.User{
-				ID:       int(row.UserID),
-				Username: row.Username,
-				UserType: (*model.UserType)(&row.UserType),
-				Privacy:  (*model.Privacy)(&row.Privacy),
+				ID:       int(copiedRow.UserID),
+				Username: copiedRow.Username,
+				UserType: (*model.UserType)(&copiedRow.UserType),
+				Privacy:  (*model.Privacy)(&copiedRow.Privacy),
 
 				DiscordID: row.DiscordID,
 			},
