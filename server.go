@@ -31,11 +31,9 @@ func main() {
 	}
 
 	gqlHandler := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
-	srv := cors.AllowAll().Handler(gqlHandler)
+	srv := cors.AllowAll().Handler(enforcePassword(gqlHandler))
 
-	if os.Getenv("ENVIRONMENT") == "development" {
-		http.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
-	}
+	http.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
 	http.Handle("/graphql", srv)
 
 	magenta := color.New(color.FgMagenta).SprintFunc()
@@ -69,4 +67,19 @@ func startup() {
 	taskServer := tasks.NewTaskServer()
 	taskServer.LaunchWorkers()
 	fmt.Println("Launched task server")
+}
+
+func enforcePassword(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authorization := r.Header.Get("Authorization")
+		passsword := os.Getenv("MIRRORBALL_PASSWORD")
+
+		if authorization != passsword {
+			http.Error(w, `{ "message": "Incorrect password" }`, http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+
 }
