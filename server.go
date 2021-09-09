@@ -16,6 +16,7 @@ import (
 	"github.com/jivison/gowon-indexer/lib/graph"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
 	"github.com/jivison/gowon-indexer/lib/tasks"
+	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
 
@@ -30,10 +31,11 @@ func main() {
 	}
 
 	gqlHandler := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
-
 	srv := cors.AllowAll().Handler(gqlHandler)
 
-	http.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
+	if os.Getenv("ENVIRONMENT") == "development" {
+		http.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
+	}
 	http.Handle("/graphql", srv)
 
 	magenta := color.New(color.FgMagenta).SprintFunc()
@@ -44,6 +46,8 @@ func main() {
 }
 
 func startup() {
+	godotenv.Load()
+
 	logger := log.New(ioutil.Discard, "", 0)
 
 	machinerylog.Set(logger)

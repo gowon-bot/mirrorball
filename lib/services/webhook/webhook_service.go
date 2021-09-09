@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
 // Webhook holds methods for posting to webhooks
@@ -67,8 +65,6 @@ func (w Webhook) BuildTaskErrorRequest(token string, errorData string) *bytes.Bu
 
 // CreateService creates an instance of the webhook service object
 func CreateService() *Webhook {
-	godotenv.Load()
-
 	webhookURL := os.Getenv("WEBHOOK_POST_URL")
 
 	service := &Webhook{webhookURL: webhookURL}

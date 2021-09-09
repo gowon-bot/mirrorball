@@ -14,7 +14,6 @@ import (
 
 	"github.com/google/go-querystring/query"
 	helpers "github.com/jivison/gowon-indexer/lib/helpers/api"
-	"github.com/joho/godotenv"
 )
 
 // API holds methods for interacting with the Last.fm API
@@ -280,8 +279,6 @@ func (s byAlphabeticalKey) Less(i, j int) bool {
 
 // CreateAPIService creates an instance of the lastfm api service object
 func CreateAPIService() *API {
-	godotenv.Load()
-
 	apiKey := os.Getenv("LAST_FM_API_KEY")
 	apiSecret := os.Getenv("LAST_FM_API_SECRET")
 
