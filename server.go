@@ -38,7 +38,8 @@ func main() {
 
 	magenta := color.New(color.FgMagenta).SprintFunc()
 
-	fmt.Printf("\nAPI running at %s\n", magenta(fmt.Sprintf("http://localhost:%s/", port)))
+	fmt.Printf("\nAPI running at %s\n", magenta(fmt.Sprintf("http://localhost:%s/graphql", port)))
+	fmt.Printf("Playground running at %s\n", magenta(fmt.Sprintf("http://localhost:%s/playground", port)))
 
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
@@ -71,10 +72,11 @@ func startup() {
 
 func enforcePassword(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
 		authorization := r.Header.Get("Authorization")
 		passsword := os.Getenv("MIRRORBALL_PASSWORD")
 
-		if authorization != passsword {
+		if os.Getenv("ENVIRONMENT") != "development" && authorization != passsword {
 			http.Error(w, `{ "message": "Incorrect password" }`, http.StatusUnauthorized)
 			return
 		}

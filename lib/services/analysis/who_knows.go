@@ -66,6 +66,14 @@ func (a Analysis) WhoKnowsTrack(tracks []db.Track, settings *model.WhoKnowsSetti
 		return []*model.WhoKnowsRow{}, nil
 	}
 
+	limit := -1
+
+	if settings.Limit != nil {
+		limit = *settings.Limit
+	}
+
+	settings.Limit = nil
+
 	var whoKnows []WhoKnowsTrackRow
 	var trackIDs []int64
 	var whoKnowsTracks []*model.WhoKnowsRow
@@ -87,15 +95,20 @@ func (a Analysis) WhoKnowsTrack(tracks []db.Track, settings *model.WhoKnowsSetti
 		UserIDPath: `user"."id`,
 	}).GetQuery()
 
-	err := db.Db.Model().
+	query := db.Db.Model().
 		TableExpr("(?) as track_counts", trackCounts).
 		ColumnExpr("total_playcount as playcount").
 		ColumnExpr(`username as username`).
 		ColumnExpr(`user_type as user_type`).
 		ColumnExpr(`privacy as privacy`).
 		ColumnExpr(`discord_id as discord_id`).
-		Order("total_playcount desc", "username desc").
-		Select(&whoKnows)
+		Order("total_playcount desc", "username desc")
+
+	if limit != -1 {
+		query.Limit(limit)
+	}
+
+	err := query.Select(&whoKnows)
 
 	if err != nil {
 		return whoKnowsTracks, err
