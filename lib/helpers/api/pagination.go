@@ -64,6 +64,15 @@ func (p Paginator) GetAllInParallel(parallelization int) {
 		return
 	}
 
+	pagesRemaining := p.TotalPages - p.convertCurrentPage(p.CurrentPage)
+
+	if pagesRemaining == 1 {
+		p.GetNext()
+		return
+	} else if pagesRemaining < parallelization {
+		parallelization = pagesRemaining
+	}
+
 	pageChannel := make(chan int)
 	var wg sync.WaitGroup
 	wg.Add(parallelization)

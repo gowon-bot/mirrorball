@@ -149,11 +149,7 @@ func (lfm API) AllScrobblesSince(requestable Requestable, since *time.Time) ([]R
 				params.Page = pp.Page
 				_, response := lfm.RecentTracks(params)
 
-				var tracksToAppend []RecentTrack
-
-				tracksToAppend = append(tracksToAppend, excludeNowPlaying(response.RecentTracks.Tracks)...)
-
-				tracks = append(tracks, tracksToAppend...)
+				tracks = append(tracks, excludeNowPlaying(response.RecentTracks.Tracks)...)
 			},
 		}
 

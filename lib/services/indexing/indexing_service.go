@@ -54,14 +54,7 @@ func (i Indexing) FullIndex(user *db.User) error {
 	return nil
 }
 
-// Update updates the cache with the newest data
 func (i Indexing) Update(user *db.User) error {
-	err := i.updateUser(user)
-
-	return err
-}
-
-func (i Indexing) updateUser(user *db.User) error {
 	recentTracks, err := i.lastFMService.AllScrobblesSince(user.AsRequestable(), &user.LastIndexed)
 
 	if err != nil {
