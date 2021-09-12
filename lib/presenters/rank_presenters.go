@@ -8,9 +8,11 @@ import (
 func PresentArtistRank(artist *db.Artist, whoKnows []db.ArtistCount, plays *db.ArtistCount, rank int) *model.ArtistRankResponse {
 
 	builtResponse := &model.ArtistRankResponse{
-		Artist: PresentArtist(artist),
-
 		Listeners: len(whoKnows),
+	}
+
+	if artist != nil {
+		builtResponse.Artist = PresentArtist(artist)
 	}
 
 	if rank != -1 {

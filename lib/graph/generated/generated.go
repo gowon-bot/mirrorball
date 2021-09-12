@@ -1686,7 +1686,7 @@ type ArtistSearchResult {
 
 # Ranks
 type ArtistRankResponse {
-  artist: Artist!
+  artist: Artist
   rank: Int!
   playcount: Int!
   listeners: Int!
@@ -3263,14 +3263,11 @@ func (ec *executionContext) _ArtistRankResponse_artist(ctx context.Context, fiel
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.Artist)
 	fc.Result = res
-	return ec.marshalNArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtist(ctx, field.Selections, res)
+	return ec.marshalOArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtist(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ArtistRankResponse_rank(ctx context.Context, field graphql.CollectedField, obj *model.ArtistRankResponse) (ret graphql.Marshaler) {
@@ -8752,9 +8749,6 @@ func (ec *executionContext) _ArtistRankResponse(ctx context.Context, sel ast.Sel
 			out.Values[i] = graphql.MarshalString("ArtistRankResponse")
 		case "artist":
 			out.Values[i] = ec._ArtistRankResponse_artist(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "rank":
 			out.Values[i] = ec._ArtistRankResponse_rank(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -11416,6 +11410,13 @@ func (ec *executionContext) marshalOAlbumTopTracksResponse2ᚖgithubᚗcomᚋjiv
 		return graphql.Null
 	}
 	return ec._AlbumTopTracksResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOArtist2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtist(ctx context.Context, sel ast.SelectionSet, v *model.Artist) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Artist(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOArtistCount2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐArtistCount(ctx context.Context, sel ast.SelectionSet, v *model.ArtistCount) graphql.Marshaler {

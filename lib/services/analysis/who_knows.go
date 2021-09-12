@@ -11,6 +11,10 @@ import (
 
 // WhoKnowsArtist returns a list of who has listened to an artist
 func (a Analysis) WhoKnowsArtist(artist *db.Artist, settings *model.WhoKnowsSettings) ([]db.ArtistCount, error) {
+	if artist == nil {
+		return []db.ArtistCount{}, nil
+	}
+
 	var whoKnows []db.ArtistCount
 
 	query := db.Db.Model(&whoKnows).
