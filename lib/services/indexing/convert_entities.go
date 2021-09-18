@@ -1,6 +1,8 @@
 package indexing
 
 import (
+	"strings"
+
 	"github.com/jivison/gowon-indexer/lib/constants"
 	"github.com/jivison/gowon-indexer/lib/db"
 	helpers "github.com/jivison/gowon-indexer/lib/helpers/database"
@@ -17,11 +19,11 @@ func (i Indexing) ConvertArtists(artistNames []string) (map[string]db.Artist, er
 	}
 
 	for _, artist := range artists {
-		artistsMap[artist.Name] = artist
+		artistsMap[strings.ToLower(artist.Name)] = artist
 	}
 
 	for _, artistName := range artistNames {
-		if _, ok := artistsMap[artistName]; !ok {
+		if _, ok := artistsMap[strings.ToLower(artistName)]; !ok {
 			artistsToCreate = append(artistsToCreate, artistName)
 		}
 	}
@@ -33,7 +35,7 @@ func (i Indexing) ConvertArtists(artistNames []string) (map[string]db.Artist, er
 	}
 
 	for _, createdArtist := range createdArtists {
-		artistsMap[createdArtist.Name] = createdArtist
+		artistsMap[strings.ToLower(createdArtist.Name)] = createdArtist
 	}
 
 	return artistsMap, nil
@@ -52,11 +54,11 @@ func (i Indexing) ConvertAlbums(albumNames []AlbumToConvert, existingArtistsMap 
 	}
 
 	for _, album := range albums {
-		if _, ok := albumsMap[album.Artist.Name]; !ok {
-			albumsMap[album.Artist.Name] = make(map[string]db.Album)
+		if _, ok := albumsMap[strings.ToLower(album.Artist.Name)]; !ok {
+			albumsMap[strings.ToLower(album.Artist.Name)] = make(map[string]db.Album)
 		}
 
-		albumsMap[album.Artist.Name][album.Name] = album
+		albumsMap[strings.ToLower(album.Artist.Name)][strings.ToLower(album.Name)] = album
 	}
 
 	albumsToCreate, err := i.generateAlbumsToCreate(albumNames, albumsMap, existingArtistsMap)
@@ -72,11 +74,11 @@ func (i Indexing) ConvertAlbums(albumNames []AlbumToConvert, existingArtistsMap 
 	}
 
 	for _, createdAlbum := range createdAlbums {
-		if _, ok := albumsMap[createdAlbum.Artist.Name]; !ok {
-			albumsMap[createdAlbum.Name] = make(map[string]db.Album)
+		if _, ok := albumsMap[strings.ToLower(createdAlbum.Artist.Name)]; !ok {
+			albumsMap[strings.ToLower(createdAlbum.Name)] = make(map[string]db.Album)
 		}
 
-		albumsMap[createdAlbum.Artist.Name][createdAlbum.Name] = createdAlbum
+		albumsMap[strings.ToLower(createdAlbum.Artist.Name)][strings.ToLower(createdAlbum.Name)] = createdAlbum
 	}
 
 	return albumsMap, nil
@@ -101,15 +103,15 @@ func (i Indexing) ConvertTracks(trackNames []TrackToConvert, existingArtistsMap 
 			albumName = track.Album.Name
 		}
 
-		if _, ok := tracksMap[track.Artist.Name]; !ok {
-			tracksMap[track.Artist.Name] = make(map[string]map[string]db.Track)
+		if _, ok := tracksMap[strings.ToLower(track.Artist.Name)]; !ok {
+			tracksMap[strings.ToLower(track.Artist.Name)] = make(map[string]map[string]db.Track)
 		}
 
-		if _, ok := tracksMap[track.Artist.Name][albumName]; !ok {
-			tracksMap[track.Artist.Name][albumName] = make(map[string]db.Track)
+		if _, ok := tracksMap[strings.ToLower(track.Artist.Name)][strings.ToLower(albumName)]; !ok {
+			tracksMap[strings.ToLower(track.Artist.Name)][strings.ToLower(albumName)] = make(map[string]db.Track)
 		}
 
-		tracksMap[track.Artist.Name][albumName][track.Name] = track
+		tracksMap[strings.ToLower(track.Artist.Name)][strings.ToLower(albumName)][strings.ToLower(track.Name)] = track
 	}
 
 	tracksToCreate, err := i.generateTracksToCreate(trackNames, tracksMap, existingArtistsMap, existingAlbumsMap)
@@ -131,15 +133,15 @@ func (i Indexing) ConvertTracks(trackNames []TrackToConvert, existingArtistsMap 
 			albumName = createdTrack.Album.Name
 		}
 
-		if _, ok := tracksMap[createdTrack.Artist.Name]; !ok {
-			tracksMap[createdTrack.Artist.Name] = make(map[string]map[string]db.Track)
+		if _, ok := tracksMap[strings.ToLower(createdTrack.Artist.Name)]; !ok {
+			tracksMap[strings.ToLower(createdTrack.Artist.Name)] = make(map[string]map[string]db.Track)
 		}
 
-		if _, ok := tracksMap[createdTrack.Artist.Name][albumName]; !ok {
-			tracksMap[createdTrack.Artist.Name][albumName] = make(map[string]db.Track)
+		if _, ok := tracksMap[strings.ToLower(createdTrack.Artist.Name)][strings.ToLower(albumName)]; !ok {
+			tracksMap[strings.ToLower(createdTrack.Artist.Name)][strings.ToLower(albumName)] = make(map[string]db.Track)
 		}
 
-		tracksMap[createdTrack.Artist.Name][albumName][createdTrack.Name] = createdTrack
+		tracksMap[strings.ToLower(createdTrack.Artist.Name)][strings.ToLower(albumName)][strings.ToLower(createdTrack.Name)] = createdTrack
 	}
 
 	return tracksMap, nil
@@ -158,11 +160,11 @@ func (i Indexing) ConvertTags(tagNames []string) (TagsMap, error) {
 	}
 
 	for _, tag := range tags {
-		tagsMap[tag.Name] = tag
+		tagsMap[strings.ToLower(tag.Name)] = tag
 	}
 
 	for _, tagName := range tagNames {
-		if _, ok := tagsMap[tagName]; !ok {
+		if _, ok := tagsMap[strings.ToLower(tagName)]; !ok {
 			tagsToCreate = append(tagsToCreate, db.Tag{Name: tagName})
 		}
 	}
@@ -174,7 +176,7 @@ func (i Indexing) ConvertTags(tagNames []string) (TagsMap, error) {
 	}
 
 	for _, createdTag := range createdTags {
-		tagsMap[createdTag.Name] = createdTag
+		tagsMap[strings.ToLower(createdTag.Name)] = createdTag
 	}
 
 	return tagsMap, nil
