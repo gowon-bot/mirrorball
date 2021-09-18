@@ -129,6 +129,7 @@ type ComplexityRoot struct {
 		RemoveUserFromGuild func(childComplexity int, discordID string, guildID string) int
 		SyncGuild           func(childComplexity int, guildID string, discordIDs []string) int
 		TagArtists          func(childComplexity int, artists []*model.ArtistInput, tags []*model.TagInput, markAsChecked *bool) int
+		Temp                func(childComplexity int) int
 		Update              func(childComplexity int, user model.UserInput, forceUserCreate *bool) int
 		UpdatePrivacy       func(childComplexity int, user model.UserInput, privacy *model.Privacy) int
 	}
@@ -279,6 +280,7 @@ type MutationResolver interface {
 	Update(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error)
 	ImportRatings(ctx context.Context, csv string, user model.UserInput) (*string, error)
 	TagArtists(ctx context.Context, artists []*model.ArtistInput, tags []*model.TagInput, markAsChecked *bool) (*string, error)
+	Temp(ctx context.Context) (*string, error)
 }
 type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
@@ -673,6 +675,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.TagArtists(childComplexity, args["artists"].([]*model.ArtistInput), args["tags"].([]*model.TagInput), args["markAsChecked"].(*bool)), true
+
+	case "Mutation.temp":
+		if e.complexity.Mutation.Temp == nil {
+			break
+		}
+
+		return e.complexity.Mutation.Temp(childComplexity), true
 
 	case "Mutation.update":
 		if e.complexity.Mutation.Update == nil {
@@ -1468,6 +1477,8 @@ type Mutation {
     tags: [TagInput!]!
     markAsChecked: Boolean
   ): Void
+
+  temp: Void
 }
 
 ##############
@@ -4233,6 +4244,38 @@ func (ec *executionContext) _Mutation_tagArtists(ctx context.Context, field grap
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().TagArtists(rctx, args["artists"].([]*model.ArtistInput), args["tags"].([]*model.TagInput), args["markAsChecked"].(*bool))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_temp(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Temp(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8981,6 +9024,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_importRatings(ctx, field)
 		case "tagArtists":
 			out.Values[i] = ec._Mutation_tagArtists(ctx, field)
+		case "temp":
+			out.Values[i] = ec._Mutation_temp(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
