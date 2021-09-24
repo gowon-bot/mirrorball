@@ -55,16 +55,35 @@ func (r *mutationResolver) TagArtists(ctx context.Context, artists []*model.Arti
 }
 
 func (r *mutationResolver) Temp(ctx context.Context) (*string, error) {
-	var artists []string
+	log.Print("Running temp...")
 
-	db.Db.Model((*db.Artist)(nil)).ColumnExpr("lower(name) as name").GroupExpr("lower(name)").Having("count(lower(name)) >= 2").Select(&artists)
+	var albums []struct {
+		Name   string
+		Artist string
+	}
 
-	log.Print(artists)
+	err := db.Db.Model((*db.Album)(nil)).
+		ColumnExpr("a.name as artist").
+		ColumnExpr("lower(album.name) as name").
+		Join("JOIN artists a on a.id = artist_id").
+		GroupExpr("lower(album.name), a.name").
+		Having("count(lower(album.name)) >= 2").
+		Select(&albums)
 
-	for _, artist := range artists {
+	if err != nil {
+		panic(err)
+	}
+
+	for _, album := range albums {
 		var ids []int64
 
-		db.Db.Model((*db.Artist)(nil)).Column("id").Where("lower(name) = lower(?)", artist).Select(&ids)
+		db.Db.
+			Model((*db.Album)(nil)).
+			Column("id").
+			Join("JOIN artists a on a.id = artist_id").
+			Where("lower(name) = lower(?)", album.Name).
+			Where("a.name = lower(?)", album.Artist).
+			Select(&ids)
 
 		var lowestID int64 = -1
 		var otherIDs []int64
@@ -82,14 +101,73 @@ func (r *mutationResolver) Temp(ctx context.Context) (*string, error) {
 		}
 
 		for _, id := range otherIDs {
-			db.Db.Exec(`update artist_counts set artist_id = ? where artist_id = ?`, lowestID, id)
-			db.Db.Exec(`update tracks set artist_id = ? where artist_id = ?`, lowestID, id)
-			db.Db.Exec(`update albums set artist_id = ? where artist_id = ?`, lowestID, id)
-			db.Db.Exec(`delete from artist_tags where artist_id = ?`, id)
-			db.Db.Exec(`delete from artists where id = ?`, id)
+			db.Db.Exec(`update album_counts set album_id = ? where album_id = ?`, lowestID, id)
+			db.Db.Exec(`update tracks set album_id = ? where album_id = ?`, lowestID, id)
+			db.Db.Exec("delete from rate_your_music_album_albums where album_id = ?", id)
+			db.Db.Exec(`delete from albums where id = ?`, id)
 		}
 
-		log.Print("Processed ", artist)
+		log.Print("Processed ", album)
+	}
+
+	return nil, nil
+}
+
+func (r *mutationResolver) Temp2(ctx context.Context) (*string, error) {
+	var tracks []struct {
+		Name   string
+		Artist string
+		Album  string
+	}
+
+	err := db.Db.Model((*db.Track)(nil)).
+		ColumnExpr("a.name as artist").
+		ColumnExpr("l.name as album").
+		ColumnExpr("lower(track.name) as name").
+		Join("JOIN artists a on a.id = track.artist_id").
+		Join("JOIN albums l on l.id = track.artist_id").
+		GroupExpr("lower(track.name), a.name, l.name").
+		Having("count(lower(track.name)) >= 2").
+		Select(&tracks)
+
+	if err != nil {
+		panic(err)
+	}
+
+	for _, track := range tracks {
+		var ids []int64
+
+		db.Db.
+			Model((*db.Track)(nil)).
+			Column("id").
+			Join("JOIN artists a on a.id = track.artist_id").
+			Join("JOIN artists l on l.id = track.album_id").
+			Where("lower(name) = lower(?)", track.Name).
+			Where("a.name = lower(?)", track.Artist).
+			Where("l.name = lower(?)", track.Album).
+			Select(&ids)
+
+		var lowestID int64 = -1
+		var otherIDs []int64
+
+		for _, id := range ids {
+			if lowestID == -1 || id < int64(lowestID) {
+				lowestID = id
+			}
+		}
+
+		for _, id := range ids {
+			if id != lowestID {
+				otherIDs = append(otherIDs, id)
+			}
+		}
+
+		for _, id := range otherIDs {
+			db.Db.Exec(`update track_counts set track_id = ? where track_id = ?`, lowestID, id)
+			db.Db.Exec(`delete from tracks where id = ?`, id)
+		}
+
+		log.Print("Processed ", track.Name)
 	}
 
 	return nil, nil
