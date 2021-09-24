@@ -75,7 +75,7 @@ func (i Indexing) ConvertAlbums(albumNames []AlbumToConvert, existingArtistsMap 
 
 	for _, createdAlbum := range createdAlbums {
 		if _, ok := albumsMap[strings.ToLower(createdAlbum.Artist.Name)]; !ok {
-			albumsMap[strings.ToLower(createdAlbum.Name)] = make(map[string]db.Album)
+			albumsMap[strings.ToLower(createdAlbum.Artist.Name)] = make(map[string]db.Album)
 		}
 
 		albumsMap[strings.ToLower(createdAlbum.Artist.Name)][strings.ToLower(createdAlbum.Name)] = createdAlbum

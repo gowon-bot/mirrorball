@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go v0.84.0 // indirect
 	cloud.google.com/go/pubsub v1.11.0 // indirect
 	github.com/99designs/gqlgen v0.13.0
+	github.com/RichardKnop/logging v0.0.0-20190827224416-1a693bdd4fae
 	github.com/RichardKnop/machinery/v2 v2.0.11
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/aws/aws-sdk-go v1.38.65 // indirect

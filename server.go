@@ -10,6 +10,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/RichardKnop/logging"
 	machinerylog "github.com/RichardKnop/machinery/v2/log"
 	"github.com/fatih/color"
 	"github.com/jivison/gowon-indexer/lib/db"
@@ -47,7 +48,13 @@ func main() {
 func startup() {
 	godotenv.Load()
 
-	logger := log.New(ioutil.Discard, "", 0)
+	var logger logging.LoggerInterface
+
+	if strings.ToLower(os.Getenv("ENVIRONMENT")) == "development" {
+		logger = log.New(os.Stdout, "", 0)
+	} else {
+		logger = log.New(ioutil.Discard, "", 0)
+	}
 
 	machinerylog.Set(logger)
 
