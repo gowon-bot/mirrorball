@@ -1,6 +1,8 @@
 package indexing
 
 import (
+	"strings"
+
 	"github.com/jivison/gowon-indexer/lib/db"
 	apihelpers "github.com/jivison/gowon-indexer/lib/helpers/api"
 	helpers "github.com/jivison/gowon-indexer/lib/helpers/generic"
@@ -21,26 +23,26 @@ func (i Indexing) GenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack, us
 	trackCounts := make(map[string]map[string]map[string]int)
 
 	for _, scrobble := range scrobbles {
-		artist := artistsMap[scrobble.Artist.Text]
-		artistCounts[artist.Name] += 1
+		artist := artistsMap[strings.ToLower(scrobble.Artist.Text)]
+		artistCounts[strings.ToLower(scrobble.Artist.Text)] += 1
 
 		if _, ok := trackCounts[artist.Name]; !ok {
-			trackCounts[scrobble.Artist.Text] = make(map[string]map[string]int)
+			trackCounts[strings.ToLower(scrobble.Artist.Text)] = make(map[string]map[string]int)
 		}
-		if _, ok := trackCounts[artist.Name][scrobble.Album.Text]; !ok {
-			trackCounts[artist.Name][scrobble.Album.Text] = make(map[string]int)
+		if _, ok := trackCounts[strings.ToLower(artist.Name)][strings.ToLower(scrobble.Album.Text)]; !ok {
+			trackCounts[strings.ToLower(artist.Name)][strings.ToLower(scrobble.Album.Text)] = make(map[string]int)
 		}
 
-		track := tracksMap[scrobble.Artist.Text][scrobble.Album.Text][scrobble.Name]
-		trackCounts[artist.Name][scrobble.Album.Text][scrobble.Name] += 1
+		track := tracksMap[strings.ToLower(scrobble.Artist.Text)][strings.ToLower(scrobble.Album.Text)][strings.ToLower(scrobble.Name)]
+		trackCounts[strings.ToLower(artist.Name)][strings.ToLower(scrobble.Album.Text)][strings.ToLower(scrobble.Name)] += 1
 
 		if scrobble.Album.Text != "" {
-			if _, ok := albumCounts[artist.Name]; !ok {
-				albumCounts[artist.Name] = make(map[string]int)
+			if _, ok := albumCounts[strings.ToLower(artist.Name)]; !ok {
+				albumCounts[strings.ToLower(artist.Name)] = make(map[string]int)
 			}
 
-			album := albumsMap[scrobble.Artist.Text][scrobble.Album.Text]
-			albumCounts[artist.Name][album.Name] += 1
+			album := albumsMap[strings.ToLower(scrobble.Artist.Text)][strings.ToLower(scrobble.Album.Text)]
+			albumCounts[strings.ToLower(artist.Name)][strings.ToLower(album.Name)] += 1
 		}
 
 		timestamp, _ := apihelpers.ParseUnix(scrobble.Timestamp.UTS)
@@ -60,13 +62,13 @@ func (i Indexing) GenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack, us
 	var dbTrackCounts []db.TrackCount
 
 	for artist, count := range artistCounts {
-		dbArtist := artistsMap[artist]
+		dbArtist := artistsMap[strings.ToLower(artist)]
 		dbArtistCounts = append(dbArtistCounts, db.ArtistCount{Artist: &dbArtist, ArtistID: dbArtist.ID, User: &user, UserID: user.ID, Playcount: int32(count)})
 	}
 
 	for artist, artistAlbums := range albumCounts {
 		for album, count := range artistAlbums {
-			dbAlbum := albumsMap[artist][album]
+			dbAlbum := albumsMap[strings.ToLower(artist)][strings.ToLower(album)]
 			dbAlbumCounts = append(dbAlbumCounts, db.AlbumCount{Album: &dbAlbum, AlbumID: dbAlbum.ID, User: &user, UserID: user.ID, Playcount: int32(count)})
 		}
 	}
@@ -74,7 +76,7 @@ func (i Indexing) GenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack, us
 	for artist, artistAlbums := range trackCounts {
 		for album, albumTracks := range artistAlbums {
 			for track, count := range albumTracks {
-				dbTrack := tracksMap[artist][album][track]
+				dbTrack := tracksMap[strings.ToLower(artist)][strings.ToLower(album)][strings.ToLower(track)]
 				dbTrackCounts = append(dbTrackCounts, db.TrackCount{Track: &dbTrack, TrackID: dbTrack.ID, User: &user, UserID: user.ID, Playcount: int32(count)})
 			}
 		}
@@ -113,19 +115,19 @@ func (I Indexing) GenerateUniqueLists(scrobbles []lastfm.RecentTrack) ([]ArtistT
 	tracks := make(map[string]map[string]map[string]int)
 
 	for _, scrobble := range scrobbles {
-		if _, ok := albums[scrobble.Artist.Text]; !ok {
-			albums[scrobble.Artist.Text] = make(map[string]int)
+		if _, ok := albums[strings.ToLower(scrobble.Artist.Text)]; !ok {
+			albums[strings.ToLower(scrobble.Artist.Text)] = make(map[string]int)
 		}
-		if _, ok := tracks[scrobble.Artist.Text]; !ok {
-			tracks[scrobble.Artist.Text] = make(map[string]map[string]int)
+		if _, ok := tracks[strings.ToLower(scrobble.Artist.Text)]; !ok {
+			tracks[strings.ToLower(scrobble.Artist.Text)] = make(map[string]map[string]int)
 		}
 		if _, ok := tracks[scrobble.Artist.Text][scrobble.Album.Text]; !ok {
-			tracks[scrobble.Artist.Text][scrobble.Album.Text] = make(map[string]int)
+			tracks[strings.ToLower(scrobble.Artist.Text)][strings.ToLower(scrobble.Album.Text)] = make(map[string]int)
 		}
 
-		artists[scrobble.Artist.Text] = 1
-		albums[scrobble.Artist.Text][scrobble.Album.Text] = 1
-		tracks[scrobble.Artist.Text][scrobble.Album.Text][scrobble.Name] = 1
+		artists[strings.ToLower(scrobble.Artist.Text)] = 1
+		albums[strings.ToLower(scrobble.Artist.Text)][strings.ToLower(scrobble.Album.Text)] = 1
+		tracks[strings.ToLower(scrobble.Artist.Text)][strings.ToLower(scrobble.Album.Text)][strings.ToLower(scrobble.Name)] = 1
 	}
 
 	var artistsList []ArtistToConvert
