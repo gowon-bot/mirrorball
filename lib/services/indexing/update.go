@@ -121,7 +121,7 @@ func (I Indexing) GenerateUniqueLists(scrobbles []lastfm.RecentTrack) ([]ArtistT
 		if _, ok := tracks[strings.ToLower(scrobble.Artist.Text)]; !ok {
 			tracks[strings.ToLower(scrobble.Artist.Text)] = make(map[string]map[string]int)
 		}
-		if _, ok := tracks[scrobble.Artist.Text][scrobble.Album.Text]; !ok {
+		if _, ok := tracks[strings.ToLower(scrobble.Artist.Text)][strings.ToLower(scrobble.Album.Text)]; !ok {
 			tracks[strings.ToLower(scrobble.Artist.Text)][strings.ToLower(scrobble.Album.Text)] = make(map[string]int)
 		}
 
