@@ -26,7 +26,7 @@ func (i Indexing) GenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack, us
 		artist := artistsMap[strings.ToLower(scrobble.Artist.Text)]
 		artistCounts[strings.ToLower(scrobble.Artist.Text)] += 1
 
-		if _, ok := trackCounts[artist.Name]; !ok {
+		if _, ok := trackCounts[strings.ToLower(artist.Name)]; !ok {
 			trackCounts[strings.ToLower(scrobble.Artist.Text)] = make(map[string]map[string]int)
 		}
 		if _, ok := trackCounts[strings.ToLower(artist.Name)][strings.ToLower(scrobble.Album.Text)]; !ok {
