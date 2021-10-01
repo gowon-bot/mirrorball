@@ -1,6 +1,8 @@
 package rateyourmusic
 
 import (
+	"strings"
+
 	"github.com/jivison/gowon-indexer/lib/constants"
 	"github.com/jivison/gowon-indexer/lib/db"
 	dbhelpers "github.com/jivison/gowon-indexer/lib/helpers/database"
@@ -166,7 +168,7 @@ func (rym RateYourMusic) createRateYourMusicAlbumAlbums(albums []RawRateYourMusi
 	for _, album := range albums {
 		for _, combination := range album.AllAlbums {
 
-			dbAlbum := albumsMap[combination.ArtistName][combination.AlbumName]
+			dbAlbum := albumsMap[strings.ToLower(combination.ArtistName)][strings.ToLower(combination.AlbumName)]
 
 			albumAlbumsToCreate = append(albumAlbumsToCreate, db.RateYourMusicAlbumAlbum{
 				RateYourMusicAlbumID: rymsAlbumsMap[album.RYMID].ID,
@@ -196,7 +198,7 @@ func (rym RateYourMusic) updateRateYourMusicAlbumAlbums(albums []RawRateYourMusi
 	for _, album := range albums {
 		for _, combination := range album.AllAlbums {
 
-			dbAlbum := albumsMap[combination.ArtistName][combination.AlbumName]
+			dbAlbum := albumsMap[strings.ToLower(combination.ArtistName)][strings.ToLower(combination.AlbumName)]
 
 			albumAlbumsToCreate = append(albumAlbumsToCreate, db.RateYourMusicAlbumAlbum{
 				RateYourMusicAlbumID: rymsAlbumsMap[album.RYMID].ID,
