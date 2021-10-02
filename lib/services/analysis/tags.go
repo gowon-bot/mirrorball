@@ -10,7 +10,7 @@ import (
 	"github.com/jivison/gowon-indexer/lib/graph/model"
 	dbhelpers "github.com/jivison/gowon-indexer/lib/helpers/database"
 	"github.com/jivison/gowon-indexer/lib/helpers/inputparser"
-	"github.com/jivison/gowon-indexer/lib/services/indexing"
+	"github.com/jivison/gowon-indexer/lib/meta"
 )
 
 func (a Analysis) TagArtists(artists []*model.ArtistInput, tags []*model.TagInput) error {
@@ -93,12 +93,14 @@ func (a Analysis) CountTags(settings *model.TagsSettings) (int, error) {
 	return count, nil
 }
 
-func (a Analysis) generateArtistTagsToCreate(artistsMap indexing.ArtistsMap, tagsMap indexing.TagsMap) []db.ArtistTag {
+func (a Analysis) generateArtistTagsToCreate(artistsMap meta.ArtistConversionMap, tagsMap meta.TagConversionMap) []db.ArtistTag {
 	var artistTags []db.ArtistTag
 
-	for _, artist := range artistsMap {
-		for _, tag := range tagsMap {
-			artistTags = append(artistTags, db.ArtistTag{ArtistID: artist.ID, TagID: tag.ID})
+	for _, artistItem := range artistsMap.GetMap() {
+		artist := artistItem.Value.(db.Artist)
+
+		for _, tag := range tagsMap.GetMap() {
+			artistTags = append(artistTags, db.ArtistTag{ArtistID: artist.ID, TagID: tag.Value.(db.Tag).ID})
 		}
 	}
 

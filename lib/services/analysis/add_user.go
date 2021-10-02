@@ -7,6 +7,8 @@ import (
 	helpers "github.com/jivison/gowon-indexer/lib/helpers/database"
 )
 
+type UsersMap = map[int64]db.User
+
 func (a Analysis) AddUserToPlays(plays []db.Play) ([]db.Play, error) {
 	var userList []int64
 
@@ -36,8 +38,6 @@ func (a Analysis) AddUserToPlays(plays []db.Play) ([]db.Play, error) {
 
 	return newPlays, nil
 }
-
-type UsersMap = map[int64]db.User
 
 func (a Analysis) generateUsersMap(userList []int64) (UsersMap, error) {
 	usersMap := make(UsersMap)

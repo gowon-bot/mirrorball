@@ -1,18 +1,15 @@
 package rateyourmusic
 
 import (
-	"strings"
-
 	"github.com/jivison/gowon-indexer/lib/constants"
 	"github.com/jivison/gowon-indexer/lib/db"
 	dbhelpers "github.com/jivison/gowon-indexer/lib/helpers/database"
+	"github.com/jivison/gowon-indexer/lib/meta"
 	"github.com/jivison/gowon-indexer/lib/services/indexing"
 )
 
-type RateYourMusicAlbumMap = map[string]db.RateYourMusicAlbum
-
-func (rym RateYourMusic) ConvertRateYourMusicAlbums(rawAlbums []RawRateYourMusicRating) (RateYourMusicAlbumMap, error) {
-	albumsMap := make(RateYourMusicAlbumMap)
+func (rym RateYourMusic) ConvertRateYourMusicAlbums(rawAlbums []RawRateYourMusicRating) (meta.RateYourMusicAlbumConversionMap, error) {
+	albumsMap := meta.CreateRateYourMusicAlbumConversionMap()
 
 	var rymsIDs []interface{}
 
@@ -23,11 +20,11 @@ func (rym RateYourMusic) ConvertRateYourMusicAlbums(rawAlbums []RawRateYourMusic
 	rateYourMusicAlbums, err := dbhelpers.SelectRateYourMusicAlbumsWhereInMany(rymsIDs, constants.ChunkSize)
 
 	if err != nil {
-		return nil, err
+		return albumsMap, err
 	}
 
 	for _, album := range rateYourMusicAlbums {
-		albumsMap[album.RateYourMusicID] = album
+		albumsMap.Set(album.RateYourMusicID, album)
 	}
 
 	albumsToCreate, albumsToUpdate := rym.generateRateYourMusicAlbumsToCreate(albumsMap, rawAlbums)
@@ -37,27 +34,27 @@ func (rym RateYourMusic) ConvertRateYourMusicAlbums(rawAlbums []RawRateYourMusic
 	createdAlbums, err := rym.createRateYourMusicAlbums(albumsToCreate)
 
 	if err != nil {
-		return nil, err
+		return albumsMap, err
 	}
 
 	for _, album := range createdAlbums {
-		albumsMap[album.RateYourMusicID] = album
+		albumsMap.Set(album.RateYourMusicID, album)
 	}
 
 	err = rym.createRateYourMusicAlbumAlbums(albumsToCreate, albumsMap)
 
 	if err != nil {
-		return nil, err
+		return albumsMap, err
 	}
 
 	return albumsMap, nil
 }
 
-func (rym RateYourMusic) SaveRatings(ratings []RawRateYourMusicRating, rymsAlbumsMap RateYourMusicAlbumMap, user db.User) ([]db.Rating, error) {
+func (rym RateYourMusic) SaveRatings(ratings []RawRateYourMusicRating, rymsAlbumsMap meta.RateYourMusicAlbumConversionMap, user db.User) ([]db.Rating, error) {
 	var dbRatings []db.Rating
 
 	for _, rating := range ratings {
-		rymsAlbum := rymsAlbumsMap[rating.RYMID]
+		rymsAlbum, _, _ := rymsAlbumsMap.Get(rating.RYMID)
 
 		dbRating := db.Rating{
 			Rating:               rating.Rating,
@@ -101,7 +98,7 @@ func (rym RateYourMusic) createRateYourMusicAlbums(albumsToCreate []RawRateYourM
 	return albums, nil
 }
 
-func (rym RateYourMusic) updateRateYourMusicAlbums(albumsToUpdate []RateYourMusicAlbumToUpdate, albumsMap RateYourMusicAlbumMap) ([]db.RateYourMusicAlbum, error) {
+func (rym RateYourMusic) updateRateYourMusicAlbums(albumsToUpdate []RateYourMusicAlbumToUpdate, albumsMap meta.RateYourMusicAlbumConversionMap) ([]db.RateYourMusicAlbum, error) {
 	var dbAlbums []db.RateYourMusicAlbum
 	var rawAlbums []RawRateYourMusicRating
 
@@ -126,12 +123,12 @@ type RateYourMusicAlbumToUpdate struct {
 	rawAlbum RawRateYourMusicRating
 }
 
-func (rym RateYourMusic) generateRateYourMusicAlbumsToCreate(albumsMap RateYourMusicAlbumMap, rawAlbums []RawRateYourMusicRating) ([]RawRateYourMusicRating, []RateYourMusicAlbumToUpdate) {
+func (rym RateYourMusic) generateRateYourMusicAlbumsToCreate(albumsMap meta.RateYourMusicAlbumConversionMap, rawAlbums []RawRateYourMusicRating) ([]RawRateYourMusicRating, []RateYourMusicAlbumToUpdate) {
 	var albumsToCreate []RawRateYourMusicRating
 	var albumsToUpdate []RateYourMusicAlbumToUpdate
 
 	for _, album := range rawAlbums {
-		if dbAlbum, ok := albumsMap[album.RYMID]; !ok {
+		if dbAlbum, _, ok := albumsMap.Get(album.RYMID); !ok {
 			albumsToCreate = append(albumsToCreate, album)
 		} else {
 			albumsToUpdate = append(albumsToUpdate, RateYourMusicAlbumToUpdate{
@@ -144,7 +141,7 @@ func (rym RateYourMusic) generateRateYourMusicAlbumsToCreate(albumsMap RateYourM
 	return albumsToCreate, albumsToUpdate
 }
 
-func (rym RateYourMusic) convertAlbumsFromRatings(rawAlbums []RawRateYourMusicRating) (indexing.AlbumsMap, error) {
+func (rym RateYourMusic) convertAlbumsFromRatings(rawAlbums []RawRateYourMusicRating) (meta.AlbumConversionMap, error) {
 	var albumList []indexing.AlbumToConvert
 
 	for _, album := range rawAlbums {
@@ -156,7 +153,7 @@ func (rym RateYourMusic) convertAlbumsFromRatings(rawAlbums []RawRateYourMusicRa
 	return albumsMap, err
 }
 
-func (rym RateYourMusic) createRateYourMusicAlbumAlbums(albums []RawRateYourMusicRating, rymsAlbumsMap RateYourMusicAlbumMap) error {
+func (rym RateYourMusic) createRateYourMusicAlbumAlbums(albums []RawRateYourMusicRating, rymsAlbumsMap meta.RateYourMusicAlbumConversionMap) error {
 	albumsMap, err := rym.convertAlbumsFromRatings(albums)
 
 	if err != nil {
@@ -168,10 +165,11 @@ func (rym RateYourMusic) createRateYourMusicAlbumAlbums(albums []RawRateYourMusi
 	for _, album := range albums {
 		for _, combination := range album.AllAlbums {
 
-			dbAlbum := albumsMap[strings.ToLower(combination.ArtistName)][strings.ToLower(combination.AlbumName)]
+			dbAlbum, _, _ := albumsMap.Get(combination.ArtistName, combination.AlbumName)
+			rateYourMusicAlbum, _, _ := rymsAlbumsMap.Get(album.RYMID)
 
 			albumAlbumsToCreate = append(albumAlbumsToCreate, db.RateYourMusicAlbumAlbum{
-				RateYourMusicAlbumID: rymsAlbumsMap[album.RYMID].ID,
+				RateYourMusicAlbumID: rateYourMusicAlbum.ID,
 				AlbumID:              dbAlbum.ID,
 			})
 		}
@@ -186,7 +184,7 @@ func (rym RateYourMusic) createRateYourMusicAlbumAlbums(albums []RawRateYourMusi
 	return nil
 }
 
-func (rym RateYourMusic) updateRateYourMusicAlbumAlbums(albums []RawRateYourMusicRating, rymsAlbumsMap RateYourMusicAlbumMap) error {
+func (rym RateYourMusic) updateRateYourMusicAlbumAlbums(albums []RawRateYourMusicRating, rymsAlbumsMap meta.RateYourMusicAlbumConversionMap) error {
 	albumsMap, err := rym.convertAlbumsFromRatings(albums)
 
 	if err != nil {
@@ -198,10 +196,11 @@ func (rym RateYourMusic) updateRateYourMusicAlbumAlbums(albums []RawRateYourMusi
 	for _, album := range albums {
 		for _, combination := range album.AllAlbums {
 
-			dbAlbum := albumsMap[strings.ToLower(combination.ArtistName)][strings.ToLower(combination.AlbumName)]
+			dbAlbum, _, _ := albumsMap.Get(combination.ArtistName, combination.AlbumName)
+			rateYourMusicAlbum, _, _ := rymsAlbumsMap.Get(album.RYMID)
 
 			albumAlbumsToCreate = append(albumAlbumsToCreate, db.RateYourMusicAlbumAlbum{
-				RateYourMusicAlbumID: rymsAlbumsMap[album.RYMID].ID,
+				RateYourMusicAlbumID: rateYourMusicAlbum.ID,
 				AlbumID:              dbAlbum.ID,
 			})
 		}
