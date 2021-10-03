@@ -1,7 +1,6 @@
 package analysis
 
 import (
-	"log"
 	"sync"
 
 	"github.com/jivison/gowon-indexer/lib/constants"
@@ -160,7 +159,6 @@ func (a Analysis) RequireTagsForMissing(artistInputs []*model.ArtistInput) error
 		}
 
 		for _, artist := range artistsThatNeedTags {
-			log.Print("Adding " + artist + " to the channel")
 			artistChannel <- artist
 		}
 

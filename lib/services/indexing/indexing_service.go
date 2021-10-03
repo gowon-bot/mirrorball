@@ -23,11 +23,7 @@ func (i Indexing) FullIndex(user *db.User) error {
 
 	if err != nil {
 		return err
-	} else if len(recentTracks) == 0 {
-		return nil
-	}
-
-	if len(recentTracks) < 1 {
+	} else if len(recentTracks) < 1 {
 		return nil
 	}
 

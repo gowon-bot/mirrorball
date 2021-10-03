@@ -1,6 +1,8 @@
 package apihelpers
 
-import "sync"
+import (
+	"sync"
+)
 
 // PagedParams is the struct type for the parameters passed into the pagination function
 type PagedParams struct {
@@ -51,7 +53,7 @@ func (p Paginator) GetAll() {
 		return
 	}
 
-	for page := p.convertCurrentPage(p.CurrentPage); page <= p.TotalPages; page++ {
+	for page := p.convertCurrentPage(p.CurrentPage); page < p.TotalPages; page++ {
 		p.CurrentPage = page
 
 		p.GetNext()
@@ -64,7 +66,7 @@ func (p Paginator) GetAllInParallel(parallelization int) {
 		return
 	}
 
-	pageChannel := make(chan int)
+	pageChannel := make(chan int, p.TotalPages)
 	var wg sync.WaitGroup
 	wg.Add(parallelization)
 
@@ -82,7 +84,7 @@ func (p Paginator) GetAllInParallel(parallelization int) {
 		}(pageChannel)
 	}
 
-	for page := p.convertCurrentPage(p.CurrentPage); page <= p.TotalPages; page++ {
+	for page := p.convertCurrentPage(p.CurrentPage); page < p.TotalPages+1; page++ {
 		pageChannel <- page
 	}
 

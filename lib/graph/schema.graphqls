@@ -107,9 +107,6 @@ type Mutation {
     tags: [TagInput!]!
     markAsChecked: Boolean
   ): Void
-
-  temp: Void
-  temp2: Void
 }
 
 ##############
