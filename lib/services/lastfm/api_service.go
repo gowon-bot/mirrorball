@@ -127,7 +127,7 @@ func (lfm API) RecentTracks(params RecentTracksParams) (*ErrorResponse, *RecentT
 
 	err := lfm.ParseResponse(response, recentTracks)
 
-	if err.Error == 29 {
+	if err != nil && err.Error == 29 {
 		time.Sleep(100 * time.Millisecond)
 
 		response = lfm.MakeRequest("user.getRecentTracks", params)
