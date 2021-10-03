@@ -237,8 +237,8 @@ func CreateTrackConversionCounter() TrackConversionCounter {
 
 type RateYourMusicAlbumConversionMap struct{ *ConversionMap }
 
-func (rlm RateYourMusicAlbumConversionMap) Get(artistName string) (db.RateYourMusicAlbum, string, bool) {
-	item, ok := rlm.get(artistName)
+func (rlm RateYourMusicAlbumConversionMap) Get(rymsID string) (db.RateYourMusicAlbum, string, bool) {
+	item, ok := rlm.get(rymsID)
 
 	if ok {
 		return item.Value.(db.RateYourMusicAlbum), item.Key, ok
@@ -247,8 +247,8 @@ func (rlm RateYourMusicAlbumConversionMap) Get(artistName string) (db.RateYourMu
 	return db.RateYourMusicAlbum{}, item.Key, ok
 }
 
-func (rlm RateYourMusicAlbumConversionMap) Set(artistName string, artist db.RateYourMusicAlbum) {
-	rlm.set(artistName, artist)
+func (rlm RateYourMusicAlbumConversionMap) Set(rymsID string, album db.RateYourMusicAlbum) {
+	rlm.set(rymsID, album)
 }
 
 func CreateRateYourMusicAlbumConversionMap() RateYourMusicAlbumConversionMap {

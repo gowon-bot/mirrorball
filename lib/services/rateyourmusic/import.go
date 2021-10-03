@@ -194,16 +194,19 @@ func (rym RateYourMusic) updateRateYourMusicAlbumAlbums(albums []RawRateYourMusi
 	var albumAlbumsToCreate []db.RateYourMusicAlbumAlbum
 
 	for _, album := range albums {
-		for _, combination := range album.AllAlbums {
+		var unfilteredAlbums []db.RateYourMusicAlbumAlbum
 
+		for _, combination := range album.AllAlbums {
 			dbAlbum, _, _ := albumsMap.Get(combination.ArtistName, combination.AlbumName)
 			rateYourMusicAlbum, _, _ := rymsAlbumsMap.Get(album.RYMID)
 
-			albumAlbumsToCreate = append(albumAlbumsToCreate, db.RateYourMusicAlbumAlbum{
+			albumAlbumsToCreate = append(unfilteredAlbums, db.RateYourMusicAlbumAlbum{
 				RateYourMusicAlbumID: rateYourMusicAlbum.ID,
 				AlbumID:              dbAlbum.ID,
 			})
 		}
+
+		albumAlbumsToCreate = append(albumAlbumsToCreate, rym.FilterDuplicateAlbumAlbums(album.RYMID, unfilteredAlbums)...)
 	}
 
 	_, err = dbhelpers.InsertManyRateYourMusicAlbumAlbums(albumAlbumsToCreate, constants.ChunkSize)
@@ -219,7 +222,7 @@ func (rym RateYourMusic) ResetRatings(user db.User) {
 	db.Db.Model((*db.Rating)(nil)).Where("user_id=?", user.ID).Delete()
 }
 
-func (rym RateYourMusic) FilterDuplicateAlbumAlbums(rateYourMusicAlbumID int64, albumAlbums []db.RateYourMusicAlbumAlbum) []db.RateYourMusicAlbumAlbum {
+func (rym RateYourMusic) FilterDuplicateAlbumAlbums(rateYourMusicAlbumID string, albumAlbums []db.RateYourMusicAlbumAlbum) []db.RateYourMusicAlbumAlbum {
 	var dbAlbumAlbums []db.RateYourMusicAlbumAlbum
 	var filtered []db.RateYourMusicAlbumAlbum
 

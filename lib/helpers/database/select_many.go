@@ -328,7 +328,6 @@ func SelectRateYourMusicAlbumsWhereInMany(rymsAlbumIDs []interface{}, itemsPerCh
 		var selectedAlbums []db.RateYourMusicAlbum
 
 		err := db.Db.Model((*db.RateYourMusicAlbum)(nil)).
-			// Relation("Albums").
 			Where(
 				"rate_your_music_id IN (?)",
 				pg.In(chunk),
@@ -370,7 +369,6 @@ func SelectRatingsWhereInMany(rymsAlbumIDs []interface{}, userID int64, itemsPer
 
 		err := db.Db.Model((*db.Rating)(nil)).
 			Relation("RateYourMusicAlbum").
-			// Relation("RateYourMusicAlbum.Albums")
 			Where(
 				"rate_your_music_album_id IN (?)",
 				pg.In(chunk),

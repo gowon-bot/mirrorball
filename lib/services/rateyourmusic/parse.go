@@ -9,7 +9,6 @@ import (
 
 	"github.com/jivison/gowon-indexer/lib/constants"
 	"github.com/jivison/gowon-indexer/lib/customerrors"
-	"github.com/jivison/gowon-indexer/lib/graph/model"
 	dbhelpers "github.com/jivison/gowon-indexer/lib/helpers/database"
 	helpers "github.com/jivison/gowon-indexer/lib/helpers/generic"
 	"github.com/jivison/gowon-indexer/lib/services/indexing"
@@ -27,7 +26,7 @@ const (
 	Rating             = 7
 )
 
-type RawRateYourMusicRating = struct {
+type RawRateYourMusicRating struct {
 	RYMID            string
 	Title            string
 	ArtistName       string
@@ -43,6 +42,8 @@ type RawRateYourMusicRating = struct {
 var artistLocalization = regexp.MustCompile(`([^\[]+) \[([^\]]+)\]`)
 
 func (rym RateYourMusic) ParseRYMSExport(csvString string) ([]RawRateYourMusicRating, error) {
+	albumGenerator := CreateAlbumGenerator()
+
 	r := csv.NewReader(strings.NewReader(csvString))
 	r.LazyQuotes = true
 
@@ -78,24 +79,10 @@ func (rym RateYourMusic) ParseRYMSExport(csvString string) ([]RawRateYourMusicRa
 			row.ArtistNativeName = &nativeArtistNames
 		}
 
-		_, err = rym.indexingService.GetAlbum(model.AlbumInput{
-			Artist: &model.ArtistInput{Name: &row.ArtistName},
-			Name:   &title,
-		}, true)
-
-		if err != nil {
-			return nil, err
-		}
+		albumGenerator.AddAlbumToEnsureExists(row.ArtistName, title)
 
 		if row.ArtistNativeName != nil {
-			_, err = rym.indexingService.GetAlbum(model.AlbumInput{
-				Artist: &model.ArtistInput{Name: row.ArtistNativeName},
-				Name:   &title,
-			}, true)
-
-			if err != nil {
-				return nil, err
-			}
+			albumGenerator.AddAlbumToEnsureExists(*row.ArtistNativeName, title)
 		}
 
 		row.RYMID = record[RYMID]
@@ -106,9 +93,21 @@ func (rym RateYourMusic) ParseRYMSExport(csvString string) ([]RawRateYourMusicRa
 		albums, _ := rym.generateRawAlbumCombinations(record, row)
 
 		row.AllAlbums = albums
+		// combinations, _ := rym.generateRawAlbumCombinations(record, row)
+
+		// albumGenerator.AddCombinations(combinations, row)
 
 		albumRatings = append(albumRatings, row)
 	}
+
+	albumGenerator.EnsureAlbumsExist()
+	// combinations, err := albumGenerator.SelectAllCombinations()
+
+	// if err != nil {
+	// 	return albumRatings, err
+	// }
+
+	// albumGenerator.AttachAlbumCombinations(combinations)
 
 	return albumRatings, nil
 }
@@ -129,10 +128,10 @@ func (rym RateYourMusic) generateRawAlbumCombinations(record []string, row RawRa
 	releaseTitle := unescape(record[Title])
 	artistName := unescape(record[LastName])
 
-	artistsToCheck := []indexing.AlbumToConvert{{ArtistName: row.ArtistName, AlbumName: row.Title}}
+	combinationsToCheck := []indexing.AlbumToConvert{{ArtistName: row.ArtistName, AlbumName: row.Title}}
 
 	if row.ArtistNativeName != nil {
-		artistsToCheck = append(artistsToCheck, indexing.AlbumToConvert{ArtistName: *row.ArtistNativeName, AlbumName: row.Title})
+		combinationsToCheck = append(combinationsToCheck, indexing.AlbumToConvert{ArtistName: *row.ArtistNativeName, AlbumName: row.Title})
 	}
 
 	var individualArtistNames []string
@@ -150,16 +149,16 @@ func (rym RateYourMusic) generateRawAlbumCombinations(record []string, row RawRa
 	}
 
 	for _, permutation := range helpers.Combinations(individualArtistNames) {
-		artistsToCheck = append(artistsToCheck, indexing.AlbumToConvert{ArtistName: joinArtists(permutation), AlbumName: releaseTitle})
+		combinationsToCheck = append(combinationsToCheck, indexing.AlbumToConvert{ArtistName: joinArtists(permutation), AlbumName: releaseTitle})
 	}
 
-	filteredArtists, err := rym.filterOutNonExistantCombinations(artistsToCheck)
+	filteredCombinations, err := rym.filterOutNonExistantCombinations(combinationsToCheck)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return filteredArtists, nil
+	return filteredCombinations, nil
 }
 
 func (rym RateYourMusic) filterOutNonExistantCombinations(combinationsToCheck []indexing.AlbumToConvert) ([]indexing.AlbumToConvert, error) {
