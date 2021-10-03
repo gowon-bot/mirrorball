@@ -8,7 +8,7 @@ import (
 	"github.com/jivison/gowon-indexer/lib/services/indexing"
 )
 
-func (rym RateYourMusic) ConvertRateYourMusicAlbums(rawAlbums []RawRateYourMusicRating) (meta.RateYourMusicAlbumConversionMap, error) {
+func (rym RateYourMusic) ConvertRateYourMusicAlbums(rawAlbums []*RawRateYourMusicRating) (meta.RateYourMusicAlbumConversionMap, error) {
 	albumsMap := meta.CreateRateYourMusicAlbumConversionMap()
 
 	var rymsIDs []interface{}
@@ -50,7 +50,7 @@ func (rym RateYourMusic) ConvertRateYourMusicAlbums(rawAlbums []RawRateYourMusic
 	return albumsMap, nil
 }
 
-func (rym RateYourMusic) SaveRatings(ratings []RawRateYourMusicRating, rymsAlbumsMap meta.RateYourMusicAlbumConversionMap, user db.User) ([]db.Rating, error) {
+func (rym RateYourMusic) SaveRatings(ratings []*RawRateYourMusicRating, rymsAlbumsMap meta.RateYourMusicAlbumConversionMap, user db.User) ([]db.Rating, error) {
 	var dbRatings []db.Rating
 
 	for _, rating := range ratings {
@@ -123,17 +123,17 @@ type RateYourMusicAlbumToUpdate struct {
 	rawAlbum RawRateYourMusicRating
 }
 
-func (rym RateYourMusic) generateRateYourMusicAlbumsToCreate(albumsMap meta.RateYourMusicAlbumConversionMap, rawAlbums []RawRateYourMusicRating) ([]RawRateYourMusicRating, []RateYourMusicAlbumToUpdate) {
+func (rym RateYourMusic) generateRateYourMusicAlbumsToCreate(albumsMap meta.RateYourMusicAlbumConversionMap, rawAlbums []*RawRateYourMusicRating) ([]RawRateYourMusicRating, []RateYourMusicAlbumToUpdate) {
 	var albumsToCreate []RawRateYourMusicRating
 	var albumsToUpdate []RateYourMusicAlbumToUpdate
 
 	for _, album := range rawAlbums {
 		if dbAlbum, _, ok := albumsMap.Get(album.RYMID); !ok {
-			albumsToCreate = append(albumsToCreate, album)
+			albumsToCreate = append(albumsToCreate, *album)
 		} else {
 			albumsToUpdate = append(albumsToUpdate, RateYourMusicAlbumToUpdate{
 				dbAlbum:  dbAlbum,
-				rawAlbum: album,
+				rawAlbum: *album,
 			})
 		}
 	}

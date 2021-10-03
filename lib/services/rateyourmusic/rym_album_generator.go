@@ -1,22 +1,26 @@
 package rateyourmusic
 
 import (
+	"github.com/jivison/gowon-indexer/lib/constants"
+	"github.com/jivison/gowon-indexer/lib/db"
+	dbhelpers "github.com/jivison/gowon-indexer/lib/helpers/database"
+	"github.com/jivison/gowon-indexer/lib/meta"
 	"github.com/jivison/gowon-indexer/lib/services/indexing"
 )
 
 type RYMAlbumGenerator struct {
 	albumsToConvert []indexing.AlbumToConvert
-	// allCombinations []indexing.AlbumToConvert
+	allCombinations []indexing.AlbumToConvert
 	indexingService *indexing.Indexing
-	// conversionMap   AlbumCombinationConversionMap
+	conversionMap   AlbumCombinationConversionMap
 }
 
 func CreateAlbumGenerator() *RYMAlbumGenerator {
 	return &RYMAlbumGenerator{
 		albumsToConvert: []indexing.AlbumToConvert{},
-		// allCombinations: []indexing.AlbumToConvert{},
+		allCombinations: []indexing.AlbumToConvert{},
 		indexingService: indexing.CreateService(),
-		// conversionMap:   CreateAlbumCombinationConversionMap(),
+		conversionMap:   CreateAlbumCombinationConversionMap(),
 	}
 }
 
@@ -30,69 +34,82 @@ func (ag *RYMAlbumGenerator) EnsureAlbumsExist() {
 	ag.indexingService.ConvertAlbums(ag.albumsToConvert, nil)
 }
 
-// func (ag *RYMAlbumGenerator) AddCombinations(combinations []indexing.AlbumToConvert, row RawRateYourMusicRating) {
-// 	ag.allCombinations = append(ag.allCombinations, combinations...)
+func (ag *RYMAlbumGenerator) AddCombinations(combinations []indexing.AlbumToConvert, row RawRateYourMusicRating) {
+	ag.allCombinations = append(ag.allCombinations, combinations...)
 
-// 	for _, combination := range combinations {
-// 		ag.conversionMap.Append(combination.ArtistName, combination.AlbumName, &row)
-// 	}
-// }
+	for _, combination := range combinations {
+		ag.conversionMap.Append(combination.ArtistName, combination.AlbumName, &row)
+	}
+}
 
-// func (ag *RYMAlbumGenerator) SelectAllCombinations() ([]db.Album, error) {
-// 	searchableAlbums := ag.indexingService.GenerateAlbumsToSearch(ag.allCombinations)
+func (ag *RYMAlbumGenerator) SelectAllCombinations() ([]db.Album, error) {
+	searchableAlbums := ag.indexingService.GenerateAlbumsToSearch(ag.allCombinations)
 
-// 	return dbhelpers.SelectAlbumsWhereInMany(searchableAlbums, constants.ChunkSize)
-// }
+	return dbhelpers.SelectAlbumsWhereInMany(searchableAlbums, constants.ChunkSize)
+}
 
-// func (ag *RYMAlbumGenerator) AttachAlbumCombinations(albums []db.Album) {
-// 	for _, album := range albums {
-// 		if rows, _, ok := ag.conversionMap.Get(album.Artist.Name, album.Name); ok {
-// 			for _, row := range rows {
-// 				row.AllAlbums = append(row.AllAlbums, indexing.AlbumToConvert{ArtistName: album.Artist.Name, AlbumName: album.Name})
-// 			}
-// 		}
-// 	}
-// }
+func (ag *RYMAlbumGenerator) AttachAlbumCombinations(ratings []*RawRateYourMusicRating, albums []db.Album) []*RawRateYourMusicRating {
 
-// // To avoid circular imports, this has to be here...
-// type AlbumCombinationConversionMap struct{ *meta.ConversionMap }
+	for _, album := range albums {
+		if rows, _, ok := ag.conversionMap.Get(album.Artist.Name, album.Name); ok {
+			var rowIDs []string
 
-// func (lm AlbumCombinationConversionMap) Get(artistName, albumName string) ([]*RawRateYourMusicRating, string, bool) {
-// 	if artist, ok := lm.PrivateGet(artistName); ok {
-// 		artistMap := artist.Value.(meta.ConversionMap)
+			for _, conversionRow := range rows {
+				rowIDs = append(rowIDs, conversionRow.RYMID)
+			}
 
-// 		albums, ok := artistMap.PrivateGet(albumName)
+			for _, row := range ratings {
+				for _, rowID := range rowIDs {
+					if rowID == row.RYMID {
+						row.AllAlbums = append(row.AllAlbums, indexing.AlbumToConvert{ArtistName: album.Artist.Name, AlbumName: album.Name})
+					}
+				}
+			}
+		}
+	}
 
-// 		if ok {
-// 			return albums.Value.([]*RawRateYourMusicRating), albums.Key, ok
-// 		}
-// 	}
+	return ratings
+}
 
-// 	return []*RawRateYourMusicRating{}, albumName, false
-// }
+// To avoid circular imports, this has to be here...
+type AlbumCombinationConversionMap struct{ *meta.ConversionMap }
 
-// func (lm AlbumCombinationConversionMap) Append(artistName, albumName string, album *RawRateYourMusicRating) {
-// 	if _, ok := lm.PrivateGet(artistName); !ok {
-// 		lm.PrivateSet(artistName, *meta.CreateConversionMap())
-// 	}
+func (lm AlbumCombinationConversionMap) Get(artistName, albumName string) ([]*RawRateYourMusicRating, string, bool) {
+	if artist, ok := lm.PrivateGet(artistName); ok {
+		artistMap := artist.Value.(meta.ConversionMap)
 
-// 	artist, _ := lm.PrivateGet(artistName)
+		albums, ok := artistMap.PrivateGet(albumName)
 
-// 	artistMap := artist.Value.(meta.ConversionMap)
+		if ok {
+			return albums.Value.([]*RawRateYourMusicRating), albums.Key, ok
+		}
+	}
 
-// 	var newAlbums []*RawRateYourMusicRating
+	return []*RawRateYourMusicRating{}, albumName, false
+}
 
-// 	existingValue, _, ok := lm.Get(artistName, albumName)
+func (lm AlbumCombinationConversionMap) Append(artistName, albumName string, album *RawRateYourMusicRating) {
+	if _, ok := lm.PrivateGet(artistName); !ok {
+		lm.PrivateSet(artistName, *meta.CreateConversionMap())
+	}
 
-// 	if ok {
-// 		newAlbums = append(newAlbums, existingValue...)
-// 	}
+	artist, _ := lm.PrivateGet(artistName)
 
-// 	newAlbums = append(newAlbums, album)
+	artistMap := artist.Value.(meta.ConversionMap)
 
-// 	artistMap.PrivateSet(albumName, newAlbums)
-// }
+	var newAlbums []*RawRateYourMusicRating
 
-// func CreateAlbumCombinationConversionMap() AlbumCombinationConversionMap {
-// 	return AlbumCombinationConversionMap{ConversionMap: meta.CreateConversionMap()}
-// }
+	existingValue, _, ok := lm.Get(artistName, albumName)
+
+	if ok {
+		newAlbums = append(newAlbums, existingValue...)
+	}
+
+	newAlbums = append(newAlbums, album)
+
+	artistMap.PrivateSet(albumName, newAlbums)
+}
+
+func CreateAlbumCombinationConversionMap() AlbumCombinationConversionMap {
+	return AlbumCombinationConversionMap{ConversionMap: meta.CreateConversionMap()}
+}
