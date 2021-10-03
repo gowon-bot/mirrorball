@@ -15,11 +15,11 @@ type ConversionMap struct {
 	_map map[string]ConversionMapItem
 }
 
-func (cm ConversionMap) PrivateSet(key string, value interface{}) {
+func (cm ConversionMap) set(key string, value interface{}) {
 	cm._map[strings.ToLower(key)] = ConversionMapItem{Key: key, Value: value}
 }
 
-func (cm ConversionMap) PrivateGet(key string) (ConversionMapItem, bool) {
+func (cm ConversionMap) get(key string) (ConversionMapItem, bool) {
 	value, ok := cm._map[strings.ToLower(key)]
 
 	return value, ok
@@ -29,14 +29,14 @@ func (cm ConversionMap) GetMap() map[string]ConversionMapItem {
 	return cm._map
 }
 
-func CreateConversionMap() *ConversionMap {
+func createConversionMap() *ConversionMap {
 	return &ConversionMap{_map: make(map[string]ConversionMapItem)}
 }
 
 type ArtistConversionMap struct{ *ConversionMap }
 
 func (am ArtistConversionMap) Get(artistName string) (db.Artist, string, bool) {
-	item, ok := am.PrivateGet(artistName)
+	item, ok := am.get(artistName)
 
 	if ok {
 		return item.Value.(db.Artist), item.Key, ok
@@ -46,20 +46,20 @@ func (am ArtistConversionMap) Get(artistName string) (db.Artist, string, bool) {
 }
 
 func (am ArtistConversionMap) Set(artistName string, artist db.Artist) {
-	am.PrivateSet(artistName, artist)
+	am.set(artistName, artist)
 }
 
 func CreateArtistConversionMap() ArtistConversionMap {
-	return ArtistConversionMap{ConversionMap: CreateConversionMap()}
+	return ArtistConversionMap{ConversionMap: createConversionMap()}
 }
 
 type AlbumConversionMap struct{ *ConversionMap }
 
 func (lm AlbumConversionMap) Get(artistName, albumName string) (db.Album, string, bool) {
-	if artist, ok := lm.PrivateGet(artistName); ok {
+	if artist, ok := lm.get(artistName); ok {
 		artistMap := artist.Value.(ConversionMap)
 
-		album, ok := artistMap.PrivateGet(albumName)
+		album, ok := artistMap.get(albumName)
 
 		if ok {
 			return album.Value.(db.Album), album.Key, ok
@@ -70,31 +70,31 @@ func (lm AlbumConversionMap) Get(artistName, albumName string) (db.Album, string
 }
 
 func (lm AlbumConversionMap) Set(artistName, albumName string, album db.Album) {
-	if _, ok := lm.PrivateGet(artistName); !ok {
-		lm.PrivateSet(artistName, *CreateConversionMap())
+	if _, ok := lm.get(artistName); !ok {
+		lm.set(artistName, *createConversionMap())
 	}
 
-	artist, _ := lm.PrivateGet(artistName)
+	artist, _ := lm.get(artistName)
 
 	artistMap := artist.Value.(ConversionMap)
 
-	artistMap.PrivateSet(albumName, album)
+	artistMap.set(albumName, album)
 }
 
 func CreateAlbumConversionMap() AlbumConversionMap {
-	return AlbumConversionMap{ConversionMap: CreateConversionMap()}
+	return AlbumConversionMap{ConversionMap: createConversionMap()}
 }
 
 type TrackConversionMap struct{ *ConversionMap }
 
 func (tm TrackConversionMap) Get(artistName, albumName, trackName string) (db.Track, string, bool) {
-	if artist, ok := tm.PrivateGet(artistName); ok {
+	if artist, ok := tm.get(artistName); ok {
 		artistMap := artist.Value.(ConversionMap)
 
-		if album, ok := artistMap.PrivateGet(albumName); ok {
+		if album, ok := artistMap.get(albumName); ok {
 			albumMap := album.Value.(ConversionMap)
 
-			track, ok := albumMap.PrivateGet(trackName)
+			track, ok := albumMap.get(trackName)
 
 			if ok {
 				return track.Value.(db.Track), track.Key, ok
@@ -106,33 +106,33 @@ func (tm TrackConversionMap) Get(artistName, albumName, trackName string) (db.Tr
 }
 
 func (tm TrackConversionMap) Set(artistName, albumName, trackName string, track db.Track) {
-	if _, ok := tm.PrivateGet(artistName); !ok {
-		tm.PrivateSet(artistName, *CreateConversionMap())
+	if _, ok := tm.get(artistName); !ok {
+		tm.set(artistName, *createConversionMap())
 	}
 
-	artist, _ := tm.PrivateGet(artistName)
+	artist, _ := tm.get(artistName)
 
 	artistMap := artist.Value.(ConversionMap)
 
-	if _, ok := artistMap.PrivateGet(albumName); !ok {
-		artistMap.PrivateSet(albumName, *CreateConversionMap())
+	if _, ok := artistMap.get(albumName); !ok {
+		artistMap.set(albumName, *createConversionMap())
 	}
 
-	album, _ := artistMap.PrivateGet(albumName)
+	album, _ := artistMap.get(albumName)
 
 	albumMap := album.Value.(ConversionMap)
 
-	albumMap.PrivateSet(trackName, track)
+	albumMap.set(trackName, track)
 }
 
 func CreateTrackConversionMap() TrackConversionMap {
-	return TrackConversionMap{ConversionMap: CreateConversionMap()}
+	return TrackConversionMap{ConversionMap: createConversionMap()}
 }
 
 type ArtistConversionCounter struct{ *ConversionMap }
 
 func (acm ArtistConversionCounter) Get(artistName string) int32 {
-	item, ok := acm.PrivateGet(artistName)
+	item, ok := acm.get(artistName)
 
 	if !ok {
 		return 0
@@ -144,24 +144,24 @@ func (acm ArtistConversionCounter) Get(artistName string) int32 {
 func (acm ArtistConversionCounter) Increment(artistName string) {
 	existingValue := acm.Get(artistName)
 
-	acm.PrivateSet(artistName, existingValue+1)
+	acm.set(artistName, existingValue+1)
 }
 
 func (acm ArtistConversionCounter) Set(artistName string, value int32) {
-	acm.PrivateSet(artistName, value)
+	acm.set(artistName, value)
 }
 
 func CreateArtistConversionCounter() ArtistConversionCounter {
-	return ArtistConversionCounter{ConversionMap: CreateConversionMap()}
+	return ArtistConversionCounter{ConversionMap: createConversionMap()}
 }
 
 type AlbumConversionCounter struct{ *ConversionMap }
 
 func (lcm AlbumConversionCounter) Get(artistName, albumName string) int32 {
-	if artist, ok := lcm.PrivateGet(artistName); ok {
+	if artist, ok := lcm.get(artistName); ok {
 		artistMap := artist.Value.(ConversionMap)
 
-		album, ok := artistMap.PrivateGet(albumName)
+		album, ok := artistMap.get(albumName)
 
 		if ok {
 			return album.Value.(int32)
@@ -174,31 +174,31 @@ func (lcm AlbumConversionCounter) Get(artistName, albumName string) int32 {
 func (lcm AlbumConversionCounter) Increment(artistName, albumName string) {
 	existingValue := lcm.Get(artistName, albumName)
 
-	if _, ok := lcm.PrivateGet(artistName); !ok {
-		lcm.PrivateSet(artistName, *CreateConversionMap())
+	if _, ok := lcm.get(artistName); !ok {
+		lcm.set(artistName, *createConversionMap())
 	}
 
-	artist, _ := lcm.PrivateGet(artistName)
+	artist, _ := lcm.get(artistName)
 
 	artistMap := artist.Value.(ConversionMap)
 
-	artistMap.PrivateSet(albumName, existingValue+1)
+	artistMap.set(albumName, existingValue+1)
 }
 
 func CreateAlbumConversionCounter() AlbumConversionCounter {
-	return AlbumConversionCounter{ConversionMap: CreateConversionMap()}
+	return AlbumConversionCounter{ConversionMap: createConversionMap()}
 }
 
 type TrackConversionCounter struct{ *ConversionMap }
 
 func (tcm TrackConversionCounter) Get(artistName, albumName, trackName string) int32 {
-	if artist, ok := tcm.PrivateGet(artistName); ok {
+	if artist, ok := tcm.get(artistName); ok {
 		artistMap := artist.Value.(ConversionMap)
 
-		if album, ok := artistMap.PrivateGet(albumName); ok {
+		if album, ok := artistMap.get(albumName); ok {
 			albumMap := album.Value.(ConversionMap)
 
-			track, ok := albumMap.PrivateGet(trackName)
+			track, ok := albumMap.get(trackName)
 
 			if ok {
 				return track.Value.(int32)
@@ -212,33 +212,33 @@ func (tcm TrackConversionCounter) Get(artistName, albumName, trackName string) i
 func (tcm TrackConversionCounter) Increment(artistName, albumName, trackName string) {
 	existingValue := tcm.Get(artistName, albumName, trackName)
 
-	if _, ok := tcm.PrivateGet(artistName); !ok {
-		tcm.PrivateSet(artistName, *CreateConversionMap())
+	if _, ok := tcm.get(artistName); !ok {
+		tcm.set(artistName, *createConversionMap())
 	}
 
-	artist, _ := tcm.PrivateGet(artistName)
+	artist, _ := tcm.get(artistName)
 
 	artistMap := artist.Value.(ConversionMap)
 
-	if _, ok := artistMap.PrivateGet(albumName); !ok {
-		artistMap.PrivateSet(albumName, *CreateConversionMap())
+	if _, ok := artistMap.get(albumName); !ok {
+		artistMap.set(albumName, *createConversionMap())
 	}
 
-	album, _ := artistMap.PrivateGet(albumName)
+	album, _ := artistMap.get(albumName)
 
 	albumMap := album.Value.(ConversionMap)
 
-	albumMap.PrivateSet(trackName, existingValue+1)
+	albumMap.set(trackName, existingValue+1)
 }
 
 func CreateTrackConversionCounter() TrackConversionCounter {
-	return TrackConversionCounter{ConversionMap: CreateConversionMap()}
+	return TrackConversionCounter{ConversionMap: createConversionMap()}
 }
 
 type RateYourMusicAlbumConversionMap struct{ *ConversionMap }
 
 func (rlm RateYourMusicAlbumConversionMap) Get(rymsID string) (db.RateYourMusicAlbum, string, bool) {
-	item, ok := rlm.PrivateGet(rymsID)
+	item, ok := rlm.get(rymsID)
 
 	if ok {
 		return item.Value.(db.RateYourMusicAlbum), item.Key, ok
@@ -248,25 +248,67 @@ func (rlm RateYourMusicAlbumConversionMap) Get(rymsID string) (db.RateYourMusicA
 }
 
 func (rlm RateYourMusicAlbumConversionMap) Set(rymsID string, album db.RateYourMusicAlbum) {
-	rlm.PrivateSet(rymsID, album)
+	rlm.set(rymsID, album)
 }
 
 func CreateRateYourMusicAlbumConversionMap() RateYourMusicAlbumConversionMap {
-	return RateYourMusicAlbumConversionMap{ConversionMap: CreateConversionMap()}
+	return RateYourMusicAlbumConversionMap{ConversionMap: createConversionMap()}
 }
 
 type TagConversionMap struct{ *ConversionMap }
 
 func (tm TagConversionMap) Get(tagName string) (db.Tag, string, bool) {
-	item, ok := tm.PrivateGet(tagName)
+	item, ok := tm.get(tagName)
 
 	return item.Value.(db.Tag), item.Key, ok
 }
 
 func (tm TagConversionMap) Set(tagName string, artist db.Tag) {
-	tm.PrivateSet(tagName, artist)
+	tm.set(tagName, artist)
 }
 
 func CreateTagConversionMap() TagConversionMap {
-	return TagConversionMap{ConversionMap: CreateConversionMap()}
+	return TagConversionMap{ConversionMap: createConversionMap()}
+}
+
+type AlbumCombinationConversionMap struct{ *ConversionMap }
+
+func (lm AlbumCombinationConversionMap) Get(artistName, albumName string) (interface{}, string, bool) {
+	if artist, ok := lm.get(artistName); ok {
+		artistMap := artist.Value.(ConversionMap)
+
+		albums, ok := artistMap.get(albumName)
+
+		if ok {
+			return albums.Value, albums.Key, ok
+		}
+	}
+
+	return []interface{}{}, albumName, false
+}
+
+func (lm AlbumCombinationConversionMap) Append(artistName, albumName string, album interface{}) {
+	if _, ok := lm.get(artistName); !ok {
+		lm.set(artistName, *createConversionMap())
+	}
+
+	artist, _ := lm.get(artistName)
+
+	artistMap := artist.Value.(ConversionMap)
+
+	var newAlbums []interface{}
+
+	existingValue, _, ok := lm.Get(artistName, albumName)
+
+	if ok {
+		newAlbums = append(newAlbums, existingValue.([]interface{})...)
+	}
+
+	newAlbums = append(newAlbums, album)
+
+	artistMap.set(albumName, newAlbums)
+}
+
+func CreateAlbumCombinationConversionMap() AlbumCombinationConversionMap {
+	return AlbumCombinationConversionMap{ConversionMap: createConversionMap()}
 }

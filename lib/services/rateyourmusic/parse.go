@@ -7,7 +7,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jivison/gowon-indexer/lib/constants"
 	"github.com/jivison/gowon-indexer/lib/customerrors"
+	dbhelpers "github.com/jivison/gowon-indexer/lib/helpers/database"
 	helpers "github.com/jivison/gowon-indexer/lib/helpers/generic"
 	"github.com/jivison/gowon-indexer/lib/services/indexing"
 )
@@ -39,13 +41,13 @@ type RawRateYourMusicRating struct {
 // var containsAsianCharacters = regexp.MustCompile(asianCharacters + "+")
 var artistLocalization = regexp.MustCompile(`([^\[]+) \[([^\]]+)\]`)
 
-func (rym RateYourMusic) ParseRYMSExport(csvString string) ([]*RawRateYourMusicRating, error) {
+func (rym RateYourMusic) ParseRYMSExport(csvString string) ([]RawRateYourMusicRating, error) {
 	albumGenerator := CreateAlbumGenerator()
 
 	r := csv.NewReader(strings.NewReader(csvString))
 	r.LazyQuotes = true
 
-	var albumRatings []*RawRateYourMusicRating
+	var albumRatings []RawRateYourMusicRating
 
 	for {
 		record, err := r.Read()
@@ -88,24 +90,14 @@ func (rym RateYourMusic) ParseRYMSExport(csvString string) ([]*RawRateYourMusicR
 		row.Rating, _ = strconv.Atoi(record[Rating])
 		row.ReleaseYear, _ = strconv.Atoi(record[ReleaseYear])
 
-		// albums, _ := rym.generateRawAlbumCombinations(record, row)
+		albums, _ := rym.generateRawAlbumCombinations(record, row)
 
-		// row.AllAlbums = albums
-		combinations, _ := rym.generateRawAlbumCombinations(record, row)
+		row.AllAlbums = albums
 
-		albumGenerator.AddCombinations(combinations, row)
-
-		albumRatings = append(albumRatings, &row)
+		albumRatings = append(albumRatings, row)
 	}
 
 	albumGenerator.EnsureAlbumsExist()
-	combinations, err := albumGenerator.SelectAllCombinations()
-
-	if err != nil {
-		return albumRatings, err
-	}
-
-	albumRatings = albumGenerator.AttachAlbumCombinations(albumRatings, combinations)
 
 	return albumRatings, nil
 }
@@ -126,10 +118,10 @@ func (rym RateYourMusic) generateRawAlbumCombinations(record []string, row RawRa
 	releaseTitle := unescape(record[Title])
 	artistName := unescape(record[LastName])
 
-	combinationsToCheck := []indexing.AlbumToConvert{{ArtistName: row.ArtistName, AlbumName: row.Title}}
+	artistsToCheck := []indexing.AlbumToConvert{{ArtistName: row.ArtistName, AlbumName: row.Title}}
 
 	if row.ArtistNativeName != nil {
-		combinationsToCheck = append(combinationsToCheck, indexing.AlbumToConvert{ArtistName: *row.ArtistNativeName, AlbumName: row.Title})
+		artistsToCheck = append(artistsToCheck, indexing.AlbumToConvert{ArtistName: *row.ArtistNativeName, AlbumName: row.Title})
 	}
 
 	var individualArtistNames []string
@@ -147,36 +139,35 @@ func (rym RateYourMusic) generateRawAlbumCombinations(record []string, row RawRa
 	}
 
 	for _, permutation := range helpers.Combinations(individualArtistNames) {
-		combinationsToCheck = append(combinationsToCheck, indexing.AlbumToConvert{ArtistName: joinArtists(permutation), AlbumName: releaseTitle})
+		artistsToCheck = append(artistsToCheck, indexing.AlbumToConvert{ArtistName: joinArtists(permutation), AlbumName: releaseTitle})
 	}
 
-	// filteredCombinations, err := rym.filterOutNonExistantCombinations(combinationsToCheck)
+	filteredArtists, err := rym.filterOutNonExistantCombinations(artistsToCheck)
 
-	// if err != nil {
-	// return nil, err
-	// }
+	if err != nil {
+		return nil, err
+	}
 
-	// return filteredCombinations, nil
-	return combinationsToCheck, nil
+	return filteredArtists, nil
 }
 
-// func (rym RateYourMusic) filterOutNonExistantCombinations(combinationsToCheck []indexing.AlbumToConvert) ([]indexing.AlbumToConvert, error) {
-// 	var combos []indexing.AlbumToConvert
+func (rym RateYourMusic) filterOutNonExistantCombinations(combinationsToCheck []indexing.AlbumToConvert) ([]indexing.AlbumToConvert, error) {
+	var combos []indexing.AlbumToConvert
 
-// 	searchableAlbums := rym.indexingService.GenerateAlbumsToSearch(combinationsToCheck)
+	searchableAlbums := rym.indexingService.GenerateAlbumsToSearch(combinationsToCheck)
 
-// 	databaseAlbums, err := dbhelpers.SelectAlbumsWhereInMany(searchableAlbums, constants.ChunkSize)
+	databaseAlbums, err := dbhelpers.SelectAlbumsWhereInMany(searchableAlbums, constants.ChunkSize)
 
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	if err != nil {
+		return nil, err
+	}
 
-// 	for _, album := range databaseAlbums {
-// 		combos = append(combos, indexing.AlbumToConvert{ArtistName: album.Artist.Name, AlbumName: album.Name})
-// 	}
+	for _, album := range databaseAlbums {
+		combos = append(combos, indexing.AlbumToConvert{ArtistName: album.Artist.Name, AlbumName: album.Name})
+	}
 
-// 	return combos, nil
-// }
+	return combos, nil
+}
 
 func joinArtists(artists []string) string {
 	if len(artists) == 1 {
