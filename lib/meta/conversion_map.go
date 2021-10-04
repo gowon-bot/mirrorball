@@ -260,7 +260,11 @@ type TagConversionMap struct{ *ConversionMap }
 func (tm TagConversionMap) Get(tagName string) (db.Tag, string, bool) {
 	item, ok := tm.get(tagName)
 
-	return item.Value.(db.Tag), item.Key, ok
+	if ok {
+		return item.Value.(db.Tag), item.Key, ok
+	}
+
+	return db.Tag{}, item.Key, ok
 }
 
 func (tm TagConversionMap) Set(tagName string, artist db.Tag) {
