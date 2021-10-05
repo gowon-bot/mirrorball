@@ -103,7 +103,14 @@ func (rym RateYourMusic) updateRateYourMusicAlbums(albumsToUpdate []RateYourMusi
 	var rawAlbums []RawRateYourMusicRating
 
 	for _, album := range albumsToUpdate {
-		dbAlbums = append(dbAlbums, album.dbAlbum)
+		dbAlbums = append(dbAlbums, db.RateYourMusicAlbum{
+			ID:               album.dbAlbum.ID,
+			ReleaseYear:      &album.rawAlbum.ReleaseYear,
+			Title:            album.rawAlbum.Title,
+			ArtistName:       album.rawAlbum.ArtistName,
+			ArtistNativeName: album.rawAlbum.ArtistNativeName,
+			RateYourMusicID:  album.dbAlbum.RateYourMusicID,
+		})
 		rawAlbums = append(rawAlbums, album.rawAlbum)
 	}
 
@@ -200,7 +207,7 @@ func (rym RateYourMusic) updateRateYourMusicAlbumAlbums(albums []RawRateYourMusi
 			dbAlbum, _, _ := albumsMap.Get(combination.ArtistName, combination.AlbumName)
 			rateYourMusicAlbum, _, _ := rymsAlbumsMap.Get(album.RYMID)
 
-			albumAlbumsToCreate = append(unfilteredAlbums, db.RateYourMusicAlbumAlbum{
+			unfilteredAlbums = append(unfilteredAlbums, db.RateYourMusicAlbumAlbum{
 				RateYourMusicAlbumID: rateYourMusicAlbum.ID,
 				AlbumID:              dbAlbum.ID,
 			})
@@ -226,7 +233,7 @@ func (rym RateYourMusic) filterDuplicateAlbumAlbums(rateYourMusicAlbumID string,
 	var dbAlbumAlbums []db.RateYourMusicAlbumAlbum
 	var filtered []db.RateYourMusicAlbumAlbum
 
-	err := db.Db.Model(&dbAlbumAlbums).Where("rate_your_music_album_id = ?", rateYourMusicAlbumID).Select()
+	err := db.Db.Model(&dbAlbumAlbums).Relation("RateYourMusicAlbum").Where("rate_your_music_id = ?", rateYourMusicAlbumID).Select()
 
 	if err != nil {
 		return albumAlbums
