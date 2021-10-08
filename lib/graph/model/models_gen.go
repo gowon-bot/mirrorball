@@ -289,6 +289,7 @@ const (
 	PrivacyPrivate    Privacy = "PRIVATE"
 	PrivacyDiscord    Privacy = "DISCORD"
 	PrivacyFmusername Privacy = "FMUSERNAME"
+	PrivacyBoth       Privacy = "BOTH"
 	PrivacyUnset      Privacy = "UNSET"
 )
 
@@ -296,12 +297,13 @@ var AllPrivacy = []Privacy{
 	PrivacyPrivate,
 	PrivacyDiscord,
 	PrivacyFmusername,
+	PrivacyBoth,
 	PrivacyUnset,
 }
 
 func (e Privacy) IsValid() bool {
 	switch e {
-	case PrivacyPrivate, PrivacyDiscord, PrivacyFmusername, PrivacyUnset:
+	case PrivacyPrivate, PrivacyDiscord, PrivacyFmusername, PrivacyBoth, PrivacyUnset:
 		return true
 	}
 	return false

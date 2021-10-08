@@ -1492,6 +1492,7 @@ enum Privacy {
   PRIVATE
   DISCORD
   FMUSERNAME
+  BOTH
   UNSET
 }
 

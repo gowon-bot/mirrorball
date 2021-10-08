@@ -10,6 +10,7 @@ import (
 // - PRIVATE
 // - DISCORD
 // - FMUSERNAME
+// - BOTH
 // - UNSET - used for displaying help messages for people who haven't set it
 const DefaultPrivacy = "UNSET"
 
