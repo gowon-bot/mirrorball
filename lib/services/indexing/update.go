@@ -116,14 +116,17 @@ func (I Indexing) GenerateUniqueLists(scrobbles []lastfm.RecentTrack) ([]ArtistT
 	var tracksList []TrackToConvert
 
 	for artist := range artists.GetMap() {
-		artistsList = append(artistsList, artist)
+		_, key := artists.Get(artist)
+		artistsList = append(artistsList, key)
 	}
 
 	for artist, artistAlbums := range albums.GetMap() {
 		for album := range artistAlbums.Value.(meta.ConversionMap).GetMap() {
+			_, artistKey, albumKey := albums.Get(artist, album)
+
 			albumsList = append(albumsList, AlbumToConvert{
-				AlbumName:  album,
-				ArtistName: artist,
+				AlbumName:  albumKey,
+				ArtistName: artistKey,
 			})
 		}
 	}
@@ -131,16 +134,18 @@ func (I Indexing) GenerateUniqueLists(scrobbles []lastfm.RecentTrack) ([]ArtistT
 	for artist, artistAlbums := range tracks.GetMap() {
 		for album, albumTracks := range artistAlbums.Value.(meta.ConversionMap).GetMap() {
 			for track := range albumTracks.Value.(meta.ConversionMap).GetMap() {
+				_, artistKey, albumKey, trackKey := tracks.Get(artist, album, track)
+
 				var albumName *string
 
-				if album != "" {
+				if albumKey != "" {
 					copiedAlbumName := helpers.DeepCopy(album)
 					albumName = &copiedAlbumName
 				}
 
 				tracksList = append(tracksList, TrackToConvert{
-					ArtistName: artist,
-					TrackName:  track,
+					ArtistName: artistKey,
+					TrackName:  trackKey,
 					AlbumName:  albumName,
 				})
 			}

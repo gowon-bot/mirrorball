@@ -131,18 +131,18 @@ func CreateTrackConversionMap() TrackConversionMap {
 
 type ArtistConversionCounter struct{ *ConversionMap }
 
-func (acm ArtistConversionCounter) Get(artistName string) int32 {
+func (acm ArtistConversionCounter) Get(artistName string) (int32, string) {
 	item, ok := acm.get(artistName)
 
 	if !ok {
-		return 0
+		return 0, artistName
 	}
 
-	return item.Value.(int32)
+	return item.Value.(int32), item.Key
 }
 
 func (acm ArtistConversionCounter) Increment(artistName string) {
-	existingValue := acm.Get(artistName)
+	existingValue, _ := acm.Get(artistName)
 
 	acm.set(artistName, existingValue+1)
 }
@@ -157,22 +157,22 @@ func CreateArtistConversionCounter() ArtistConversionCounter {
 
 type AlbumConversionCounter struct{ *ConversionMap }
 
-func (lcm AlbumConversionCounter) Get(artistName, albumName string) int32 {
+func (lcm AlbumConversionCounter) Get(artistName, albumName string) (int32, string, string) {
 	if artist, ok := lcm.get(artistName); ok {
 		artistMap := artist.Value.(ConversionMap)
 
 		album, ok := artistMap.get(albumName)
 
 		if ok {
-			return album.Value.(int32)
+			return album.Value.(int32), artist.Key, album.Key
 		}
 	}
 
-	return 0
+	return 0, artistName, albumName
 }
 
 func (lcm AlbumConversionCounter) Increment(artistName, albumName string) {
-	existingValue := lcm.Get(artistName, albumName)
+	existingValue, _, _ := lcm.Get(artistName, albumName)
 
 	if _, ok := lcm.get(artistName); !ok {
 		lcm.set(artistName, *createConversionMap())
@@ -191,7 +191,7 @@ func CreateAlbumConversionCounter() AlbumConversionCounter {
 
 type TrackConversionCounter struct{ *ConversionMap }
 
-func (tcm TrackConversionCounter) Get(artistName, albumName, trackName string) int32 {
+func (tcm TrackConversionCounter) Get(artistName, albumName, trackName string) (int32, string, string, string) {
 	if artist, ok := tcm.get(artistName); ok {
 		artistMap := artist.Value.(ConversionMap)
 
@@ -201,16 +201,16 @@ func (tcm TrackConversionCounter) Get(artistName, albumName, trackName string) i
 			track, ok := albumMap.get(trackName)
 
 			if ok {
-				return track.Value.(int32)
+				return track.Value.(int32), artist.Key, album.Key, track.Key
 			}
 		}
 	}
 
-	return 0
+	return 0, artistName, albumName, trackName
 }
 
 func (tcm TrackConversionCounter) Increment(artistName, albumName, trackName string) {
-	existingValue := tcm.Get(artistName, albumName, trackName)
+	existingValue, _, _, _ := tcm.Get(artistName, albumName, trackName)
 
 	if _, ok := tcm.get(artistName); !ok {
 		tcm.set(artistName, *createConversionMap())
