@@ -3,6 +3,8 @@ package tasks
 import (
 	"encoding/json"
 	"log"
+	"os"
+	"strconv"
 
 	"github.com/jivison/gowon-indexer/lib/db"
 
@@ -79,8 +81,19 @@ func NewTaskServer() *GowonTaskServer {
 	}
 
 	server := createServer()
+
+	workerCount := os.Getenv("WORKER_COUNT")
+
+	var workerCountNumber int
+
+	if workerCount != "" {
+		workerCountNumber, _ = strconv.Atoi(workerCount)
+	} else {
+		workerCountNumber = 3
+	}
+
 	workers := []*machinery.Worker{
-		server.NewWorker("lastfm_worker", 5),
+		server.NewWorker("lastfm_worker", workerCountNumber),
 	}
 
 	TaskServer = &GowonTaskServer{
