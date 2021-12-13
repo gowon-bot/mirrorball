@@ -1,5 +1,7 @@
 # Mirrorball
 
+_모든 소린 나를 따라와_
+
 This project is part of Gowon bot ([main repo](https://github.com/jivison/gowon))
 
 ## Running yourself
@@ -8,7 +10,7 @@ Ensure you have Go and Postgres properly installed. The indexer does not need to
 
 Install [sql-migrate](https://github.com/rubenv/sql-migrate), and then copy `dbconfig.example.yml` to `dbconfig.yml` and fill out your database credentials. Do the same with `.env.example`
 
-*Note regarding 'WEBHOOK_URL', this is the url that the indexer posts to when it's done running tasks. If you have Gowon bot running, this defaults to localhost:3000. If you don't have/want Gowon bot running, I suggest using https://webhook.site for testing*
+_Note regarding 'WEBHOOK_URL', this is the url that the indexer posts to when it's done running tasks. If you have Gowon bot running, this defaults to localhost:3000. If you don't have/want Gowon bot running, I suggest using https://webhook.site for testing_
 
 Ensure there exists a database called `gowon-indexer`, and then to run all migrations with `sql-migrate`, simply navigate the project root and run `sql-migrate up`.
 
@@ -20,7 +22,7 @@ If you make any changes to the graphql schema file, you will need to rerun the c
 
 ## How to use
 
-By default, the indexer runs on http://localhost:8080. Visiting that url will take you to a playground where you can view the schema and execute requests. 
+By default, the indexer runs on http://localhost:8080. Visiting that url will take you to a playground where you can view the schema and execute requests.
 
 Requests should be made to http://localhost:8080/graphql
 
@@ -44,4 +46,3 @@ Somethings broken? Just curious how something works?
 
 Feel free to shoot me a Discord dm at `john!#2527`
 or join the support server! https://discord.gg/9Vr7Df7TZf
-

@@ -16,6 +16,7 @@ import (
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
+	"github.com/jivison/gowon-indexer/lib/meta"
 	"github.com/jivison/gowon-indexer/lib/tasks"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
@@ -32,7 +33,10 @@ func main() {
 	}
 
 	gqlHandler := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
-	srv := cors.AllowAll().Handler(enforcePassword(gqlHandler))
+
+	withMiddleware := meta.DoughnutMiddleware(meta.EnforcePassword(gqlHandler))
+
+	srv := cors.AllowAll().Handler(withMiddleware)
 
 	http.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
 	http.Handle("/graphql", srv)
@@ -75,20 +79,4 @@ func startup() {
 	taskServer := tasks.NewTaskServer()
 	taskServer.LaunchWorkers()
 	fmt.Println("Launched task server")
-}
-
-func enforcePassword(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		authorization := r.Header.Get("Authorization")
-		passsword := os.Getenv("MIRRORBALL_PASSWORD")
-
-		if os.Getenv("ENVIRONMENT") != "development" && authorization != passsword {
-			http.Error(w, `{ "message": "Incorrect password" }`, http.StatusUnauthorized)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-
 }
