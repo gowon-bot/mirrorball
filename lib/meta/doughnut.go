@@ -18,8 +18,9 @@ func CheckUserMatches(ctx context.Context, id string) error {
 
 func CheckNoUser(ctx context.Context) error {
 	doughnutDiscordID := ctx.Value(ContextDiscordIDKey).(string)
+	isGowon := ctx.Value(ContextIsGowonKey).(string)
 
-	if doughnutDiscordID != "" {
+	if doughnutDiscordID != "" && isGowon != "true" {
 		return customerrors.NotAuthorized()
 	}
 
