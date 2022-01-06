@@ -103,9 +103,11 @@ func (rym RateYourMusic) updateRateYourMusicAlbums(albumsToUpdate []RateYourMusi
 	var rawAlbums []RawRateYourMusicRating
 
 	for _, album := range albumsToUpdate {
+		releaseYear := album.rawAlbum.ReleaseYear
+
 		dbAlbums = append(dbAlbums, db.RateYourMusicAlbum{
 			ID:               album.dbAlbum.ID,
-			ReleaseYear:      &album.rawAlbum.ReleaseYear,
+			ReleaseYear:      &releaseYear,
 			Title:            album.rawAlbum.Title,
 			ArtistName:       album.rawAlbum.ArtistName,
 			ArtistNativeName: album.rawAlbum.ArtistNativeName,
