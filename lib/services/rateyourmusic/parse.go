@@ -37,9 +37,7 @@ type RawRateYourMusicRating struct {
 }
 
 // var asianCharacters = `[\p{Hangul}\p{Han}\p{Katakana}\p{Hiragana}]`
-
 // var containsAsianCharacters = regexp.MustCompile(asianCharacters + "+")
-var artistLocalization = regexp.MustCompile(`([^\[]+) \[([^\]]+)\]`)
 
 func (rym RateYourMusic) ParseRYMSExport(csvString string) ([]RawRateYourMusicRating, error) {
 	albumGenerator := CreateAlbumGenerator()
@@ -115,7 +113,9 @@ func combineNames(firstName string, lastName string) string {
 }
 
 func (rym RateYourMusic) generateRawAlbumCombinations(record []string, row RawRateYourMusicRating) ([]indexing.AlbumToConvert, error) {
-	releaseTitle := unescape(record[Title])
+	rawReleaseTitle := unescape(record[Title])
+	releaseTitle, bracketedTitle := parseReleaseTitle(rawReleaseTitle)
+
 	artistName := unescape(record[LastName])
 
 	artistsToCheck := []indexing.AlbumToConvert{{ArtistName: row.ArtistName, AlbumName: row.Title}}
@@ -126,7 +126,7 @@ func (rym RateYourMusic) generateRawAlbumCombinations(record []string, row RawRa
 
 	var individualArtistNames []string
 
-	splitOnAnds := regexp.MustCompile(`( & | ,)`).Split(artistName, -1)
+	splitOnAnds := regexp.MustCompile(`( & | , | \/ | \+ | X)`).Split(artistName, -1)
 
 	for _, split := range splitOnAnds {
 		trimmedSplit := strings.TrimSpace(split)
@@ -140,6 +140,10 @@ func (rym RateYourMusic) generateRawAlbumCombinations(record []string, row RawRa
 
 	for _, permutation := range helpers.Combinations(individualArtistNames) {
 		artistsToCheck = append(artistsToCheck, indexing.AlbumToConvert{ArtistName: joinArtists(permutation), AlbumName: releaseTitle})
+
+		if bracketedTitle != "" {
+			artistsToCheck = append(artistsToCheck, indexing.AlbumToConvert{ArtistName: joinArtists(permutation), AlbumName: bracketedTitle})
+		}
 	}
 
 	filteredArtists, err := rym.filterOutNonExistantCombinations(artistsToCheck)
@@ -185,8 +189,10 @@ func unescape(str string) string {
 }
 
 // regex functions
+var artistLocalization = regexp.MustCompile(`([^\[]+) \[([^\]]+)\]`)
 var nativeArtistNamesRegex = regexp.MustCompile(`\[([^\]]+)\]`)
 var localizedArtistNamesRegex = regexp.MustCompile(`(^|[&\,] ?)[^&,\[]+ \[([^\]]+)\]`)
+var titleBracketsRegex = regexp.MustCompile(`^(.*) \((.*)\)$`)
 
 type Localization = struct {
 	Localized string
@@ -212,4 +218,18 @@ func removeLocalizedArtistNames(artistName string) string {
 
 func removeNativeArtistNames(artistName string) string {
 	return localizedArtistNamesRegex.ReplaceAllString(artistName, "${1}${2}")
+}
+
+func parseReleaseTitle(releaseTitle string) (string, string) {
+	titles := titleBracketsRegex.FindAllStringSubmatch(releaseTitle, 1)
+
+	if len(titles) > 0 && len(titles[0]) == 3 {
+		title2 := titles[0][2]
+
+		if !strings.Contains(strings.ToLower(title2), "version") {
+			return titles[0][1], title2
+		}
+	}
+
+	return releaseTitle, ""
 }
