@@ -2,7 +2,7 @@ version: 2
 jobs:
   deploy:
     context:
-      - Gowon
+      - gowon
     docker:
       - image: cimg/base:2020.01
     steps:
