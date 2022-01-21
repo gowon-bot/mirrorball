@@ -1,0 +1,22 @@
+version: 2
+jobs:
+  deploy:
+    docker:
+      - image: cimg/base:2020.01
+
+    steps:
+      - run:
+          name: Deploy
+          command: |
+            ssh -o StrictHostKeyChecking=no root@$GOWON_HOST_IP "cd ./mirrorball && /bin/bash ./deploy.sh ../gowon"
+
+workflows:
+  version: 2
+  deploy:
+    jobs:
+      - hold:
+          type: approval
+
+      - deploy:
+          requires:
+            - hold
