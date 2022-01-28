@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	helpers "github.com/jivison/gowon-indexer/lib/helpers/api"
 )
@@ -149,7 +150,20 @@ func (lfm API) AllScrobblesSince(requestable Requestable, since *time.Time) ([]R
 				params.Page = pp.Page
 				_, response := lfm.RecentTracks(params)
 
-				tracks = append(tracks, excludeNowPlaying(response.RecentTracks.Tracks)...)
+				tracksToAppend := excludeNowPlaying(response.RecentTracks.Tracks)
+
+				if len(tracksToAppend) > 0 {
+					defer func() {
+						if err := recover(); err != nil {
+							spew.Dump(tracksToAppend)
+
+							panic(err)
+						}
+					}()
+
+					tracks = append(tracks, tracksToAppend...)
+				}
+
 			},
 		}
 
