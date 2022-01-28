@@ -127,6 +127,7 @@ func (lfm API) RecentTracks(params RecentTracksParams) (*ErrorResponse, *RecentT
 
 	err := lfm.ParseResponse(response, recentTracks)
 
+	// Rate limit
 	if err != nil && err.Error == 29 {
 		time.Sleep(100 * time.Millisecond)
 

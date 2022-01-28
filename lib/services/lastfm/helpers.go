@@ -1,10 +1,10 @@
 package lastfm
 
 import (
+	"log"
 	"strconv"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	helpers "github.com/jivison/gowon-indexer/lib/helpers/api"
 )
@@ -153,11 +153,13 @@ func (lfm API) AllScrobblesSince(requestable Requestable, since *time.Time) ([]R
 				tracksToAppend := excludeNowPlaying(response.RecentTracks.Tracks)
 
 				if len(tracksToAppend) > 0 {
+
+					// Catch the stupid slice index out of bounds error
+					// I have no fucking idea what causes it
+					// ??????? go????
 					defer func() {
 						if err := recover(); err != nil {
-							spew.Dump(tracksToAppend)
-
-							panic(err)
+							log.Print("OUT OF BOUNDS ERROR OCURRED!")
 						}
 					}()
 
