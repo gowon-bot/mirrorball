@@ -274,8 +274,9 @@ type WhoKnowsRow struct {
 }
 
 type WhoKnowsSettings struct {
-	GuildID *string `json:"guildID"`
-	Limit   *int    `json:"limit"`
+	GuildID *string  `json:"guildID"`
+	Limit   *int     `json:"limit"`
+	UserIDs []string `json:"userIDs"`
 }
 
 type WhoKnowsTrackResponse struct {

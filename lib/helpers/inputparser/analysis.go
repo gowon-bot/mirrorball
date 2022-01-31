@@ -3,6 +3,7 @@ package inputparser
 import (
 	"fmt"
 
+	"github.com/go-pg/pg/v10"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
 )
 
@@ -17,6 +18,10 @@ func (p InputParser) ParseWhoKnowsSettings(settingsInput *model.WhoKnowsSettings
 
 	if settingsInput.GuildID != nil {
 		p.query.Join(`JOIN "guild_members" ON "guild_members"."guild_id" = ? AND "guild_members"."user_id" = "`+settings.getUserIDPath()+`"`, settingsInput.GuildID)
+	}
+
+	if len(settingsInput.UserIDs) != 0 {
+		p.query.Join(`JOIN "users" on "users"."discord_id" IN (?) AND "users"."id" = "`+settings.getUserIDPath()+`"`, pg.In(settingsInput.UserIDs))
 	}
 
 	if settingsInput.Limit != nil {

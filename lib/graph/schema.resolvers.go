@@ -94,7 +94,6 @@ func (r *mutationResolver) Update(ctx context.Context, user model.UserInput, for
 }
 
 func (r *mutationResolver) ImportRatings(ctx context.Context, csv string, user model.UserInput) (*string, error) {
-
 	err := meta.CheckUserMatches(ctx, *user.DiscordID)
 
 	if err != nil {

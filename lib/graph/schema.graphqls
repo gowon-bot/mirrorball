@@ -363,6 +363,7 @@ input TrackInput {
 input WhoKnowsSettings {
   guildID: String
   limit: Int
+  userIDs: [String!]
 }
 
 input ArtistSearchCriteria {
