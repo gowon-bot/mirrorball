@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph/model"
 	"github.com/jivison/gowon-indexer/lib/presenters"
 	"github.com/jivison/gowon-indexer/lib/services/analysis"
@@ -25,16 +26,19 @@ func WhoFirstArtist(artistInput model.ArtistInput, settings *model.WhoKnowsSetti
 		whoLastArg = *whoLast
 	}
 
-	undated, err := analysisService.WhoHasUndatedArtist(artist, settings, whoLastArg)
-
-	if err != nil {
-		return nil, err
-	}
-
 	var excludeIDs []int64
+	var undated []db.Play
 
-	for _, excludedUser := range undated {
-		excludeIDs = append(excludeIDs, excludedUser.UserID)
+	if whoLast == nil || !*whoLast {
+		undated, err = analysisService.WhoHasUndatedArtist(artist, settings, whoLastArg)
+
+		if err != nil {
+			return nil, err
+		}
+
+		for _, excludedUser := range undated {
+			excludeIDs = append(excludeIDs, excludedUser.UserID)
+		}
 	}
 
 	whoFirst, err := analysisService.WhoFirstArtist(artist, settings, whoLastArg, excludeIDs)
