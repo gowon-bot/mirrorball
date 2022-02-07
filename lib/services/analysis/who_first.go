@@ -28,9 +28,12 @@ func (a Analysis) WhoFirstArtist(artist *db.Artist, settings *model.WhoKnowsSett
 		ColumnExpr(aggFunc+"(scrobbled_at) as scrobbled_at").
 		Column("play.user_id").
 		Where("artist_id = ?", artist.ID).
-		Where("scrobbled_at > '1970-01-01 00:00:00'::date").
-		Where("play.user_id NOT IN (?)", pg.In(excludeIDs)).
+		Where("scrobbled_at > '2002-03-19 00:00:00'::date").
 		Group("play.user_id").OrderExpr("1 " + sort)
+
+	if len(excludeIDs) != 0 {
+		query = query.Where("play.user_id NOT IN (?)", pg.In(excludeIDs))
+	}
 
 	err := inputparser.CreateParser(query).ParseWhoKnowsSettings(settings, &inputparser.InputSettings{
 		UserIDPath: `play"."user_id`,
@@ -62,7 +65,7 @@ func (a Analysis) WhoHasUndatedArtist(artist *db.Artist, settings *model.WhoKnow
 		Relation("Track._").
 		Column("play.user_id").
 		Where("artist_id = ?", artist.ID).
-		Where("scrobbled_at < '1970-01-01 00:00:00'::date").
+		Where("scrobbled_at < '2002-03-19 00:00:00'::date").
 		Group("play.user_id").OrderExpr("1 " + sort)
 
 	err := inputparser.CreateParser(query).ParseWhoKnowsSettings(settings, &inputparser.InputSettings{
