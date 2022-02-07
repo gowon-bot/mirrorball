@@ -249,8 +249,9 @@ type UserInput struct {
 }
 
 type WhoFirstArtistResponse struct {
-	Rows   []*WhoFirstRow `json:"rows"`
-	Artist *Artist        `json:"artist"`
+	Rows    []*WhoFirstRow `json:"rows"`
+	Undated []*WhoFirstRow `json:"undated"`
+	Artist  *Artist        `json:"artist"`
 }
 
 type WhoFirstRow struct {

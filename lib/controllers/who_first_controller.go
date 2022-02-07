@@ -25,11 +25,23 @@ func WhoFirstArtist(artistInput model.ArtistInput, settings *model.WhoKnowsSetti
 		whoLastArg = *whoLast
 	}
 
-	whoFirst, err := analysisService.WhoFirstArtist(artist, settings, whoLastArg)
+	undated, err := analysisService.WhoHasUndatedArtist(artist, settings, whoLastArg)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return presenters.PresentWhoFirstArtistResponse(artist, whoFirst), nil
+	var excludeIDs []int64
+
+	for _, excludedUser := range undated {
+		excludeIDs = append(excludeIDs, excludedUser.UserID)
+	}
+
+	whoFirst, err := analysisService.WhoFirstArtist(artist, settings, whoLastArg, excludeIDs)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return presenters.PresentWhoFirstArtistResponse(artist, whoFirst, undated), nil
 }

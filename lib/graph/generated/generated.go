@@ -238,8 +238,9 @@ type ComplexityRoot struct {
 	}
 
 	WhoFirstArtistResponse struct {
-		Artist func(childComplexity int) int
-		Rows   func(childComplexity int) int
+		Artist  func(childComplexity int) int
+		Rows    func(childComplexity int) int
+		Undated func(childComplexity int) int
 	}
 
 	WhoFirstRow struct {
@@ -1225,6 +1226,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.WhoFirstArtistResponse.Rows(childComplexity), true
 
+	case "WhoFirstArtistResponse.undated":
+		if e.complexity.WhoFirstArtistResponse.Undated == nil {
+			break
+		}
+
+		return e.complexity.WhoFirstArtistResponse.Undated(childComplexity), true
+
 	case "WhoFirstRow.scrobbledAt":
 		if e.complexity.WhoFirstRow.ScrobbledAt == nil {
 			break
@@ -1632,6 +1640,7 @@ type WhoFirstRow {
 
 type WhoFirstArtistResponse {
   rows: [WhoFirstRow!]!
+  undated: [WhoFirstRow!]!
   artist: Artist!
 }
 
@@ -6511,6 +6520,41 @@ func (ec *executionContext) _WhoFirstArtistResponse_rows(ctx context.Context, fi
 	return ec.marshalNWhoFirstRow2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoFirstRowᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _WhoFirstArtistResponse_undated(ctx context.Context, field graphql.CollectedField, obj *model.WhoFirstArtistResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WhoFirstArtistResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Undated, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.WhoFirstRow)
+	fc.Result = res
+	return ec.marshalNWhoFirstRow2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoFirstRowᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _WhoFirstArtistResponse_artist(ctx context.Context, field graphql.CollectedField, obj *model.WhoFirstArtistResponse) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -9789,6 +9833,11 @@ func (ec *executionContext) _WhoFirstArtistResponse(ctx context.Context, sel ast
 			out.Values[i] = graphql.MarshalString("WhoFirstArtistResponse")
 		case "rows":
 			out.Values[i] = ec._WhoFirstArtistResponse_rows(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "undated":
+			out.Values[i] = ec._WhoFirstArtistResponse_undated(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

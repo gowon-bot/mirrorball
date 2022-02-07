@@ -271,6 +271,7 @@ type WhoFirstRow {
 
 type WhoFirstArtistResponse {
   rows: [WhoFirstRow!]!
+  undated: [WhoFirstRow!]!
   artist: Artist!
 }
 
