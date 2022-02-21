@@ -118,8 +118,10 @@ func createServer() *machinery.Server {
 		},
 	}
 
-	broker := redisbroker.NewGR(cnf, []string{"redis:6379"}, 0)
-	backend := redisbackend.NewGR(cnf, []string{"redis:6379"}, 0)
+	redisHost := os.Getenv("REDIS_HOST")
+
+	broker := redisbroker.NewGR(cnf, []string{redisHost}, 0)
+	backend := redisbackend.NewGR(cnf, []string{redisHost}, 0)
 	lock := eagerlock.New()
 
 	server := machinery.NewServer(cnf, broker, backend, lock)
