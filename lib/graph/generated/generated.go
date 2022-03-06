@@ -122,6 +122,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AddUserToGuild      func(childComplexity int, discordID string, guildID string) int
+		DeleteGuild         func(childComplexity int, guildID string) int
 		FullIndex           func(childComplexity int, user model.UserInput, forceUserCreate *bool) int
 		ImportRatings       func(childComplexity int, csv string, user model.UserInput) int
 		Login               func(childComplexity int, username string, session *string, discordID string, userType model.UserType) int
@@ -276,6 +277,7 @@ type MutationResolver interface {
 	AddUserToGuild(ctx context.Context, discordID string, guildID string) (*model.GuildMember, error)
 	RemoveUserFromGuild(ctx context.Context, discordID string, guildID string) (*string, error)
 	SyncGuild(ctx context.Context, guildID string, discordIDs []string) (*string, error)
+	DeleteGuild(ctx context.Context, guildID string) (*string, error)
 	FullIndex(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error)
 	Update(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error)
 	ImportRatings(ctx context.Context, csv string, user model.UserInput) (*string, error)
@@ -590,6 +592,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.AddUserToGuild(childComplexity, args["discordID"].(string), args["guildID"].(string)), true
+
+	case "Mutation.deleteGuild":
+		if e.complexity.Mutation.DeleteGuild == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteGuild_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteGuild(childComplexity, args["guildID"].(string)), true
 
 	case "Mutation.fullIndex":
 		if e.complexity.Mutation.FullIndex == nil {
@@ -1462,6 +1476,7 @@ type Mutation {
   addUserToGuild(discordID: String!, guildID: String!): GuildMember
   removeUserFromGuild(discordID: String!, guildID: String!): Void
   syncGuild(guildID: String!, discordIDs: [String!]!): Void
+  deleteGuild(guildID: String!): Void
 
   # .fm indexing
   fullIndex(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
@@ -1820,6 +1835,21 @@ func (ec *executionContext) field_Mutation_addUserToGuild_args(ctx context.Conte
 		}
 	}
 	args["guildID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteGuild_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["guildID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("guildID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["guildID"] = arg0
 	return args, nil
 }
 
@@ -4088,6 +4118,45 @@ func (ec *executionContext) _Mutation_syncGuild(ctx context.Context, field graph
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().SyncGuild(rctx, args["guildID"].(string), args["discordIDs"].([]string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteGuild(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteGuild_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteGuild(rctx, args["guildID"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9027,6 +9096,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_removeUserFromGuild(ctx, field)
 		case "syncGuild":
 			out.Values[i] = ec._Mutation_syncGuild(ctx, field)
+		case "deleteGuild":
+			out.Values[i] = ec._Mutation_deleteGuild(ctx, field)
 		case "fullIndex":
 			out.Values[i] = ec._Mutation_fullIndex(ctx, field)
 		case "update":

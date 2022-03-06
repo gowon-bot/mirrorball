@@ -93,6 +93,7 @@ type Mutation {
   addUserToGuild(discordID: String!, guildID: String!): GuildMember
   removeUserFromGuild(discordID: String!, guildID: String!): Void
   syncGuild(guildID: String!, discordIDs: [String!]!): Void
+  deleteGuild(guildID: String!): Void
 
   # .fm indexing
   fullIndex(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse

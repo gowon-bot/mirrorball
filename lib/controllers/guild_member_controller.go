@@ -84,3 +84,15 @@ func GuildMembers(guildID string) ([]*model.GuildMember, error) {
 
 	return presenters.PresentGuildMembers(guildMembers), nil
 }
+
+func DeleteGuild(guildID string) (*string, error) {
+	guildMembersService := guildmembers.CreateService()
+
+	err := guildMembersService.DeleteGuild(guildID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}

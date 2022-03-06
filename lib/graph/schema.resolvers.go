@@ -73,6 +73,16 @@ func (r *mutationResolver) SyncGuild(ctx context.Context, guildID string, discor
 	return controllers.SyncGuild(discordIDs, guildID)
 }
 
+func (r *mutationResolver) DeleteGuild(ctx context.Context, guildID string) (*string, error) {
+	err := meta.CheckNoUser(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return controllers.DeleteGuild(guildID)
+}
+
 func (r *mutationResolver) FullIndex(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error) {
 	err := meta.CheckUserMatches(ctx, *user.DiscordID)
 
