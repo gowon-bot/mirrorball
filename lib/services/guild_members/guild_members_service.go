@@ -71,6 +71,12 @@ func (gm GuildMembers) ListGuildMembers(guildID string) ([]db.GuildMember, error
 	return guildMembers, nil
 }
 
+func (gm GuildMembers) DeleteGuild(guildID string) error {
+	_, err := db.Db.Model((*db.GuildMember)(nil)).Where("guild_id = ?", guildID).Delete()
+
+	return err
+}
+
 // CreateService creates an instance of the guild members service object
 func CreateService() *GuildMembers {
 	service := &GuildMembers{}
