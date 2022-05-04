@@ -16,7 +16,7 @@ type RateYourMusic struct {
 func (rym RateYourMusic) GetRatings(settings *model.RatingsSettings) ([]db.Rating, error) {
 	var ratings []db.Rating
 
-	query := db.Db.Model(&ratings).Relation("RateYourMusicAlbum").Order("rating DESC", "release_year ASC", "title DESC")
+	query := db.Db.Model(&ratings).Relation("RateYourMusicAlbum").Order("rating DESC", "title DESC", "release_year ASC")
 
 	parser := inputparser.CreateParser(query).ParseRatingsSettings(settings)
 

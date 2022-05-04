@@ -125,7 +125,7 @@ type ComplexityRoot struct {
 		DeleteGuild         func(childComplexity int, guildID string) int
 		FullIndex           func(childComplexity int, user model.UserInput, forceUserCreate *bool) int
 		ImportRatings       func(childComplexity int, csv string, user model.UserInput) int
-		Login               func(childComplexity int, username string, session *string, discordID string, userType model.UserType) int
+		Login               func(childComplexity int, username string, session *string, discordID string) int
 		Logout              func(childComplexity int, discordID string) int
 		RemoveUserFromGuild func(childComplexity int, discordID string, guildID string) int
 		SyncGuild           func(childComplexity int, guildID string, discordIDs []string) int
@@ -234,7 +234,6 @@ type ComplexityRoot struct {
 		DiscordID func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Privacy   func(childComplexity int) int
-		UserType  func(childComplexity int) int
 		Username  func(childComplexity int) int
 	}
 
@@ -271,7 +270,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	Login(ctx context.Context, username string, session *string, discordID string, userType model.UserType) (*model.User, error)
+	Login(ctx context.Context, username string, session *string, discordID string) (*model.User, error)
 	Logout(ctx context.Context, discordID string) (*string, error)
 	UpdatePrivacy(ctx context.Context, user model.UserInput, privacy *model.Privacy) (*string, error)
 	AddUserToGuild(ctx context.Context, discordID string, guildID string) (*model.GuildMember, error)
@@ -639,7 +638,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Login(childComplexity, args["username"].(string), args["session"].(*string), args["discordID"].(string), args["userType"].(model.UserType)), true
+		return e.complexity.Mutation.Login(childComplexity, args["username"].(string), args["session"].(*string), args["discordID"].(string)), true
 
 	case "Mutation.logout":
 		if e.complexity.Mutation.Logout == nil {
@@ -1212,13 +1211,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Privacy(childComplexity), true
 
-	case "User.userType":
-		if e.complexity.User.UserType == nil {
-			break
-		}
-
-		return e.complexity.User.UserType(childComplexity), true
-
 	case "User.username":
 		if e.complexity.User.Username == nil {
 			break
@@ -1463,12 +1455,7 @@ type Query {
 
 type Mutation {
   # Users
-  login(
-    username: String!
-    session: String
-    discordID: String!
-    userType: UserType!
-  ): User
+  login(username: String!, session: String, discordID: String!): User
   logout(discordID: String!): Void
   updatePrivacy(user: UserInput!, privacy: Privacy): Void
 
@@ -1506,11 +1493,6 @@ input Timerange {
   to: Date
 }
 
-enum UserType {
-  Wavy
-  Lastfm
-}
-
 enum Privacy {
   PRIVATE
   DISCORD
@@ -1524,7 +1506,6 @@ type User {
   username: String!
   discordID: String!
 
-  userType: UserType
   privacy: Privacy
 }
 
@@ -1727,7 +1708,6 @@ type ArtistRankResponse {
 input UserInput {
   discordID: String
   lastFMUsername: String
-  wavyUsername: String
 }
 
 input ArtistInput {
@@ -1931,15 +1911,6 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 		}
 	}
 	args["discordID"] = arg2
-	var arg3 model.UserType
-	if tmp, ok := rawArgs["userType"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userType"))
-		arg3, err = ec.unmarshalNUserType2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserType(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["userType"] = arg3
 	return args, nil
 }
 
@@ -3922,7 +3893,7 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Login(rctx, args["username"].(string), args["session"].(*string), args["discordID"].(string), args["userType"].(model.UserType))
+		return ec.resolvers.Mutation().Login(rctx, args["username"].(string), args["session"].(*string), args["discordID"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6490,38 +6461,6 @@ func (ec *executionContext) _User_discordID(ctx context.Context, field graphql.C
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_userType(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "User",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UserType, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.UserType)
-	fc.Result = res
-	return ec.marshalOUserType2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserType(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _User_privacy(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -8558,14 +8497,6 @@ func (ec *executionContext) unmarshalInputUserInput(ctx context.Context, obj int
 			if err != nil {
 				return it, err
 			}
-		case "wavyUsername":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("wavyUsername"))
-			it.WavyUsername, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -9876,8 +9807,6 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "userType":
-			out.Values[i] = ec._User_userType(ctx, field, obj)
 		case "privacy":
 			out.Values[i] = ec._User_privacy(ctx, field, obj)
 		default:
@@ -11139,16 +11068,6 @@ func (ec *executionContext) unmarshalNUserInput2ᚖgithubᚗcomᚋjivisonᚋgowo
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNUserType2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserType(ctx context.Context, v interface{}) (model.UserType, error) {
-	var res model.UserType
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNUserType2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserType(ctx context.Context, sel ast.SelectionSet, v model.UserType) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) marshalNWhoFirstRow2ᚕᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐWhoFirstRowᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.WhoFirstRow) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -11893,22 +11812,6 @@ func (ec *executionContext) unmarshalOUserInput2ᚖgithubᚗcomᚋjivisonᚋgowo
 	}
 	res, err := ec.unmarshalInputUserInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOUserType2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserType(ctx context.Context, v interface{}) (*model.UserType, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var res = new(model.UserType)
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOUserType2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserType(ctx context.Context, sel ast.SelectionSet, v *model.UserType) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
 }
 
 func (ec *executionContext) unmarshalOVoid2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

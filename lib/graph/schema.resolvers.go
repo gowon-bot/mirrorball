@@ -13,14 +13,14 @@ import (
 	"github.com/jivison/gowon-indexer/lib/meta"
 )
 
-func (r *mutationResolver) Login(ctx context.Context, username string, session *string, discordID string, userType model.UserType) (*model.User, error) {
+func (r *mutationResolver) Login(ctx context.Context, username string, session *string, discordID string) (*model.User, error) {
 	err := meta.CheckUserMatches(ctx, discordID)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return controllers.Login(username, session, discordID, userType.String())
+	return controllers.Login(username, session, discordID)
 }
 
 func (r *mutationResolver) Logout(ctx context.Context, discordID string) (*string, error) {

@@ -11,8 +11,7 @@ func PresentUser(user *db.User) *model.User {
 		ID:        int(user.ID),
 		Username:  user.Username,
 		DiscordID: user.DiscordID,
-		UserType:  (*model.UserType)(&user.UserType),
-		Privacy:   (*model.Privacy)(&user.Privacy),
+		Privacy:   PresentPrivacy(user.Privacy),
 	}
 }
 
@@ -24,4 +23,24 @@ func PresentUsers(users []*db.User) []*model.User {
 	}
 
 	return builtUsers
+}
+
+func PresentPrivacy(privacy int64) *model.Privacy {
+	var privacyString string
+
+	switch privacy {
+	case 1:
+		privacyString = "PRIVATE"
+	case 2:
+		privacyString = "DISCORD"
+	case 3:
+		privacyString = "FMUSERNAME"
+	case 4:
+		privacyString = "BOTH"
+	case 5:
+		privacyString = "UNSET"
+
+	}
+
+	return (*model.Privacy)(&privacyString)
 }

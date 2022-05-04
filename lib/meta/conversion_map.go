@@ -49,6 +49,12 @@ func (am ArtistConversionMap) Set(artistName string, artist db.Artist) {
 	am.set(artistName, artist)
 }
 
+func (am ArtistConversionMap) Merge(target ArtistConversionMap) {
+	for key, value := range target.GetMap() {
+		am.Set(key, value.Value.(db.Artist))
+	}
+}
+
 func CreateArtistConversionMap() ArtistConversionMap {
 	return ArtistConversionMap{ConversionMap: createConversionMap()}
 }
@@ -67,6 +73,17 @@ func (lm AlbumConversionMap) Get(artistName, albumName string) (db.Album, string
 	}
 
 	return db.Album{}, albumName, false
+}
+
+func (lm AlbumConversionMap) Merge(target AlbumConversionMap) {
+	for artistKey, albumMap := range target.GetMap() {
+		targetMap := albumMap.Value.(ConversionMap)
+		sourceMap := lm.GetMap()[artistKey].Value.(ConversionMap)
+
+		for albumKey, album := range targetMap.GetMap() {
+			sourceMap.set(albumKey, album)
+		}
+	}
 }
 
 func (lm AlbumConversionMap) Set(artistName, albumName string, album db.Album) {
@@ -123,6 +140,22 @@ func (tm TrackConversionMap) Set(artistName, albumName, trackName string, track 
 	albumMap := album.Value.(ConversionMap)
 
 	albumMap.set(trackName, track)
+}
+
+func (tm TrackConversionMap) Merge(target TrackConversionMap) {
+	for artistKey, albumMap := range target.GetMap() {
+		targetAlbumMap := albumMap.Value.(ConversionMap)
+		sourceAlbumMap := tm.GetMap()[artistKey].Value.(ConversionMap)
+
+		for albumKey, trackMap := range targetAlbumMap.GetMap() {
+			targetTrackMap := trackMap.Value.(ConversionMap)
+			sourceTrackMap := sourceAlbumMap.GetMap()[albumKey].Value.(ConversionMap)
+
+			for trackKey, track := range targetTrackMap.GetMap() {
+				sourceTrackMap.set(trackKey, track)
+			}
+		}
+	}
 }
 
 func CreateTrackConversionMap() TrackConversionMap {

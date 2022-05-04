@@ -235,17 +235,15 @@ type TrackTopAlbumsResponse struct {
 }
 
 type User struct {
-	ID        int       `json:"id"`
-	Username  string    `json:"username"`
-	DiscordID string    `json:"discordID"`
-	UserType  *UserType `json:"userType"`
-	Privacy   *Privacy  `json:"privacy"`
+	ID        int      `json:"id"`
+	Username  string   `json:"username"`
+	DiscordID string   `json:"discordID"`
+	Privacy   *Privacy `json:"privacy"`
 }
 
 type UserInput struct {
 	DiscordID      *string `json:"discordID"`
 	LastFMUsername *string `json:"lastFMUsername"`
-	WavyUsername   *string `json:"wavyUsername"`
 }
 
 type WhoFirstArtistResponse struct {
@@ -329,46 +327,5 @@ func (e *Privacy) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Privacy) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type UserType string
-
-const (
-	UserTypeWavy   UserType = "Wavy"
-	UserTypeLastfm UserType = "Lastfm"
-)
-
-var AllUserType = []UserType{
-	UserTypeWavy,
-	UserTypeLastfm,
-}
-
-func (e UserType) IsValid() bool {
-	switch e {
-	case UserTypeWavy, UserTypeLastfm:
-		return true
-	}
-	return false
-}
-
-func (e UserType) String() string {
-	return string(e)
-}
-
-func (e *UserType) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = UserType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid UserType", str)
-	}
-	return nil
-}
-
-func (e UserType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

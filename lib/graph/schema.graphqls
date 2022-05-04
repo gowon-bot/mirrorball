@@ -80,12 +80,7 @@ type Query {
 
 type Mutation {
   # Users
-  login(
-    username: String!
-    session: String
-    discordID: String!
-    userType: UserType!
-  ): User
+  login(username: String!, session: String, discordID: String!): User
   logout(discordID: String!): Void
   updatePrivacy(user: UserInput!, privacy: Privacy): Void
 
@@ -123,11 +118,6 @@ input Timerange {
   to: Date
 }
 
-enum UserType {
-  Wavy
-  Lastfm
-}
-
 enum Privacy {
   PRIVATE
   DISCORD
@@ -141,7 +131,6 @@ type User {
   username: String!
   discordID: String!
 
-  userType: UserType
   privacy: Privacy
 }
 
@@ -344,7 +333,6 @@ type ArtistRankResponse {
 input UserInput {
   discordID: String
   lastFMUsername: String
-  wavyUsername: String
 }
 
 input ArtistInput {

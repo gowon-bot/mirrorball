@@ -17,11 +17,7 @@ func (p InputParser) ParseUserInput(userInput model.UserInput, settings UserInpu
 	}
 
 	if userInput.LastFMUsername != nil {
-		p.query.Where("user_type = 'Lastfm'").Where("username = ?", userInput.LastFMUsername)
-	}
-
-	if userInput.WavyUsername != nil {
-		p.query.Where("user_type = 'Wavy'").Where("username = ?", userInput.WavyUsername)
+		p.query.Where("username = ?", userInput.LastFMUsername)
 	}
 
 	return &p
@@ -58,7 +54,7 @@ func (p InputParser) ParseUserInputs(userInputs []*model.UserInput, settings Use
 	}
 
 	if len(lastFMUsernames) > 0 {
-		p.query.Where("username IN (?)", pg.In(lastFMUsernames)).Where("user_type = 'Lastfm'")
+		p.query.Where("username IN (?)", pg.In(lastFMUsernames))
 	}
 
 	return &p

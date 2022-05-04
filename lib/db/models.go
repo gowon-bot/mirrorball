@@ -7,10 +7,9 @@ type User struct {
 	ID            int64 `pg:",pk"`
 	DiscordID     string
 	Username      string
-	UserType      string
 	LastIndexed   time.Time
 	LastFMSession *string
-	Privacy       string
+	Privacy       int64
 
 	GuildMembers *[]GuildMember `pg:"rel:has-many"`
 }

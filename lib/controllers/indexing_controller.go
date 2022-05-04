@@ -28,8 +28,6 @@ func FullIndex(userInput model.UserInput, forceUserCreate *bool) (*model.TaskSta
 
 	if user == nil {
 		return nil, customerrors.EntityDoesntExistError("user")
-	} else if user.IsWavyUser() {
-		return nil, customerrors.WavyNotSupportedError()
 	}
 
 	tasks.TaskServer.SendIndexUserTask(user, token)
@@ -57,8 +55,6 @@ func Update(userInput model.UserInput, forceUserCreate *bool) (*model.TaskStartR
 
 	if user == nil {
 		return nil, customerrors.EntityDoesntExistError("user")
-	} else if user.IsWavyUser() {
-		return nil, customerrors.WavyNotSupportedError()
 	}
 
 	if user.LastIndexed.IsZero() {

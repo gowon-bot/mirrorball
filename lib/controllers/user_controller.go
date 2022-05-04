@@ -11,18 +11,18 @@ import (
 )
 
 // Login logs a user in
-func Login(username string, session *string, discordID, userType string) (*model.User, error) {
+func Login(username string, session *string, discordID string) (*model.User, error) {
 	usersService := users.CreateService()
 
-	user, err := usersService.CreateUser(username, discordID, userType, session)
+	user, err := usersService.CreateUser(username, discordID, session)
 
 	if err != nil {
 		if user != nil {
-			if user.Username == username && user.UserType == userType {
+			if user.Username == username {
 				return presenters.PresentUser(user), nil
 			}
 
-			user, _ = usersService.ChangeUsername(user, username, userType, session)
+			user, _ = usersService.ChangeUsername(user, username, session)
 
 			return presenters.PresentUser(user), nil
 		}
@@ -59,7 +59,7 @@ func Users(inputs []*model.UserInput) ([]*model.User, error) {
 }
 
 func UpdatePrivacy(userInput model.UserInput, privacy *model.Privacy) (*string, error) {
-	if strings.ToUpper(privacy.String()) == db.DefaultPrivacy {
+	if strings.ToUpper(privacy.String()) == db.ConvertPrivacyToString(db.DefaultPrivacy) {
 		return nil, customerrors.CannotSetToUnset()
 	}
 
@@ -71,7 +71,7 @@ func UpdatePrivacy(userInput model.UserInput, privacy *model.Privacy) (*string, 
 		return nil, customerrors.EntityDoesntExistError("user")
 	}
 
-	_, err := usersService.UpdatePrivacy(user, strings.ToUpper(privacy.String()))
+	_, err := usersService.UpdatePrivacy(user, db.ConvertPrivacyFromString(privacy.String()))
 
 	return nil, err
 }

@@ -34,5 +34,5 @@ func UpdateUserTask(userJSON string, token string) (string, error) {
 
 	webhookService.Post(data)
 
-	return fmt.Sprintf("Updated user %s (%s)", user.Username, user.UserType), nil
+	return fmt.Sprintf("Updated user %s", user.Username), nil
 }
