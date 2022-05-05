@@ -40,6 +40,8 @@ func (i Indexing) NewGenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack,
 	albumCounts := meta.CreateAlbumConversionCounter()
 	trackCounts := meta.CreateTrackConversionCounter()
 
+	var album db.Album
+
 	for _, scrobble := range scrobbles {
 		artist, _, _ := artistsMap.Get(scrobble.Artist.Text)
 		artistCounts.Increment(scrobble.Artist.Text)
@@ -48,21 +50,30 @@ func (i Indexing) NewGenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack,
 		trackCounts.Increment(artist.Name, scrobble.Album.Text, scrobble.Name)
 
 		if scrobble.Album.Text != "" {
-
-			album, _, _ := albumsMap.Get(scrobble.Artist.Text, scrobble.Album.Text)
+			album, _, _ = albumsMap.Get(scrobble.Artist.Text, scrobble.Album.Text)
 			albumCounts.Increment(artist.Name, album.Name)
 		}
 
 		timestamp, _ := apihelpers.ParseUnix(scrobble.Timestamp.UTS)
-		dbScrobbles = append(dbScrobbles, db.Play{
+		play := db.Play{
 			UserID: user.ID,
 			User:   &user,
 
 			TrackID: track.ID,
 			Track:   &track,
 
+			ArtistID: artist.ID,
+			Artist:   &artist,
+
 			ScrobbledAt: timestamp,
-		})
+		}
+
+		if album.ID != 0 {
+			play.AlbumID = album.ID
+			play.Album = &album
+		}
+
+		dbScrobbles = append(dbScrobbles, play)
 	}
 
 	var dbArtistCounts []db.ArtistCount

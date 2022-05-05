@@ -58,6 +58,12 @@ type Play struct {
 
 	TrackID int64
 	Track   *Track `pg:"rel:has-one"`
+
+	ArtistID int64
+	Artist   *Artist `pg:"rel:has-one"`
+
+	AlbumID int64
+	Album   *Album `pg:"rel:has-one"`
 }
 
 type RateYourMusicAlbum struct {
