@@ -66,6 +66,10 @@ type Play struct {
 	Album   *Album `pg:"rel:has-one"`
 }
 
+func (Play) TableName() string {
+	return "scrobbles"
+}
+
 type RateYourMusicAlbum struct {
 	ID              int64 `pg:",pk"`
 	RateYourMusicID string
