@@ -258,12 +258,12 @@ func (i Indexing) resetTrackCounts(user *db.User) {
 }
 
 func (i Indexing) resetPlays(user *db.User) {
-	db.Db.Model((*db.Play)(nil)).Where("user_id=?", user.ID).Delete()
+	db.Db.Model((*db.Scrobble)(nil)).Where("user_id=?", user.ID).Delete()
 }
 
 // AddPlay saves a play to the database
-func (i Indexing) AddPlay(user *db.User, track *db.Track, scrobbledAt time.Time) (*db.Play, error) {
-	scrobble := &db.Play{
+func (i Indexing) AddPlay(user *db.User, track *db.Track, scrobbledAt time.Time) (*db.Scrobble, error) {
+	scrobble := &db.Scrobble{
 		UserID: user.ID,
 		User:   user,
 

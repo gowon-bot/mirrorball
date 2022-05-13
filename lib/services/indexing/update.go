@@ -18,7 +18,7 @@ type CountsFromScrobbles struct {
 	ArtistCounts []db.ArtistCount
 	AlbumCounts  []db.AlbumCount
 	TrackCounts  []db.TrackCount
-	Plays        []db.Play
+	Plays        []db.Scrobble
 }
 
 func (i Indexing) NewGenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack, user db.User, maps ConversionMaps) (CountsFromScrobbles, error) {
@@ -34,7 +34,7 @@ func (i Indexing) NewGenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack,
 		return CountsFromScrobbles{}, err
 	}
 
-	var dbScrobbles []db.Play
+	var dbScrobbles []db.Scrobble
 
 	artistCounts := meta.CreateArtistConversionCounter()
 	albumCounts := meta.CreateAlbumConversionCounter()
@@ -55,7 +55,7 @@ func (i Indexing) NewGenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack,
 		}
 
 		timestamp, _ := apihelpers.ParseUnix(scrobble.Timestamp.UTS)
-		play := db.Play{
+		play := db.Scrobble{
 			UserID: user.ID,
 			User:   &user,
 
@@ -111,14 +111,14 @@ func (i Indexing) NewGenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack,
 	return returnStruct, nil
 }
 
-func (i Indexing) GenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack, user db.User) ([]db.ArtistCount, []db.AlbumCount, []db.TrackCount, []db.Play, error) {
+func (i Indexing) GenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack, user db.User) ([]db.ArtistCount, []db.AlbumCount, []db.TrackCount, []db.Scrobble, error) {
 	artistsMap, albumsMap, tracksMap, err := i.ConvertScrobbles(scrobbles)
 
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
 
-	var dbScrobbles []db.Play
+	var dbScrobbles []db.Scrobble
 
 	artistCounts := meta.CreateArtistConversionCounter()
 	albumCounts := meta.CreateAlbumConversionCounter()
@@ -138,7 +138,7 @@ func (i Indexing) GenerateCountsFromScrobbles(scrobbles []lastfm.RecentTrack, us
 		}
 
 		timestamp, _ := apihelpers.ParseUnix(scrobble.Timestamp.UTS)
-		dbScrobbles = append(dbScrobbles, db.Play{
+		dbScrobbles = append(dbScrobbles, db.Scrobble{
 			UserID: user.ID,
 			User:   &user,
 

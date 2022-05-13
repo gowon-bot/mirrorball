@@ -9,8 +9,8 @@ import (
 )
 
 // WhoFirstArtist returns a list of who first listened to an artist
-func (a Analysis) WhoFirstArtist(artist *db.Artist, settings *model.WhoKnowsSettings, whoLast bool, excludeIDs []int64) ([]db.Play, error) {
-	var whoFirst []db.Play
+func (a Analysis) WhoFirstArtist(artist *db.Artist, settings *model.WhoKnowsSettings, whoLast bool, excludeIDs []int64) ([]db.Scrobble, error) {
+	var whoFirst []db.Scrobble
 
 	sort := "asc"
 	aggFunc := "min"
@@ -26,17 +26,17 @@ func (a Analysis) WhoFirstArtist(artist *db.Artist, settings *model.WhoKnowsSett
 	query := db.Db.Model(&whoFirst).
 		Relation("Track._").
 		ColumnExpr(aggFunc+"(scrobbled_at) as scrobbled_at").
-		Column("play.user_id").
+		Column("scrobble.user_id").
 		Where("artist_id = ?", artist.ID).
 		Where("scrobbled_at > '2002-03-19 00:00:00'::date").
-		Group("play.user_id").OrderExpr("1 " + sort)
+		Group("scrobble.user_id").OrderExpr("1 " + sort)
 
 	if len(excludeIDs) != 0 {
-		query = query.Where("play.user_id NOT IN (?)", pg.In(excludeIDs))
+		query = query.Where("scrobble.user_id NOT IN (?)", pg.In(excludeIDs))
 	}
 
 	err := inputparser.CreateParser(query).ParseWhoKnowsSettings(settings, &inputparser.InputSettings{
-		UserIDPath: `play"."user_id`,
+		UserIDPath: `scrobble"."user_id`,
 	}).GetQuery().Select()
 
 	if err != nil {
@@ -52,8 +52,8 @@ func (a Analysis) WhoFirstArtist(artist *db.Artist, settings *model.WhoKnowsSett
 	return whoFirst, nil
 }
 
-func (a Analysis) WhoHasUndatedArtist(artist *db.Artist, settings *model.WhoKnowsSettings, whoLast bool) ([]db.Play, error) {
-	var whoFirst []db.Play
+func (a Analysis) WhoHasUndatedArtist(artist *db.Artist, settings *model.WhoKnowsSettings, whoLast bool) ([]db.Scrobble, error) {
+	var whoFirst []db.Scrobble
 
 	sort := "asc"
 
@@ -63,13 +63,13 @@ func (a Analysis) WhoHasUndatedArtist(artist *db.Artist, settings *model.WhoKnow
 
 	query := db.Db.Model(&whoFirst).
 		Relation("Track._").
-		Column("play.user_id").
+		Column("scrobble.user_id").
 		Where("artist_id = ?", artist.ID).
 		Where("scrobbled_at < '2002-03-19 00:00:00'::date").
-		Group("play.user_id").OrderExpr("1 " + sort)
+		Group("scrobble.user_id").OrderExpr("1 " + sort)
 
 	err := inputparser.CreateParser(query).ParseWhoKnowsSettings(settings, &inputparser.InputSettings{
-		UserIDPath: `play"."user_id`,
+		UserIDPath: `scrobble"."user_id`,
 	}).GetQuery().Select()
 
 	if err != nil {

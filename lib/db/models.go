@@ -48,8 +48,8 @@ type Track struct {
 	Album   *Album `pg:"rel:has-one"`
 }
 
-// Play represents a single play of a song (eg. a Last.fm scrobble)
-type Play struct {
+// Scrobble represents a single play of a song (eg. a Last.fm scrobble)
+type Scrobble struct {
 	ID          int64 `pg:",pk"`
 	ScrobbledAt time.Time
 
@@ -64,10 +64,6 @@ type Play struct {
 
 	AlbumID int64
 	Album   *Album `pg:"rel:has-one"`
-}
-
-func (Play) TableName() string {
-	return "scrobbles"
 }
 
 type RateYourMusicAlbum struct {

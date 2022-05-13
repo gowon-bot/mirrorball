@@ -88,7 +88,7 @@ func PresentAmbiguousTrack(tracks []db.Track) *model.AmbiguousTrack {
 	return builtTrack
 }
 
-func PresentPlay(play *db.Play) *model.Play {
+func PresentPlay(play *db.Scrobble) *model.Play {
 	builtPlay := &model.Play{
 		ID:          int(play.ID),
 		ScrobbledAt: int(play.ScrobbledAt.UTC().Unix()),
@@ -105,7 +105,7 @@ func PresentPlay(play *db.Play) *model.Play {
 	return builtPlay
 }
 
-func PresentPlays(plays []db.Play) []*model.Play {
+func PresentPlays(plays []db.Scrobble) []*model.Play {
 	var builtPlays []*model.Play
 
 	for _, play := range plays {

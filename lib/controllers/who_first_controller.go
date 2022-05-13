@@ -27,7 +27,7 @@ func WhoFirstArtist(artistInput model.ArtistInput, settings *model.WhoKnowsSetti
 	}
 
 	var excludeIDs []int64
-	var undated []db.Play
+	var undated []db.Scrobble
 
 	if whoLast == nil || !*whoLast {
 		undated, err = analysisService.WhoHasUndatedArtist(artist, settings, whoLastArg)

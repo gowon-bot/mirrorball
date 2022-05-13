@@ -96,17 +96,17 @@ func InsertManyTracks(tracks []db.Track, itemsPerChunk float64) ([]db.Track, err
 	return allTracks, nil
 }
 
-func InsertManyPlays(plays []db.Play, itemsPerChunk float64) ([]db.Play, error) {
-	var chunks [][]db.Play
-	var allPlays []db.Play
+func InsertManyPlays(plays []db.Scrobble, itemsPerChunk float64) ([]db.Scrobble, error) {
+	var chunks [][]db.Scrobble
+	var allPlays []db.Scrobble
 
-	chunks = make([][]db.Play, int(math.Floor(float64(len(plays))/(itemsPerChunk)))+1)
+	chunks = make([][]db.Scrobble, int(math.Floor(float64(len(plays))/(itemsPerChunk)))+1)
 
 	for index, play := range plays {
 		chunkIndex := int(math.Floor(float64(index+1) / (itemsPerChunk)))
 
 		if chunks[chunkIndex] == nil {
-			chunks[chunkIndex] = make([]db.Play, 0)
+			chunks[chunkIndex] = make([]db.Scrobble, 0)
 		}
 
 		chunks[chunkIndex] = append(chunks[chunkIndex], play)

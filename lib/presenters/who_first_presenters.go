@@ -5,14 +5,14 @@ import (
 	"github.com/jivison/gowon-indexer/lib/graph/model"
 )
 
-func PresentWhoFirstRow(play db.Play) *model.WhoFirstRow {
+func PresentWhoFirstRow(play db.Scrobble) *model.WhoFirstRow {
 	return &model.WhoFirstRow{
 		User:        PresentUser(play.User),
 		ScrobbledAt: int(play.ScrobbledAt.Unix()),
 	}
 }
 
-func PresentWhoFirstArtistResponse(artist *db.Artist, plays []db.Play, undated []db.Play) *model.WhoFirstArtistResponse {
+func PresentWhoFirstArtistResponse(artist *db.Artist, plays []db.Scrobble, undated []db.Scrobble) *model.WhoFirstArtistResponse {
 	var whoKnowsRows []*model.WhoFirstRow
 	var undatedRows []*model.WhoFirstRow
 

@@ -9,7 +9,7 @@ import (
 
 type UsersMap = map[int64]db.User
 
-func (a Analysis) AddUserToPlays(plays []db.Play) ([]db.Play, error) {
+func (a Analysis) AddUserToPlays(plays []db.Scrobble) ([]db.Scrobble, error) {
 	var userList []int64
 
 	for _, play := range plays {
@@ -22,7 +22,7 @@ func (a Analysis) AddUserToPlays(plays []db.Play) ([]db.Play, error) {
 		return plays, err
 	}
 
-	var newPlays []db.Play
+	var newPlays []db.Scrobble
 
 	for _, play := range plays {
 		user := usersMap[play.UserID]
