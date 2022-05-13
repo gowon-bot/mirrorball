@@ -24,7 +24,6 @@ func (a Analysis) WhoFirstArtist(artist *db.Artist, settings *model.WhoKnowsSett
 	}
 
 	query := db.Db.Model(&whoFirst).
-		Relation("Track._").
 		ColumnExpr(aggFunc+"(scrobbled_at) as scrobbled_at").
 		Column("scrobble.user_id").
 		Where("artist_id = ?", artist.ID).
@@ -62,7 +61,6 @@ func (a Analysis) WhoHasUndatedArtist(artist *db.Artist, settings *model.WhoKnow
 	}
 
 	query := db.Db.Model(&whoFirst).
-		Relation("Track._").
 		Column("scrobble.user_id").
 		Where("artist_id = ?", artist.ID).
 		Where("scrobbled_at < '2002-03-19 00:00:00'::date").
