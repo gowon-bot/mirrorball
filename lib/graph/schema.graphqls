@@ -90,10 +90,6 @@ type Mutation {
   syncGuild(guildID: String!, discordIDs: [String!]!): Void
   deleteGuild(guildID: String!): Void
 
-  # .fm indexing
-  fullIndex(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
-  update(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
-
   # Ratings
   importRatings(csv: String!, user: UserInput!): Void
 

@@ -83,26 +83,6 @@ func (r *mutationResolver) DeleteGuild(ctx context.Context, guildID string) (*st
 	return controllers.DeleteGuild(guildID)
 }
 
-func (r *mutationResolver) FullIndex(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error) {
-	err := meta.CheckUserMatches(ctx, *user.DiscordID)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return controllers.FullIndex(user, forceUserCreate)
-}
-
-func (r *mutationResolver) Update(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error) {
-	err := meta.CheckUserMatches(ctx, *user.DiscordID)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return controllers.Update(user, forceUserCreate)
-}
-
 func (r *mutationResolver) ImportRatings(ctx context.Context, csv string, user model.UserInput) (*string, error) {
 	err := meta.CheckUserMatches(ctx, *user.DiscordID)
 

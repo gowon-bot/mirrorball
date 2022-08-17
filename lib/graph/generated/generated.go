@@ -123,14 +123,12 @@ type ComplexityRoot struct {
 	Mutation struct {
 		AddUserToGuild      func(childComplexity int, discordID string, guildID string) int
 		DeleteGuild         func(childComplexity int, guildID string) int
-		FullIndex           func(childComplexity int, user model.UserInput, forceUserCreate *bool) int
 		ImportRatings       func(childComplexity int, csv string, user model.UserInput) int
 		Login               func(childComplexity int, username string, session *string, discordID string) int
 		Logout              func(childComplexity int, discordID string) int
 		RemoveUserFromGuild func(childComplexity int, discordID string, guildID string) int
 		SyncGuild           func(childComplexity int, guildID string, discordIDs []string) int
 		TagArtists          func(childComplexity int, artists []*model.ArtistInput, tags []*model.TagInput, markAsChecked *bool) int
-		Update              func(childComplexity int, user model.UserInput, forceUserCreate *bool) int
 		UpdatePrivacy       func(childComplexity int, user model.UserInput, privacy *model.Privacy) int
 	}
 
@@ -277,8 +275,6 @@ type MutationResolver interface {
 	RemoveUserFromGuild(ctx context.Context, discordID string, guildID string) (*string, error)
 	SyncGuild(ctx context.Context, guildID string, discordIDs []string) (*string, error)
 	DeleteGuild(ctx context.Context, guildID string) (*string, error)
-	FullIndex(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error)
-	Update(ctx context.Context, user model.UserInput, forceUserCreate *bool) (*model.TaskStartResponse, error)
 	ImportRatings(ctx context.Context, csv string, user model.UserInput) (*string, error)
 	TagArtists(ctx context.Context, artists []*model.ArtistInput, tags []*model.TagInput, markAsChecked *bool) (*string, error)
 }
@@ -604,18 +600,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteGuild(childComplexity, args["guildID"].(string)), true
 
-	case "Mutation.fullIndex":
-		if e.complexity.Mutation.FullIndex == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_fullIndex_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.FullIndex(childComplexity, args["user"].(model.UserInput), args["forceUserCreate"].(*bool)), true
-
 	case "Mutation.importRatings":
 		if e.complexity.Mutation.ImportRatings == nil {
 			break
@@ -687,18 +671,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.TagArtists(childComplexity, args["artists"].([]*model.ArtistInput), args["tags"].([]*model.TagInput), args["markAsChecked"].(*bool)), true
-
-	case "Mutation.update":
-		if e.complexity.Mutation.Update == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_update_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.Update(childComplexity, args["user"].(model.UserInput), args["forceUserCreate"].(*bool)), true
 
 	case "Mutation.updatePrivacy":
 		if e.complexity.Mutation.UpdatePrivacy == nil {
@@ -1465,10 +1437,6 @@ type Mutation {
   syncGuild(guildID: String!, discordIDs: [String!]!): Void
   deleteGuild(guildID: String!): Void
 
-  # .fm indexing
-  fullIndex(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
-  update(user: UserInput!, forceUserCreate: Boolean): TaskStartResponse
-
   # Ratings
   importRatings(csv: String!, user: UserInput!): Void
 
@@ -1833,30 +1801,6 @@ func (ec *executionContext) field_Mutation_deleteGuild_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_fullIndex_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.UserInput
-	if tmp, ok := rawArgs["user"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user"))
-		arg0, err = ec.unmarshalNUserInput2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["user"] = arg0
-	var arg1 *bool
-	if tmp, ok := rawArgs["forceUserCreate"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("forceUserCreate"))
-		arg1, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["forceUserCreate"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_importRatings_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2031,30 +1975,6 @@ func (ec *executionContext) field_Mutation_updatePrivacy_args(ctx context.Contex
 		}
 	}
 	args["privacy"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_update_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.UserInput
-	if tmp, ok := rawArgs["user"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user"))
-		arg0, err = ec.unmarshalNUserInput2githubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐUserInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["user"] = arg0
-	var arg1 *bool
-	if tmp, ok := rawArgs["forceUserCreate"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("forceUserCreate"))
-		arg1, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["forceUserCreate"] = arg1
 	return args, nil
 }
 
@@ -4139,84 +4059,6 @@ func (ec *executionContext) _Mutation_deleteGuild(ctx context.Context, field gra
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_fullIndex(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_fullIndex_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().FullIndex(rctx, args["user"].(model.UserInput), args["forceUserCreate"].(*bool))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.TaskStartResponse)
-	fc.Result = res
-	return ec.marshalOTaskStartResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTaskStartResponse(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_update(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_update_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Update(rctx, args["user"].(model.UserInput), args["forceUserCreate"].(*bool))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.TaskStartResponse)
-	fc.Result = res
-	return ec.marshalOTaskStartResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTaskStartResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_importRatings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -9029,10 +8871,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_syncGuild(ctx, field)
 		case "deleteGuild":
 			out.Values[i] = ec._Mutation_deleteGuild(ctx, field)
-		case "fullIndex":
-			out.Values[i] = ec._Mutation_fullIndex(ctx, field)
-		case "update":
-			out.Values[i] = ec._Mutation_update(ctx, field)
 		case "importRatings":
 			out.Values[i] = ec._Mutation_importRatings(ctx, field)
 		case "tagArtists":
@@ -11719,13 +11557,6 @@ func (ec *executionContext) unmarshalOTagsSettings2ᚖgithubᚗcomᚋjivisonᚋg
 	}
 	res, err := ec.unmarshalInputTagsSettings(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOTaskStartResponse2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTaskStartResponse(ctx context.Context, sel ast.SelectionSet, v *model.TaskStartResponse) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._TaskStartResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOTimerange2ᚖgithubᚗcomᚋjivisonᚋgowonᚑindexerᚋlibᚋgraphᚋmodelᚐTimerange(ctx context.Context, v interface{}) (*model.Timerange, error) {

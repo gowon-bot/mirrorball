@@ -75,53 +75,6 @@ func (i Indexing) ConvertAlbums(albumNames []AlbumToConvert, existingArtistsMap 
 	return albumsMap, nil
 }
 
-func (i Indexing) ConvertTracks(trackNames []TrackToConvert, existingArtistsMap *meta.ArtistConversionMap, existingAlbumsMap *meta.AlbumConversionMap) (meta.TrackConversionMap, error) {
-	var tracks []db.Track
-	tracksMap := meta.CreateTrackConversionMap()
-
-	tracksToSearch := i.GenerateTracksToSearch(trackNames)
-
-	tracks, err := helpers.SelectTracksWhereInMany(tracksToSearch, constants.ChunkSize)
-
-	if err != nil {
-		return tracksMap, err
-	}
-
-	for _, track := range tracks {
-		albumName := ""
-
-		if track.Album != nil {
-			albumName = track.Album.Name
-		}
-
-		tracksMap.Set(track.Artist.Name, albumName, track.Name, track)
-	}
-
-	tracksToCreate, err := i.generateTracksToCreate(trackNames, tracksMap, existingArtistsMap, existingAlbumsMap)
-
-	if err != nil {
-		return tracksMap, err
-	}
-
-	createdTracks, err := i.CreateTracks(tracksToCreate)
-
-	if err != nil {
-		return tracksMap, err
-	}
-
-	for _, createdTrack := range createdTracks {
-		albumName := ""
-
-		if createdTrack.Album != nil {
-			albumName = createdTrack.Album.Name
-		}
-
-		tracksMap.Set(createdTrack.Artist.Name, albumName, createdTrack.Name, createdTrack)
-	}
-
-	return tracksMap, nil
-}
-
 func (i Indexing) ConvertTags(tagNames []string) (meta.TagConversionMap, error) {
 	tagsMap := meta.CreateTagConversionMap()
 	tagsToCreate := []db.Tag{}

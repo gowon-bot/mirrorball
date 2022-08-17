@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -10,14 +9,11 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/RichardKnop/logging"
-	machinerylog "github.com/RichardKnop/machinery/v2/log"
 	"github.com/fatih/color"
 	"github.com/jivison/gowon-indexer/lib/db"
 	"github.com/jivison/gowon-indexer/lib/graph"
 	"github.com/jivison/gowon-indexer/lib/graph/generated"
 	"github.com/jivison/gowon-indexer/lib/meta"
-	"github.com/jivison/gowon-indexer/lib/tasks"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
@@ -52,16 +48,6 @@ func main() {
 func startup() {
 	godotenv.Load()
 
-	var logger logging.LoggerInterface
-
-	if strings.ToLower(os.Getenv("ENVIRONMENT")) == "development" {
-		logger = log.New(os.Stdout, "", 0)
-	} else {
-		logger = log.New(ioutil.Discard, "", 0)
-	}
-
-	machinerylog.Set(logger)
-
 	const asciiArt = `888b     d888 d8b                                 888               888 888 
 8888b   d8888 Y8P                                 888               888 888 
 88888b.d88888                                     888               888 888 
@@ -76,7 +62,4 @@ func startup() {
 	db.InitDB()
 	fmt.Println("Connected to database")
 
-	taskServer := tasks.NewTaskServer()
-	taskServer.LaunchWorkers()
-	fmt.Println("Launched task server")
 }

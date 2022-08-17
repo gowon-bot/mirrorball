@@ -1,8 +1,6 @@
 package users
 
 import (
-	"strings"
-
 	"github.com/go-pg/pg/v10"
 	"github.com/jivison/gowon-indexer/lib/customerrors"
 	"github.com/jivison/gowon-indexer/lib/db"
@@ -70,27 +68,6 @@ func (u Users) CreateUser(username, discordID string, session *string) (*db.User
 	}
 
 	return user, nil
-}
-
-// CreateUser creates a user from input if one doesn't already exist
-func (u Users) CreateUserFromInput(input model.UserInput) (*db.User, error) {
-
-	username := input.LastFMUsername
-
-	if username == nil || input.DiscordID == nil {
-		missingArguments := []string{}
-
-		if username == nil {
-			missingArguments = append(missingArguments, "username")
-		}
-		if input.DiscordID == nil {
-			missingArguments = append(missingArguments, "discord ID")
-		}
-
-		return nil, customerrors.InsufficientArgumentsSupplied(strings.Join(missingArguments, ", "))
-	}
-
-	return u.CreateUser(*username, *input.DiscordID, nil)
 }
 
 // DeleteUser deletes a user if one exists
