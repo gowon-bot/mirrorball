@@ -1,4 +1,4 @@
-# Mirrorball
+<img src="Mirrorball Banner.png" alt="Mirrorball" width="500"/>
 
 _모든 소린 나를 따라와_
 
@@ -44,5 +44,5 @@ Some resolvers execute "tasks" (`lib/tasks`). Since these are asynchronous and r
 
 Somethings broken? Just curious how something works?
 
-Feel free to shoot me a Discord dm at `john!#2527`
+Feel free to shoot me a Discord dm at `@abbyfour`
 or join the support server! https://discord.gg/9Vr7Df7TZf
